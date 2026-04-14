@@ -17,7 +17,7 @@ import { Program, AnchorProvider, BN, web3 } from "@coral-xyz/anchor";
 
 // ─── PDA Derivation Helpers ─────────────────────────────────────────
 
-const PROGRAM_ID = new PublicKey("StrataHackBountyEscrow1111111111111111111111");
+const PROGRAM_ID = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID ?? "11111111111111111111111111111111");
 
 export function findCommunityPDA(
   authority: PublicKey,

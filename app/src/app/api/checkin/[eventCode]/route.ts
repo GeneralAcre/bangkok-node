@@ -24,7 +24,7 @@ import {
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
-const PROGRAM_ID   = new PublicKey("StrataPresenceProtocol111111111111111111111");
+const PROGRAM_ID   = new PublicKey(process.env.NEXT_PUBLIC_PROGRAM_ID ?? "11111111111111111111111111111111");
 const RPC_ENDPOINT = process.env.SOLANA_RPC_URL || "https://api.devnet.solana.com";
 const APP_URL      = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
