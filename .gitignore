@@ -7,3 +7,4 @@ target/
 *.dylib
 test-ledger/
 .env
+app/.next/
