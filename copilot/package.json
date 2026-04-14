@@ -1,0 +1,15 @@
+{
+  "name": "strata-copilot",
+  "version": "0.1.0",
+  "description": "Strata AI Copilot — Reputation scoring and bounty review agent",
+  "main": "strata-copilot.ts",
+  "scripts": {
+    "start": "npx ts-node strata-copilot.ts",
+    "test": "npx ts-node test-copilot.ts"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
+  }
+}
