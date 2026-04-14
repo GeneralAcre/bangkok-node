@@ -186,7 +186,7 @@ export class StrataClient {
 
   async getMember(community: PublicKey, wallet: PublicKey): Promise<MemberAccount> {
     const [memberPDA] = findMemberPDA(community, wallet);
-    return (await this.program.account.member.fetch(memberPDA)) as any;
+    return (await (this.program.account as any).member.fetch(memberPDA)) as any;
   }
 
   // ── Bounties ──
@@ -199,7 +199,7 @@ export class StrataClient {
     deadline: number,
     amountSol: number
   ) {
-    const communityAccount = (await this.program.account.community.fetch(
+    const communityAccount = (await (this.program.account as any).community.fetch(
       community
     )) as any;
     const bountyIndex = communityAccount.bountyCount.toNumber();
@@ -290,10 +290,10 @@ export class StrataClient {
   }
 
   async getBounty(bountyPDA: PublicKey): Promise<BountyAccount> {
-    return (await this.program.account.bounty.fetch(bountyPDA)) as any;
+    return (await (this.program.account as any).bounty.fetch(bountyPDA)) as any;
   }
 
   async getCommunity(communityPDA: PublicKey): Promise<CommunityAccount> {
-    return (await this.program.account.community.fetch(communityPDA)) as any;
+    return (await (this.program.account as any).community.fetch(communityPDA)) as any;
   }
 }
