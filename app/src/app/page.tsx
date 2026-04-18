@@ -274,12 +274,26 @@ interface OnChainEvent {
 
 export default function HomePage() {
   const { connection } = useConnection();
-  const [events, setEvents] = useState<OnChainEvent[]>([]);
-  const [stats, setStats] = useState({ events: 0, members: 0, checkins: 0 });
+  const [events,      setEvents]      = useState<OnChainEvent[]>([]);
+  const [stats,       setStats]       = useState({ events: 0, members: 0, checkins: 0 });
+  const [statsLoaded, setStatsLoaded] = useState(false);
 
   useEffect(() => {
     async function load() {
-      if (!COMMUNITY_PDA_STR || !PROGRAM_ID_STR) return;
+      // Try server-side stats API first (faster, avoids devnet timeout)
+      try {
+        const r = await fetch("/api/stats");
+        if (r.ok) {
+          const d = await r.json();
+          setStats({ events: d.events ?? 0, members: d.members ?? 0, checkins: d.checkins ?? 0 });
+          setEvents((d.recentEvents ?? []).slice(0, 4));
+          setStatsLoaded(true);
+          return;
+        }
+      } catch {}
+
+      // Fallback: client-side devnet fetch
+      if (!COMMUNITY_PDA_STR || !PROGRAM_ID_STR) { setStatsLoaded(true); return; }
       try {
         const [{ default: idl }, { AnchorProvider }, { StrataClient, findEventPDA, parseEventStatus }] = await Promise.all([
           import("../idl/strata.json"),
@@ -305,6 +319,7 @@ export default function HomePage() {
         setEvents(loaded.reverse().slice(0, 4));
         setStats({ events: count, members: commAcc.memberCount.toNumber(), checkins });
       } catch {}
+      setStatsLoaded(true);
     }
     load();
   }, [connection]);
@@ -356,7 +371,11 @@ export default function HomePage() {
             { val: stats.checkins, lbl: "Proof-of-Presence" },
           ].map(s => (
             <div className="stat" key={s.lbl}>
-              <div className="stat-val">{s.val}</div>
+              {!statsLoaded ? (
+                <div style={{ height:"2.5rem", background:"linear-gradient(90deg,#1e1e2e 25%,#2d2d4e 50%,#1e1e2e 75%)", backgroundSize:"200% 100%", animation:"shimmer 1.5s infinite", borderRadius:8, marginBottom:".4rem" }} />
+              ) : (
+                <div className="stat-val">{s.val}</div>
+              )}
               <div className="stat-lbl">{s.lbl}</div>
             </div>
           ))}
