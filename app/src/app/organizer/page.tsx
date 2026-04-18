@@ -400,11 +400,23 @@ export default function OrganizerPage() {
               <div className="blink-url" onClick={() => copyUrl(qrEvent.account.eventCode)} title="Click to copy">
                 {blinkUrl(qrEvent.account.eventCode)}
               </div>
-              <div style={{ display:"flex", gap:".5rem", justifyContent:"center", flexWrap:"wrap" }}>
+              <div style={{ display:"flex", gap:".5rem", justifyContent:"center", flexWrap:"wrap", marginBottom:".75rem" }}>
                 <button className="btn btn-ghost" onClick={() => copyUrl(qrEvent.account.eventCode)}>
                   {copied ? "✓ Copied!" : "Copy Blink URL"}
                 </button>
                 <button className="btn btn-ghost" onClick={() => setQrEvent(null)}>Hide QR</button>
+              </div>
+              <div style={{ background:"#111118", border:"1px solid #1e1e2e", borderRadius:10, padding:".85rem 1rem", fontSize:".78rem", color:"#6b7280", textAlign:"left" }}>
+                <span style={{ color:"#8CE9A4", fontWeight:600 }}>💻 Demo on your computer:</span>{" "}
+                Share this link instead of the QR —{" "}
+                <a
+                  href={`/checkin?code=${qrEvent.account.eventCode}`}
+                  target="_blank" rel="noreferrer"
+                  style={{ color:"#7A57E9", fontFamily:"'Space Mono',monospace", wordBreak:"break-all" }}
+                >
+                  /checkin?code={qrEvent.account.eventCode}
+                </a>
+                {" "}— works in any browser with Phantom installed.
               </div>
             </div>
           </div>

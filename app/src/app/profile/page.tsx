@@ -141,6 +141,19 @@ const CSS = `
   }
   .nft-minted:hover { background:#8CE9A425; border-color:var(--green); text-decoration:none; }
 
+  /* NFT Gallery */
+  .nft-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1rem; margin-top:1rem; }
+  .nft-card {
+    background:var(--surface2); border:1px solid var(--border); border-radius:14px;
+    overflow:hidden; transition:all .25s; cursor:pointer; text-decoration:none; display:block;
+  }
+  .nft-card:hover { border-color:var(--purple-border); transform:translateY(-3px); box-shadow:0 12px 30px #7A57E920; text-decoration:none; }
+  .nft-img { width:100%; aspect-ratio:1; display:block; background:#111; }
+  .nft-info { padding:.75rem; }
+  .nft-name { font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; color:#fff; margin-bottom:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .nft-edition { font-size:.68rem; color:var(--purple); font-weight:600; }
+  .nft-date { font-size:.65rem; color:var(--muted); margin-top:.15rem; }
+
   .msg-err { background:#1a0a0f; border:1px solid #7f1d1d; color:#f87171; padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
   .msg-ok  { background:#0a1f0f; border:1px solid #166534; color:var(--green); padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
 
@@ -440,6 +453,43 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* NFT Gallery */}
+            {mintedCount > 0 && (
+              <div className="card">
+                <div className="card-title">
+                  My NFT Collection
+                  <span style={{ marginLeft:".5rem", color:"var(--green)" }}>({mintedCount})</span>
+                </div>
+                <div className="nft-grid">
+                  {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).map(rec => {
+                    const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
+                    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+                    return (
+                      <a
+                        key={rec.eventPubkey}
+                        className="nft-card"
+                        href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
+                        target="_blank" rel="noreferrer"
+                      >
+                        <img
+                          className="nft-img"
+                          src={`${appUrl}/nft-badge.svg`}
+                          alt={rec.event?.title ?? "Strata NFT"}
+                        />
+                        <div className="nft-info">
+                          <div className="nft-name">{rec.event?.title ?? "Strata Event"}</div>
+                          <div className="nft-edition">Edition #{rec.attendance.edition.toNumber()}</div>
+                          <div className="nft-date">
+                            {new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Attendance + NFT claims */}
             <div className="card">
               <div className="card-title">
@@ -458,10 +508,9 @@ export default function ProfilePage() {
                     <div className="how-to-title">How to get your NFT</div>
                     <div className="how-to-step">
                       1. Organizer creates &amp; starts an event at <a href="/organizer">/organizer</a><br />
-                      2. Organizer shares the QR Blink URL with you<br />
-                      3. <strong>Scan the QR with Phantom</strong> → one-tap check-in on-chain<br />
-                      4. Return here → glowing <strong style={{ color:"var(--purple)" }}>Claim NFT</strong> button appears below<br /><br />
-                      <strong>Testing solo?</strong> Go to <a href="/organizer">/organizer</a> → Go Live → click <strong>✦ Demo Check-In</strong>
+                      2. Attendees go to <a href="/checkin">/checkin?code=EVENTCODE</a> or scan the QR<br />
+                      3. <strong>One tap</strong> → check-in confirmed on-chain<br />
+                      4. Return here → glowing <strong style={{ color:"var(--purple)" }}>Claim NFT</strong> button appears below
                     </div>
                   </div>
                 </div>
@@ -486,19 +535,11 @@ export default function ProfilePage() {
                     </div>
                     <div style={{ flexShrink:0, paddingTop:".1rem" }}>
                       {hasMint ? (
-                        <a
-                          className="nft-minted"
-                          href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
-                          target="_blank" rel="noreferrer"
-                        >
+                        <a className="nft-minted" href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer">
                           ✓ NFT Minted ↗
                         </a>
                       ) : (
-                        <button
-                          className="btn-claim"
-                          onClick={() => handleClaimNft(rec)}
-                          disabled={claiming === rec.eventPubkey}
-                        >
+                        <button className="btn-claim" onClick={() => handleClaimNft(rec)} disabled={claiming === rec.eventPubkey}>
                           {claiming === rec.eventPubkey
                             ? <><span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span> Minting…</>
                             : "✦ Claim NFT"}
