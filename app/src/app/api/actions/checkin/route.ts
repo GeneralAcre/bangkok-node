@@ -108,7 +108,7 @@ async function fetchEventByCode(
   const eventCountOffset = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64) + 8;
   const eventCount = commInfo.data.readBigUInt64LE(eventCountOffset);
 
-  for (let i = 0n; i < eventCount; i++) {
+  for (let i = BigInt(0); i < eventCount; i++) {
     const ePDA = eventPDA(community, i);
     const info = await connection.getAccountInfo(ePDA);
     if (!info) continue;
