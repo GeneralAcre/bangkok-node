@@ -19,128 +19,162 @@ interface AttendedEvent {
 }
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: #000; color: #e2e8f0; font-family: 'Share Tech Mono', monospace; min-height: 100vh; }
-  .page { max-width: 820px; margin: 0 auto; padding: 2rem 1.5rem; }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
 
-  @keyframes fadeUp  { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes scanline{ 0%{top:-20px} 100%{top:100vh} }
-  @keyframes pulse   { 0%,100%{opacity:.6} 50%{opacity:1} }
-  @keyframes glow    { 0%,100%{box-shadow:0 0 6px rgba(220,38,38,0)} 50%{box-shadow:0 0 16px rgba(220,38,38,.25)} }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #000; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  :root {
+    --green: #8CE9A4; --purple: #7A57E9;
+    --green-dim: #8CE9A415; --purple-dim: #7A57E915;
+    --green-border: #8CE9A440; --purple-border: #7A57E940;
+    --surface: #0a0a0f; --surface2: #111118; --border: #1e1e2e;
+    --text-muted: #6b7280; --text-dim: #374151;
+  }
+
+  @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse   { 0%,100%{opacity:.7} 50%{opacity:1} }
+  @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes glow    { 0%,100%{box-shadow:0 0 16px #7A57E920} 50%{box-shadow:0 0 32px #7A57E950} }
+  @keyframes scanline{ 0%{top:-4px} 100%{top:100vh} }
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
 
   .scanline {
-    position:fixed; top:0; left:0; right:0; height:2px;
-    background:linear-gradient(transparent,rgba(220,38,38,.06),transparent);
-    animation:scanline 10s linear infinite; pointer-events:none; z-index:999;
+    position:fixed; top:0; left:0; right:0; height:2px; z-index:999; pointer-events:none;
+    background:linear-gradient(transparent,#7A57E915,transparent);
+    animation:scanline 12s linear infinite;
   }
 
-  .top-nav {
-    display:flex; align-items:center; justify-content:space-between;
-    border-bottom:1px solid #111; padding-bottom:1.25rem; margin-bottom:2rem;
+  .nav {
+    position:sticky; top:0; z-index:100;
+    background:rgba(0,0,0,.85); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border); padding:0 1.5rem;
   }
-  .nav-brand { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:#dc2626; letter-spacing:.15em; text-decoration:none; }
-  .nav-links { display:flex; gap:.75rem; align-items:center; }
+  .nav-inner {
+    max-width:900px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between; height:60px;
+  }
+  .nav-brand {
+    font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700;
+    background:linear-gradient(135deg,var(--purple),var(--green));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    text-decoration:none;
+  }
+  .nav-links { display:flex; gap:.4rem; align-items:center; }
   .nav-link {
-    font-size:.72rem; color:#6b7280; text-decoration:none; letter-spacing:.1em;
-    padding:.3rem .7rem; border:1px solid #1a1a1a; border-radius:2px; transition:all .2s;
+    font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:500;
+    color:var(--text-muted); text-decoration:none; padding:.4rem .8rem;
+    border-radius:6px; transition:all .2s;
   }
-  .nav-link:hover,.nav-link.active { color:#dc2626; border-color:#dc2626; }
+  .nav-link:hover { color:#fff; background:var(--purple-dim); }
+  .nav-link.active { color:var(--purple); }
+  @media(max-width:600px){.nav-link:not(.active){display:none}}
 
-  h1 { font-family:'Cinzel Decorative',serif; font-size:1.4rem; color:#dc2626; margin-bottom:.2rem; }
-  .sub { font-size:.72rem; color:#374151; margin-bottom:1.75rem; letter-spacing:.06em; }
+  .page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+  .page-header { margin-bottom:2rem; animation:fadeUp .4s ease both; }
+  .page-title { font-family:'Space Grotesk',sans-serif; font-size:1.75rem; font-weight:700; color:#fff; margin-bottom:.3rem; }
+  .page-sub { font-size:.85rem; color:var(--text-muted); }
 
   .card {
-    background:#050505; border:1px solid #1a1a1a; border-radius:2px;
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
     padding:1.5rem; margin-bottom:1.25rem; animation:fadeUp .4s ease both;
-    position:relative; overflow:hidden;
   }
-  .card::before {
-    content:''; position:absolute; top:0; left:0; right:0; height:1px;
-    background:linear-gradient(90deg,transparent,#dc2626,transparent); opacity:.3;
+  .card-title { font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; color:var(--text-muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:1.25rem; }
+
+  /* Identity card */
+  .identity-top { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem; }
+  .username { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:#fff; }
+  .wallet-addr { font-family:'Space Mono',monospace; font-size:.62rem; color:var(--text-muted); margin-top:.3rem; word-break:break-all; }
+  .sol-pill {
+    display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:600;
+    padding:.3rem .8rem; border-radius:100px;
   }
-  .card-title { font-size:.65rem; color:#4b5563; letter-spacing:.25em; margin-bottom:1.25rem; text-transform:uppercase; }
+  .sol-ok  { color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); }
+  .sol-low { color:#f87171; background:#f871710d; border:1px solid #7f1d1d; animation:pulse 2s infinite; }
 
-  .identity-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem; }
-  .username { font-size:1.4rem; color:#f9fafb; font-family:'Rajdhani',sans-serif; font-weight:700; letter-spacing:.04em; }
-  .wallet-addr { font-size:.62rem; color:#374151; margin-top:.2rem; letter-spacing:.04em; word-break:break-all; }
-  .sol-balance { font-size:.72rem; padding:.2rem .6rem; border-radius:2px; letter-spacing:.06em; }
-  .sol-ok  { color:#34d399; border:1px solid #065f46; background:#020f06; }
-  .sol-low { color:#f87171; border:1px solid #7f1d1d; background:#0a0000; animation:pulse 2s infinite; }
-
-  .tier-badge {
-    display:inline-flex; align-items:center; gap:.5rem; padding:.4rem 1rem;
-    border-radius:2px; font-size:.85rem; font-weight:700; margin-bottom:1.25rem;
-    font-family:'Rajdhani',sans-serif; letter-spacing:.1em;
+  .tier-pill {
+    display:inline-flex; align-items:center; gap:.5rem;
+    padding:.4rem 1rem; border-radius:8px; font-family:'Space Grotesk',sans-serif;
+    font-size:.85rem; font-weight:700; margin-bottom:1.25rem; letter-spacing:.04em;
   }
   .tier-dot { width:8px; height:8px; border-radius:50%; }
 
-  .stat-row { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.25rem; }
-  .stat { text-align:center; background:#0a0a0a; border:1px solid #111; padding:1rem; border-radius:2px; }
-  .stat-val { font-size:1.8rem; font-weight:700; color:#f9fafb; font-family:'Rajdhani',sans-serif; line-height:1; }
-  .stat-lbl { font-size:.58rem; color:#374151; margin-top:.3rem; letter-spacing:.15em; text-transform:uppercase; }
+  .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.25rem; }
+  .stat-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem; text-align:center; }
+  .stat-val { font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:700; color:#fff; line-height:1; margin-bottom:.3rem; }
+  .stat-lbl { font-size:.65rem; font-weight:500; color:var(--text-muted); letter-spacing:.08em; text-transform:uppercase; }
+  @media(max-width:400px){.stat-grid{grid-template-columns:1fr 1fr}}
 
-  .prog-bar { height:3px; background:#0a0a0a; border-radius:0; overflow:hidden; margin-bottom:.35rem; }
-  .prog-fill { height:100%; transition:width .8s ease; }
-  .prog-labels { display:flex; justify-content:space-between; font-size:.6rem; color:#374151; letter-spacing:.05em; }
+  .prog-track { height:4px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-bottom:.4rem; }
+  .prog-fill  { height:100%; border-radius:4px; transition:width .8s ease; }
+  .prog-labels{ display:flex; justify-content:space-between; font-size:.68rem; color:var(--text-muted); }
 
-  .event-row { border-bottom:1px solid #0d0d0d; padding:1rem 0; }
-  .event-row:last-child { border-bottom:none; }
-  .event-row-header { display:flex; align-items:flex-start; justify-content:space-between; gap:.5rem; flex-wrap:wrap; margin-bottom:.4rem; }
-  .event-name { font-size:.9rem; color:#e2e8f0; font-family:'Rajdhani',sans-serif; font-weight:600; }
-  .event-meta { font-size:.68rem; color:#374151; line-height:1.6; }
-
-  .nft-claimed {
-    display:inline-flex; align-items:center; gap:.4rem; font-size:.68rem;
-    color:#4ade80; border:1px solid #14532d; padding:4px 12px; border-radius:2px;
-    background:#020f06; text-decoration:none; white-space:nowrap;
+  /* Attendance */
+  .attendance-row {
+    border-bottom:1px solid #0d0d14; padding:1rem 0;
+    display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;
   }
-  .nft-claimed:hover { border-color:#4ade80; text-decoration:none; }
+  .attendance-row:last-child { border-bottom:none; }
+  .att-name { font-family:'Space Grotesk',sans-serif; font-size:.92rem; font-weight:600; color:#fff; margin-bottom:.2rem; }
+  .att-meta { font-size:.72rem; color:var(--text-muted); line-height:1.6; }
+  .att-meta a { color:var(--purple); text-decoration:none; }
+  .att-meta a:hover { text-decoration:underline; }
+
   .btn-claim {
-    display:inline-flex; align-items:center; gap:.4rem; font-size:.72rem;
-    color:#fff; border:none; padding:6px 16px; border-radius:2px; cursor:pointer;
-    background:#991b1b; border:1px solid #dc2626; font-family:'Rajdhani',sans-serif;
-    font-weight:700; letter-spacing:.08em; text-transform:uppercase; transition:all .2s;
-    animation:glow 2s ease-in-out infinite;
+    display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
+    padding:.55rem 1.25rem; background:var(--purple); color:#fff; border:none;
+    font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:600;
+    border-radius:8px; cursor:pointer; transition:all .2s;
+    animation:glow 2.5s ease-in-out infinite;
+    letter-spacing:.03em;
   }
-  .btn-claim:hover { background:#dc2626; box-shadow:0 0 20px rgba(220,38,38,.3); }
-  .btn-claim:disabled { background:#1a0000; color:#4b5563; border-color:#1a1a1a; cursor:not-allowed; animation:none; }
+  .btn-claim:hover { background:#8B6EF0; transform:translateY(-1px); box-shadow:0 8px 25px #7A57E940; animation:none; }
+  .btn-claim:disabled { background:#2d2060; color:#6b7280; cursor:not-allowed; animation:none; transform:none; box-shadow:none; }
+
+  .nft-minted {
+    display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
+    padding:.45rem 1rem; background:var(--green-dim); color:var(--green);
+    border:1px solid var(--green-border); border-radius:8px; font-size:.78rem;
+    font-weight:600; text-decoration:none; font-family:'Space Grotesk',sans-serif;
+    transition:all .2s;
+  }
+  .nft-minted:hover { background:#8CE9A425; border-color:var(--green); text-decoration:none; }
+
+  .msg-err { background:#1a0a0f; border:1px solid #7f1d1d; color:#f87171; padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
+  .msg-ok  { background:#0a1f0f; border:1px solid #166534; color:var(--green); padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
+
+  .connect-center { text-align:center; padding:4rem 1.5rem; }
+  .connect-center p { font-size:.9rem; color:var(--text-muted); margin-bottom:1.5rem; }
+
+  .empty-state { text-align:center; padding:2rem 0; }
+  .empty-text { font-size:.88rem; color:var(--text-muted); margin-bottom:1.25rem; }
+  .how-to-box {
+    background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:1.25rem 1.5rem; text-align:left;
+  }
+  .how-to-title { font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:700; color:var(--purple); letter-spacing:.08em; text-transform:uppercase; margin-bottom:.75rem; }
+  .how-to-step { font-size:.8rem; color:var(--text-muted); line-height:2; }
+  .how-to-step strong { color:#fff; }
+  .how-to-step a { color:var(--purple); text-decoration:none; }
+  .how-to-step a:hover { text-decoration:underline; }
 
   .btn {
-    padding:.6rem 1.4rem; border:1px solid #dc2626; background:transparent;
-    color:#dc2626; cursor:pointer; font-family:'Share Tech Mono',monospace;
-    font-size:.78rem; letter-spacing:.1em; border-radius:2px;
-    transition:all .2s; text-transform:uppercase;
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.65rem 1.4rem; border:1px solid var(--purple); background:transparent;
+    color:var(--purple); cursor:pointer; font-family:'Space Grotesk',sans-serif;
+    font-size:.85rem; font-weight:600; border-radius:8px; transition:all .2s;
   }
-  .btn:hover { background:#dc2626; color:#000; }
+  .btn:hover { background:var(--purple); color:#fff; }
   .btn:disabled { opacity:.4; cursor:not-allowed; }
 
-  .msg-err { background:#0a0000; border:1px solid #7f1d1d; color:#f87171; padding:.75rem 1rem; border-radius:2px; font-size:.78rem; margin-bottom:1rem; }
-  .msg-ok  { background:#020f06; border:1px solid #14532d; color:#4ade80; padding:.75rem 1rem; border-radius:2px; font-size:.78rem; margin-bottom:1rem; }
-
-  .connect-box { text-align:center; padding:4rem 1rem; color:#374151; }
-  .connect-box p { margin-bottom:1.5rem; font-size:.85rem; }
-
-  .empty { color:#374151; font-size:.82rem; text-align:center; padding:2rem 0; line-height:1.7; }
-  .how-to-nft {
-    background:#080808; border:1px solid #111; padding:1rem 1.25rem;
-    border-radius:2px; font-size:.72rem; color:#4b5563; line-height:1.9; margin-top:.5rem;
-  }
-  .how-to-nft strong { color:#e2e8f0; }
-  .how-to-nft a { color:#dc2626; }
-
-  a { color:#dc2626; text-decoration:none; }
-  a:hover { text-decoration:underline; }
-
   .wallet-adapter-button {
-    background:transparent !important; border:1px solid #1a1a1a !important;
-    color:#6b7280 !important; font-family:'Share Tech Mono',monospace !important;
-    font-size:.72rem !important; letter-spacing:.08em !important; border-radius:2px !important;
-    padding:.3rem .8rem !important; height:auto !important;
+    background:var(--purple) !important; color:#fff !important;
+    font-family:'Space Grotesk',sans-serif !important; font-size:.8rem !important;
+    font-weight:600 !important; border-radius:8px !important;
+    padding:.45rem 1rem !important; height:auto !important; border:none !important;
   }
-  .wallet-adapter-button:hover { border-color:#dc2626 !important; color:#dc2626 !important; background:transparent !important; }
-  .wallet-adapter-button-trigger { background:#991b1b !important; border-color:#dc2626 !important; color:#fff !important; }
-  .wallet-adapter-button-trigger:hover { background:#dc2626 !important; }
+  .wallet-adapter-button:hover { background:#8B6EF0 !important; }
 `;
 
 export default function ProfilePage() {
@@ -164,7 +198,7 @@ export default function ProfilePage() {
       try {
         const idl = await import("../../idl/strata.json").catch(() => null);
         if (!idl) return;
-        const provider = new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
+        const provider = new AnchorProvider(connection, wallet as any, { commitment:"confirmed" });
         setClient(new StrataClient(provider, idl));
       } catch (e: any) { setError(e?.message); }
     }
@@ -208,18 +242,13 @@ export default function ProfilePage() {
         setError("Need devnet SOL to register. Get some free at faucet.solana.com");
         setLoading(false); return;
       }
-      const community = new PublicKey(COMMUNITY_PDA_STR);
-      await client.registerMember(community, publicKey!.toBase58().slice(0, 12));
+      await client.registerMember(new PublicKey(COMMUNITY_PDA_STR), publicKey!.toBase58().slice(0, 12));
       await loadProfile();
     } catch (e: any) {
       const m = e?.message ?? "";
-      if (m.includes("already in use") || m.includes("already initialized")) {
-        await loadProfile(); return;
-      } else if (m.includes("rejected") || m.includes("cancelled")) {
-        setError("Transaction cancelled — click Register again and Approve in Phantom.");
-      } else {
-        setError(m || "Registration failed");
-      }
+      if (m.includes("already in use") || m.includes("already initialized")) { await loadProfile(); return; }
+      else if (m.includes("rejected") || m.includes("cancelled")) { setError("Transaction cancelled — try again and Approve in Phantom."); }
+      else { setError(m || "Registration failed"); }
     } finally { setLoading(false); }
   }
 
@@ -228,9 +257,8 @@ export default function ProfilePage() {
     setClaiming(rec.eventPubkey); setError(null); setSuccess(null);
     try {
       const res = await fetch("/api/mint-nft", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
           userWallet:  publicKey.toBase58(),
           eventTitle:  rec.event?.title ?? "Strata Event",
           eventCode:   rec.event?.eventCode ?? "",
@@ -247,25 +275,27 @@ export default function ProfilePage() {
   }
 
   function tierProgress(tier: MemberTier, events: number) {
-    const th: Record<MemberTier, [number, number]> = {
-      Initiate: [0,1], Seeker:[1,3], Resident:[3,6], Builder:[6,11], Core:[11,21], Legend:[21,21],
+    const th: Record<MemberTier,[number,number]> = {
+      Initiate:[0,1], Seeker:[1,3], Resident:[3,6], Builder:[6,11], Core:[11,21], Legend:[21,21],
     };
-    const [lo, hi] = th[tier];
-    if (tier === "Legend") return { pct: 100, next: "MAX TIER — LEGEND" };
-    const next: Record<MemberTier, MemberTier> = {
+    const next: Record<MemberTier,MemberTier> = {
       Initiate:"Seeker", Seeker:"Resident", Resident:"Builder", Builder:"Core", Core:"Legend", Legend:"Legend",
     };
-    return { pct: Math.min(100, Math.round(((events - lo) / (hi - lo)) * 100)), next: `${hi - events} events to ${next[tier]}` };
+    const [lo, hi] = th[tier];
+    if (tier === "Legend") return { pct:100, label:"MAX TIER" };
+    return { pct:Math.min(100, Math.round(((events-lo)/(hi-lo))*100)), label:`${hi-events} events to ${next[tier]}` };
   }
 
   const Nav = () => (
-    <nav className="top-nav">
-      <a href="/" className="nav-brand" style={{ textDecoration: "none" }}>STRATA</a>
-      <div className="nav-links">
-        <a href="/" className="nav-link">HOME</a>
-        <a href="/organizer" className="nav-link">ORGANIZER</a>
-        <a href="/profile" className="nav-link active">PROFILE</a>
-        <WalletMultiButton />
+    <nav className="nav">
+      <div className="nav-inner">
+        <a href="/" className="nav-brand">STRATA</a>
+        <div className="nav-links">
+          <a href="/" className="nav-link">Home</a>
+          <a href="/organizer" className="nav-link">Organizer</a>
+          <a href="/profile" className="nav-link active">Profile</a>
+          <WalletMultiButton />
+        </div>
       </div>
     </nav>
   );
@@ -275,11 +305,10 @@ export default function ProfilePage() {
       <>
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
         <div className="scanline" />
+        <Nav />
         <div className="page">
-          <Nav />
-          <h1>PROFILE</h1>
-          <p className="sub">Your on-chain identity and reputation.</p>
-          <div className="card connect-box">
+          <div className="page-header"><h1 className="page-title">Profile</h1><p className="page-sub">Your on-chain identity and reputation.</p></div>
+          <div className="card connect-center">
             <p>Connect your wallet to view your Strata profile.</p>
             <WalletMultiButton />
           </div>
@@ -293,24 +322,26 @@ export default function ProfilePage() {
   const rep      = member ? member.reputationScore.toNumber() : 0;
   const progress = tier ? tierProgress(tier, events) : null;
   const color    = tier ? TIER_COLOR[tier] : "#6b7280";
+  const mintedCount = attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length;
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="scanline" />
+      <Nav />
+
       <div className="page">
-        <Nav />
-        <h1>PROFILE</h1>
-        <p className="sub">On-chain identity · Permanent reputation · Proof of presence.</p>
+        <div className="page-header">
+          <h1 className="page-title">Profile</h1>
+          <p className="page-sub">On-chain identity · Permanent reputation · Proof of presence</p>
+        </div>
 
         {error && (
           <div className="msg-err">
             {error}
-            {(error.includes("SOL") || error.includes("faucet")) && (
-              <div style={{ marginTop: ".4rem" }}>
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" style={{ color: "#fbbf24" }}>
-                  → faucet.solana.com ↗
-                </a>
+            {error.includes("SOL") && (
+              <div style={{ marginTop:".4rem" }}>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" style={{ color:"#fbbf24" }}>→ faucet.solana.com ↗</a>
               </div>
             )}
           </div>
@@ -318,10 +349,8 @@ export default function ProfilePage() {
         {success && <div className="msg-ok">{success}</div>}
 
         {loading && !member && (
-          <div className="card">
-            <div style={{ color: "#374151", textAlign: "center", padding: "2rem", fontSize: ".82rem" }}>
-              Loading chain data…
-            </div>
+          <div className="card" style={{ textAlign:"center", padding:"2.5rem", color:"var(--text-muted)" }}>
+            Loading chain data…
           </div>
         )}
 
@@ -329,26 +358,26 @@ export default function ProfilePage() {
         {!loading && !member && (
           <div className="card">
             <div className="card-title">Identity</div>
-            <div className="identity-header">
+            <div className="identity-top">
               <div>
-                <div className="wallet-addr" style={{ fontSize: ".72rem", color: "#6b7280", marginBottom: ".5rem" }}>
-                  {publicKey.toBase58()}
+                <div style={{ fontFamily:"'Space Grotesk',sans-serif", fontSize:"1.1rem", fontWeight:600, color:"#fff", marginBottom:".35rem" }}>
+                  New to Strata
                 </div>
-                <p style={{ fontSize: ".82rem", color: "#6b7280", lineHeight: 1.7 }}>
-                  Not yet a Strata member. Register to start building your on-chain reputation.
-                </p>
+                <div className="wallet-addr">{publicKey.toBase58()}</div>
               </div>
               {balance !== null && (
-                <span className={`sol-balance ${balance < 0.01 ? "sol-low" : "sol-ok"}`}>
+                <span className={`sol-pill ${balance < 0.01 ? "sol-low" : "sol-ok"}`}>
                   {balance.toFixed(4)} SOL{balance < 0.01 ? " ⚠" : ""}
                 </span>
               )}
             </div>
+            <p style={{ fontSize:".85rem", color:"var(--text-muted)", lineHeight:1.7, marginBottom:"1.25rem" }}>
+              Register to start building your on-chain reputation. Each event you attend earns you a higher tier.
+            </p>
             {balance !== null && balance < 0.01 ? (
               <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
-                style={{ display:"inline-block", padding:".6rem 1.4rem", border:"1px solid #fbbf24",
-                  color:"#fbbf24", fontSize:".8rem", letterSpacing:".1em", borderRadius:"2px" }}>
-                GET DEVNET SOL FIRST ↗
+                style={{ display:"inline-flex", alignItems:"center", gap:".4rem", padding:".65rem 1.4rem", border:"1px solid #fbbf24", color:"#fbbf24", fontSize:".85rem", fontWeight:600, borderRadius:8, textDecoration:"none" }}>
+                Get Devnet SOL First ↗
               </a>
             ) : (
               <button className="btn" disabled={loading} onClick={handleRegister}>
@@ -358,41 +387,41 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* Member identity */}
+        {/* Member */}
         {member && tier && (
           <>
             <div className="card">
               <div className="card-title">Identity</div>
-              <div className="identity-header">
+              <div className="identity-top">
                 <div>
                   <div className="username">@{member.username}</div>
                   <div className="wallet-addr">{publicKey.toBase58()}</div>
                 </div>
                 {balance !== null && (
-                  <span className={`sol-balance ${balance < 0.01 ? "sol-low" : "sol-ok"}`}>
+                  <span className={`sol-pill ${balance < 0.01 ? "sol-low" : "sol-ok"}`}>
                     {balance.toFixed(4)} SOL
                   </span>
                 )}
               </div>
 
-              <div className="tier-badge" style={{ background: `${color}12`, border: `1px solid ${color}44`, color }}>
-                <span className="tier-dot" style={{ background: color }} />
-                {tier.toUpperCase()}
-                <span style={{ fontSize: ".62rem", opacity: .6 }}>· {TIER_THRESHOLD[tier]}</span>
+              <div className="tier-pill" style={{ background:`${color}15`, border:`1px solid ${color}40`, color }}>
+                <span className="tier-dot" style={{ background:color }} />
+                {tier}
+                <span style={{ fontSize:".68rem", opacity:.6, fontWeight:500 }}>· {TIER_THRESHOLD[tier]}</span>
               </div>
 
-              <div className="stat-row">
-                <div className="stat">
-                  <div className="stat-val">{events}</div>
+              <div className="stat-grid">
+                <div className="stat-box">
+                  <div className="stat-val" style={{ color:"var(--purple)" }}>{events}</div>
                   <div className="stat-lbl">Events</div>
                 </div>
-                <div className="stat">
-                  <div className="stat-val">{rep}</div>
+                <div className="stat-box">
+                  <div className="stat-val" style={{ color:"var(--green)" }}>{rep}</div>
                   <div className="stat-lbl">Rep Score</div>
                 </div>
-                <div className="stat">
-                  <div className="stat-val" style={{ fontSize: "1rem", paddingTop: ".3rem" }}>
-                    {new Date(member.joinedAt.toNumber() * 1000).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                <div className="stat-box">
+                  <div className="stat-val" style={{ fontSize:"1rem", paddingTop:".4rem", color:"#fff" }}>
+                    {new Date(member.joinedAt.toNumber() * 1000).toLocaleDateString("en-US", { month:"short", year:"numeric" })}
                   </div>
                   <div className="stat-lbl">Joined</div>
                 </div>
@@ -400,12 +429,12 @@ export default function ProfilePage() {
 
               {progress && (
                 <>
-                  <div className="prog-bar">
-                    <div className="prog-fill" style={{ width: `${progress.pct}%`, background: color }} />
+                  <div className="prog-track">
+                    <div className="prog-fill" style={{ width:`${progress.pct}%`, background:`linear-gradient(90deg,var(--purple),var(--green))` }} />
                   </div>
                   <div className="prog-labels">
                     <span>{progress.pct}% progress</span>
-                    <span>{progress.next}</span>
+                    <span>{progress.label}</span>
                   </div>
                 </>
               )}
@@ -415,70 +444,66 @@ export default function ProfilePage() {
             <div className="card">
               <div className="card-title">
                 Attendance History ({attended.length})
-                {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length > 0 && (
-                  <span style={{ marginLeft: ".75rem", color: "#34d399" }}>
-                    · {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length} NFT{attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length > 1 ? "s" : ""} minted
+                {mintedCount > 0 && (
+                  <span style={{ marginLeft:".75rem", color:"var(--green)" }}>
+                    · {mintedCount} NFT{mintedCount > 1 ? "s" : ""} minted
                   </span>
                 )}
               </div>
 
               {attended.length === 0 && (
-                <div>
-                  <div className="empty">No check-ins yet.</div>
-                  <div className="how-to-nft">
-                    <strong>HOW TO GET YOUR NFT:</strong><br />
-                    1. Organizer creates &amp; starts an event at <a href="/organizer">/organizer</a><br />
-                    2. Organizer shares the QR Blink URL<br />
-                    3. <strong>You scan the QR with Phantom</strong> → one-tap check-in on-chain<br />
-                    4. Come back here → <strong style={{ color: "#dc2626" }}>CLAIM NFT</strong> button appears below<br />
-                    <br />
-                    <strong>Testing solo?</strong> Go to <a href="/organizer">/organizer</a> → GO LIVE → click <strong>DEMO CHECK-IN</strong>
+                <div className="empty-state">
+                  <p className="empty-text">No check-ins yet.</p>
+                  <div className="how-to-box">
+                    <div className="how-to-title">How to get your NFT</div>
+                    <div className="how-to-step">
+                      1. Organizer creates &amp; starts an event at <a href="/organizer">/organizer</a><br />
+                      2. Organizer shares the QR Blink URL with you<br />
+                      3. <strong>Scan the QR with Phantom</strong> → one-tap check-in on-chain<br />
+                      4. Return here → glowing <strong style={{ color:"var(--purple)" }}>Claim NFT</strong> button appears below<br /><br />
+                      <strong>Testing solo?</strong> Go to <a href="/organizer">/organizer</a> → Go Live → click <strong>✦ Demo Check-In</strong>
+                    </div>
                   </div>
                 </div>
               )}
 
               {attended.map((rec) => {
                 const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
-                const hasMint = !!(rec.attendance.nftMint || minted[rec.eventPubkey]);
+                const hasMint  = !!(rec.attendance.nftMint || minted[rec.eventPubkey]);
                 return (
-                  <div className="event-row" key={rec.eventPubkey}>
-                    <div className="event-row-header">
-                      <div>
-                        <div className="event-name">{rec.event?.title ?? "Unknown Event"}</div>
-                        <div className="event-meta">
-                          {rec.event && `${rec.event.location}, ${rec.event.country} · `}
-                          Checked in {new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle: "medium" })}
-                          {" "}· Edition #{rec.attendance.edition.toNumber()}
-                          {" "}·{" "}
-                          <a href={`https://explorer.solana.com/address/${rec.eventPubkey}?cluster=devnet`} target="_blank" rel="noreferrer">
-                            Explorer ↗
-                          </a>
-                        </div>
+                  <div className="attendance-row" key={rec.eventPubkey}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div className="att-name">{rec.event?.title ?? "Unknown Event"}</div>
+                      <div className="att-meta">
+                        {rec.event && `${rec.event.location}, ${rec.event.country} · `}
+                        Checked in {new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}
+                        {" "}· Edition #{rec.attendance.edition.toNumber()}
+                        {" "}·{" "}
+                        <a href={`https://explorer.solana.com/address/${rec.eventPubkey}?cluster=devnet`} target="_blank" rel="noreferrer">
+                          Explorer ↗
+                        </a>
                       </div>
-                      <div style={{ paddingTop: ".1rem", flexShrink: 0 }}>
-                        {hasMint ? (
-                          <a
-                            className="nft-claimed"
-                            href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
-                            target="_blank" rel="noreferrer"
-                          >
-                            ✓ NFT MINTED — VIEW ↗
-                          </a>
-                        ) : (
-                          <button
-                            className="btn-claim"
-                            onClick={() => handleClaimNft(rec)}
-                            disabled={claiming === rec.eventPubkey}
-                          >
-                            {claiming === rec.eventPubkey ? (
-                              <>
-                                <span style={{ display: "inline-block", animation: "spin 1s linear infinite", fontSize: ".8rem" }}>◈</span>
-                                MINTING…
-                              </>
-                            ) : "✦ CLAIM NFT"}
-                          </button>
-                        )}
-                      </div>
+                    </div>
+                    <div style={{ flexShrink:0, paddingTop:".1rem" }}>
+                      {hasMint ? (
+                        <a
+                          className="nft-minted"
+                          href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
+                          target="_blank" rel="noreferrer"
+                        >
+                          ✓ NFT Minted ↗
+                        </a>
+                      ) : (
+                        <button
+                          className="btn-claim"
+                          onClick={() => handleClaimNft(rec)}
+                          disabled={claiming === rec.eventPubkey}
+                        >
+                          {claiming === rec.eventPubkey
+                            ? <><span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span> Minting…</>
+                            : "✦ Claim NFT"}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
