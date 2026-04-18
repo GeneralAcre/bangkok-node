@@ -407,7 +407,16 @@ export default function ProfilePage() {
             <div className="card">
               <div className="card-title">Attendance History ({attended.length})</div>
               {attended.length === 0 && (
-                <div className="empty">No check-ins yet. Scan a QR at a live Strata event.</div>
+                <div>
+                  <div className="empty" style={{ marginBottom: "1rem" }}>No check-ins yet.</div>
+                  <div style={{ background: "#050505", border: "1px solid #1a1a1a", padding: "1rem", fontSize: "0.75rem", color: "#6b7280", lineHeight: "1.8" }}>
+                    <span style={{ color: "#dc2626", fontWeight: 700 }}>HOW TO GET YOUR NFT:</span><br/>
+                    1. Organizer creates event at <a href="/organizer">/organizer</a> and clicks GO LIVE<br/>
+                    2. Organizer shares the Blink URL as QR code<br/>
+                    3. <strong style={{ color: "#e2e8f0" }}>You scan the QR with Phantom</strong> → one-tap check-in on-chain<br/>
+                    4. Come back here → <strong style={{ color: "#dc2626" }}>CLAIM NFT</strong> button will appear below
+                  </div>
+                </div>
               )}
               {attended.map((rec) => (
                 <div className="event-row" key={rec.eventPubkey}>

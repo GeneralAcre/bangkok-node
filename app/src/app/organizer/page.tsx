@@ -125,8 +125,9 @@ export default function OrganizerPage() {
   const [events,    setEvents]    = useState<LocalEvent[]>([]);
   const [loading,   setLoading]   = useState(false);
   const [msg,       setMsg]       = useState<{ type: "ok"|"err"; text: string } | null>(null);
-  const [qrEvent,   setQrEvent]   = useState<LocalEvent | null>(null);
-  const [copied,    setCopied]    = useState(false);
+  const [qrEvent,      setQrEvent]      = useState<LocalEvent | null>(null);
+  const [copied,       setCopied]       = useState(false);
+  const [demoChecking, setDemoChecking] = useState<string | null>(null);
 
   const [title,       setTitle]       = useState("");
   const [description, setDescription] = useState("");
@@ -174,6 +175,37 @@ export default function OrganizerPage() {
   }, [client, publicKey]);
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
+
+  async function handleDemoCheckIn(ev: LocalEvent) {
+    if (!publicKey || !wallet.signTransaction) return;
+    setDemoChecking(ev.pubkey); setMsg(null);
+    try {
+      const res = await fetch(`/api/actions/checkin?eventCode=${ev.account.eventCode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account: publicKey.toBase58() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? data.detail ?? "Check-in failed");
+      const { Transaction: SolTx } = await import("@solana/web3.js");
+      const txBytes = Buffer.from(data.transaction, "base64");
+      const tx = SolTx.from(txBytes);
+      const signed = await wallet.signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(sig, "confirmed");
+      setMsg({ type: "ok", text: `Demo check-in confirmed! Now go to /profile to claim your NFT. Tx: ${sig}` });
+      await loadEvents();
+    } catch (err: any) {
+      const m = err?.message ?? "";
+      if (m.includes("already in use") || m.includes("already been processed")) {
+        setMsg({ type: "ok", text: "Already checked in! Go to /profile to claim your NFT." });
+      } else if (m.includes("rejected") || m.includes("cancelled")) {
+        setMsg({ type: "err", text: "Transaction cancelled." });
+      } else {
+        setMsg({ type: "err", text: m || "Demo check-in failed" });
+      }
+    } finally { setDemoChecking(null); }
+  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -306,6 +338,27 @@ export default function OrganizerPage() {
           </div>
         )}
 
+        {/* How it works */}
+        {connected && (
+          <div className="card" style={{ borderColor: "#1f1f1f" }}>
+            <h2 style={{ color: "#6b7280" }}>HOW IT WORKS</h2>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem", fontSize: "0.72rem", color: "#6b7280" }}>
+              {[
+                ["1", "Fill form below & click DEPLOY EVENT ON-CHAIN"],
+                ["2", "Click GO LIVE on your event when ready"],
+                ["3", "Copy the Blink URL → paste into qr-code-generator.com → print QR"],
+                ["4", "Attendees scan QR with Phantom → one-tap check-in on-chain"],
+                ["5", "Attendees go to /profile → click CLAIM NFT"],
+              ].map(([n, t]) => (
+                <div key={n} style={{ background: "#050505", border: "1px solid #1a1a1a", padding: "0.6rem 0.75rem", borderRadius: "2px" }}>
+                  <span style={{ color: "#dc2626", fontWeight: 700, display: "block", marginBottom: "0.2rem" }}>STEP {n}</span>
+                  {t}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Create Event Form */}
         {connected && idlLoaded && (
           <div className="card">
@@ -314,8 +367,8 @@ export default function OrganizerPage() {
               <label>Event Title</label>
               <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Strata Bangkok #1" required />
 
-              <label>Description</label>
-              <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What is this event about?" required />
+              <label>Description <span style={{ color: "#4b5563", fontWeight: 400 }}>(optional)</span></label>
+              <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What is this event about?" />
 
               <div className="row">
                 <div><label>Location / Venue</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Hubba-TO Co-working" required /></div>
@@ -361,6 +414,15 @@ export default function OrganizerPage() {
                     {status === "Upcoming" && <button className="btn btn-green" disabled={loading} onClick={() => handleStart(ev)}>GO LIVE</button>}
                     {status === "Live" && <>
                       <button className="btn btn-ghost" onClick={() => setQrEvent(ev)}>SHOW QR</button>
+                      <button
+                        className="btn btn-ghost"
+                        disabled={!!demoChecking}
+                        onClick={() => handleDemoCheckIn(ev)}
+                        title="Simulate an attendee check-in with your own wallet (for demo/testing)"
+                        style={{ borderColor: "#fbbf24", color: "#fbbf24" }}
+                      >
+                        {demoChecking === ev.pubkey ? "CHECKING IN…" : "DEMO CHECK-IN"}
+                      </button>
                       <button className="btn btn-red" disabled={loading} onClick={() => handleEnd(ev)}>END EVENT</button>
                     </>}
                     <a href={`https://explorer.solana.com/address/${ev.pubkey}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ fontSize: "0.72rem", alignSelf: "center" }}>EXPLORER ↗</a>
