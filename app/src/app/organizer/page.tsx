@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { QRCodeSVG } from "qrcode.react";
 import {
   StrataClient, findEventPDA, parseEventStatus, EventAccount,
 } from "../../utils/strata-client";
@@ -20,97 +21,130 @@ function randomCode() {
 const CSS = `
   @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #000; color: #e2e8f0; font-family: 'Share Tech Mono', monospace; }
+  html, body { background: #000; color: #e2e8f0; font-family: 'Share Tech Mono', monospace; }
   .page { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
 
-  .top-nav {
-    display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 1px solid #7f1d1d; padding-bottom: 1rem; margin-bottom: 2rem;
-  }
-  .nav-brand { font-family: 'Cinzel Decorative', serif; font-size: 1.1rem; color: #dc2626; letter-spacing: 0.1em; }
-  .nav-links { display: flex; gap: 1rem; align-items: center; }
-  .nav-link {
-    font-size: 0.75rem; color: #9ca3af; text-decoration: none; letter-spacing: 0.1em;
-    padding: 0.3rem 0.7rem; border: 1px solid #374151; border-radius: 2px;
-    transition: all 0.2s;
-  }
-  .nav-link:hover, .nav-link.active { color: #dc2626; border-color: #dc2626; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse  { 0%,100%{opacity:.6} 50%{opacity:1} }
+  @keyframes scanline { 0%{top:-20px} 100%{top:100vh} }
 
-  h1 { font-family: 'Cinzel Decorative', serif; font-size: 1.4rem; color: #dc2626; margin-bottom: 0.2rem; letter-spacing: 0.05em; }
-  .sub { font-size: 0.75rem; color: #6b7280; margin-bottom: 2rem; letter-spacing: 0.05em; }
+  .scanline {
+    position:fixed; top:0; left:0; right:0; height:2px;
+    background:linear-gradient(transparent,rgba(220,38,38,.06),transparent);
+    animation:scanline 10s linear infinite; pointer-events:none; z-index:999;
+  }
+
+  .top-nav {
+    display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid #111; padding-bottom:1.25rem; margin-bottom:2rem;
+  }
+  .nav-brand { font-family:'Cinzel Decorative',serif; font-size:1.1rem; color:#dc2626; letter-spacing:.15em; text-decoration:none; }
+  .nav-links { display:flex; gap:.75rem; align-items:center; }
+  .nav-link {
+    font-size:.72rem; color:#6b7280; text-decoration:none; letter-spacing:.1em;
+    padding:.3rem .7rem; border:1px solid #1a1a1a; border-radius:2px; transition:all .2s;
+  }
+  .nav-link:hover,.nav-link.active { color:#dc2626; border-color:#dc2626; }
+
+  h1 { font-family:'Cinzel Decorative',serif; font-size:1.4rem; color:#dc2626; margin-bottom:.2rem; }
+  .sub { font-size:.72rem; color:#374151; margin-bottom:1.75rem; letter-spacing:.06em; }
 
   .card {
-    background: #0a0a0a; border: 1px solid #7f1d1d;
-    border-radius: 2px; padding: 1.5rem; margin-bottom: 1.5rem;
-    position: relative;
+    background:#050505; border:1px solid #1a1a1a; border-radius:2px;
+    padding:1.5rem; margin-bottom:1.25rem; animation:fadeUp .4s ease both;
+    position:relative; overflow:hidden;
   }
   .card::before {
-    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, #dc2626, transparent);
+    content:''; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg,transparent,#dc2626,transparent); opacity:.4;
   }
-  .card h2 {
-    font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: #dc2626;
-    letter-spacing: 0.2em; margin-bottom: 1.25rem; text-transform: uppercase;
+  .card-title {
+    font-family:'Rajdhani',sans-serif; font-size:.72rem; color:#dc2626;
+    letter-spacing:.2em; margin-bottom:1.25rem; text-transform:uppercase; font-weight:700;
   }
 
-  label { display: block; font-size: 0.7rem; color: #6b7280; margin-bottom: 0.3rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  label { display:block; font-size:.65rem; color:#4b5563; margin-bottom:.25rem; letter-spacing:.1em; text-transform:uppercase; }
   input, textarea, select {
-    width: 100%; padding: 0.6rem 0.8rem; background: #0d0d0d;
-    border: 1px solid #374151; border-radius: 2px; color: #e2e8f0;
-    font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; margin-bottom: 1rem;
-    transition: border-color 0.2s;
+    width:100%; padding:.6rem .8rem; background:#0a0a0a; border:1px solid #1a1a1a;
+    border-radius:2px; color:#e2e8f0; font-family:'Share Tech Mono',monospace;
+    font-size:.85rem; margin-bottom:.9rem; transition:border-color .2s; outline:none;
   }
-  input:focus, textarea:focus { outline: none; border-color: #dc2626; }
-  textarea { resize: vertical; min-height: 70px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  input:focus, textarea:focus { border-color:#dc2626; }
+  textarea { resize:vertical; min-height:70px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+  .field-note { font-size:.65rem; color:#374151; margin-top:-.5rem; margin-bottom:.9rem; letter-spacing:.05em; }
 
   .btn {
-    padding: 0.65rem 1.4rem; border: none; cursor: pointer; border-radius: 2px;
-    font-family: 'Rajdhani', sans-serif; font-size: 0.85rem; font-weight: 700;
-    letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.2s;
+    padding:.65rem 1.4rem; border:none; cursor:pointer; border-radius:2px;
+    font-family:'Rajdhani',sans-serif; font-size:.88rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; transition:all .2s; display:inline-flex; align-items:center; gap:.4rem;
   }
-  .btn-primary { background: #991b1b; color: #fff; border: 1px solid #dc2626; }
-  .btn-primary:hover { background: #dc2626; }
-  .btn-primary:disabled { background: #3d0000; color: #6b7280; border-color: #374151; cursor: not-allowed; }
-  .btn-green { background: #064e3b; color: #34d399; border: 1px solid #059669; }
-  .btn-green:hover { background: #065f46; }
-  .btn-red { background: #450a0a; color: #f87171; border: 1px solid #dc2626; }
-  .btn-red:hover { background: #7f1d1d; }
-  .btn-ghost { background: transparent; color: #9ca3af; border: 1px solid #374151; }
-  .btn-ghost:hover { border-color: #dc2626; color: #dc2626; }
+  .btn-primary { background:#991b1b; color:#fff; border:1px solid #dc2626; }
+  .btn-primary:hover { background:#dc2626; box-shadow:0 0 16px rgba(220,38,38,.2); }
+  .btn-primary:disabled { background:#1a0000; color:#4b5563; border-color:#1a1a1a; cursor:not-allowed; }
+  .btn-green  { background:#052e1c; color:#34d399; border:1px solid #065f46; }
+  .btn-green:hover  { background:#065f46; }
+  .btn-green:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-red    { background:#1a0000; color:#f87171; border:1px solid #7f1d1d; }
+  .btn-red:hover    { background:#7f1d1d; }
+  .btn-red:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-ghost  { background:transparent; color:#6b7280; border:1px solid #1f2937; }
+  .btn-ghost:hover  { border-color:#6b7280; color:#e2e8f0; }
+  .btn-yellow { background:#1c1200; color:#fbbf24; border:1px solid #78350f; }
+  .btn-yellow:hover { background:#292000; border-color:#fbbf24; }
+  .btn-yellow:disabled { opacity:.5; cursor:not-allowed; }
 
-  .msg-ok  { background: #052e16; border: 1px solid #166534; color: #4ade80; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; word-break: break-all; }
-  .msg-err { background: #1f0505; border: 1px solid #7f1d1d; color: #f87171; padding: 0.75rem 1rem; margin-bottom: 1rem; font-size: 0.8rem; }
+  .msg-ok  { background:#020f06; border:1px solid #14532d; color:#4ade80; padding:.75rem 1rem; margin-bottom:1rem; font-size:.78rem; word-break:break-all; border-radius:2px; }
+  .msg-err { background:#0a0000; border:1px solid #7f1d1d; color:#f87171; padding:.75rem 1rem; margin-bottom:1rem; font-size:.78rem; border-radius:2px; }
 
-  .event-card { border: 1px solid #1f1f1f; padding: 1rem; margin-bottom: 0.75rem; position: relative; }
-  .event-card:hover { border-color: #7f1d1d; }
-  .event-title { font-family: 'Rajdhani', sans-serif; font-size: 1rem; font-weight: 700; color: #f87171; margin-bottom: 0.25rem; }
-  .event-meta { font-size: 0.72rem; color: #4b5563; margin-bottom: 0.5rem; }
-  .event-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+  .event-card { border:1px solid #111; padding:1.1rem; margin-bottom:.75rem; border-radius:2px; transition:border-color .2s; }
+  .event-card:hover { border-color:#1f2937; }
+  .event-title { font-family:'Rajdhani',sans-serif; font-size:1.05rem; font-weight:700; color:#f87171; margin-bottom:.2rem; }
+  .event-meta  { font-size:.68rem; color:#374151; margin-bottom:.5rem; }
+  .event-actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:.75rem; align-items:center; }
 
-  .status-live     { color: #34d399; font-size: 0.75rem; }
-  .status-upcoming { color: #fbbf24; font-size: 0.75rem; }
-  .status-ended    { color: #4b5563; font-size: 0.75rem; }
+  .status-live     { color:#34d399; font-size:.72rem; }
+  .status-upcoming { color:#fbbf24; font-size:.72rem; }
+  .status-ended    { color:#374151; font-size:.72rem; }
+  .status-cancelled{ color:#374151; font-size:.72rem; }
 
-  .qr-panel { text-align: center; padding: 1rem 0; }
+  .qr-panel { text-align:center; padding:.5rem 0 .25rem; }
   .code-badge {
-    display: inline-block; font-size: 2rem; font-weight: 700; letter-spacing: 0.2em;
-    color: #dc2626; background: #0a0000; padding: 0.5rem 1.5rem;
-    border: 1px solid #7f1d1d; margin-bottom: 1rem;
+    display:inline-block; font-size:2rem; font-weight:700; letter-spacing:.2em;
+    color:#dc2626; background:#080000; padding:.5rem 1.5rem;
+    border:1px solid #7f1d1d; margin-bottom:1rem; border-radius:2px;
+  }
+  .qr-wrap {
+    display:inline-block; padding:1rem; background:#fff; border-radius:2px; margin-bottom:1rem;
   }
   .blink-url {
-    font-size: 0.68rem; color: #6b7280; word-break: break-all; padding: 0.75rem;
-    background: #050505; border: 1px solid #1f1f1f; margin-bottom: 0.75rem;
-    cursor: pointer; transition: border-color 0.2s;
+    font-size:.65rem; color:#374151; word-break:break-all; padding:.65rem .75rem;
+    background:#0a0a0a; border:1px solid #111; margin-bottom:.75rem;
+    cursor:pointer; transition:all .2s; border-radius:2px; text-align:left;
   }
-  .blink-url:hover { border-color: #dc2626; color: #dc2626; }
+  .blink-url:hover { border-color:#dc2626; color:#dc2626; }
 
-  .connect-box { text-align: center; padding: 4rem 1rem; }
-  .connect-box p { color: #4b5563; margin-bottom: 1.5rem; font-size: 0.85rem; letter-spacing: 0.05em; }
+  .how-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:.75rem; }
+  .how-step {
+    background:#0a0a0a; border:1px solid #111; padding:.75rem; border-radius:2px;
+  }
+  .how-num { color:#dc2626; font-weight:700; font-size:.72rem; margin-bottom:.2rem; }
+  .how-text { font-size:.68rem; color:#4b5563; line-height:1.6; }
 
-  a { color: #dc2626; text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .code-note { font-size: 0.7rem; color: #4b5563; margin-top: -0.5rem; margin-bottom: 1rem; }
+  .connect-box { text-align:center; padding:3.5rem 1rem; color:#4b5563; }
+  .connect-box p { margin-bottom:1.5rem; font-size:.85rem; letter-spacing:.05em; }
+  a { color:#dc2626; text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  .wallet-adapter-button {
+    background:transparent !important; border:1px solid #1a1a1a !important;
+    color:#6b7280 !important; font-family:'Share Tech Mono',monospace !important;
+    font-size:.72rem !important; letter-spacing:.08em !important; border-radius:2px !important;
+    padding:.3rem .8rem !important; height:auto !important;
+  }
+  .wallet-adapter-button:hover { border-color:#dc2626 !important; color:#dc2626 !important; background:transparent !important; }
+  .wallet-adapter-button-trigger { background:#991b1b !important; border-color:#dc2626 !important; color:#fff !important; }
+  .wallet-adapter-button-trigger:hover { background:#dc2626 !important; }
 `;
 
 interface LocalEvent { pubkey: string; account: EventAccount; }
@@ -120,11 +154,11 @@ export default function OrganizerPage() {
   const wallet = useWallet();
   const { publicKey, connected } = wallet;
 
-  const [client,    setClient]    = useState<StrataClient | null>(null);
-  const [idlLoaded, setIdlLoaded] = useState(false);
-  const [events,    setEvents]    = useState<LocalEvent[]>([]);
-  const [loading,   setLoading]   = useState(false);
-  const [msg,       setMsg]       = useState<{ type: "ok"|"err"; text: string } | null>(null);
+  const [client,       setClient]       = useState<StrataClient | null>(null);
+  const [idlLoaded,    setIdlLoaded]    = useState(false);
+  const [events,       setEvents]       = useState<LocalEvent[]>([]);
+  const [loading,      setLoading]      = useState(false);
+  const [msg,          setMsg]          = useState<{ type: "ok"|"err"; text: string } | null>(null);
   const [qrEvent,      setQrEvent]      = useState<LocalEvent | null>(null);
   const [copied,       setCopied]       = useState(false);
   const [demoChecking, setDemoChecking] = useState<string | null>(null);
@@ -137,16 +171,14 @@ export default function OrganizerPage() {
   const [capacity,    setCapacity]    = useState("100");
   const [eventCode,   setEventCode]   = useState("");
 
-  useEffect(() => {
-    setEventCode(randomCode());
-  }, []);
+  useEffect(() => { setEventCode(randomCode()); }, []);
 
   useEffect(() => {
     if (!connected || !publicKey) return;
     async function init() {
       try {
         const idl = await import("../../idl/strata.json").catch(() => null);
-        if (!idl) { setMsg({ type: "err", text: "IDL not found. Run deploy script first." }); return; }
+        if (!idl) { setMsg({ type: "err", text: "IDL not found." }); return; }
         const provider = new AnchorProvider(connection, wallet as any, { commitment: "confirmed" });
         setClient(new StrataClient(provider, idl));
         setIdlLoaded(true);
@@ -176,37 +208,6 @@ export default function OrganizerPage() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
-  async function handleDemoCheckIn(ev: LocalEvent) {
-    if (!publicKey || !wallet.signTransaction) return;
-    setDemoChecking(ev.pubkey); setMsg(null);
-    try {
-      const res = await fetch(`/api/actions/checkin?eventCode=${ev.account.eventCode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account: publicKey.toBase58() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? data.detail ?? "Check-in failed");
-      const { Transaction: SolTx } = await import("@solana/web3.js");
-      const txBytes = Buffer.from(data.transaction, "base64");
-      const tx = SolTx.from(txBytes);
-      const signed = await wallet.signTransaction(tx);
-      const sig = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(sig, "confirmed");
-      setMsg({ type: "ok", text: `Demo check-in confirmed! Now go to /profile to claim your NFT. Tx: ${sig}` });
-      await loadEvents();
-    } catch (err: any) {
-      const m = err?.message ?? "";
-      if (m.includes("already in use") || m.includes("already been processed")) {
-        setMsg({ type: "ok", text: "Already checked in! Go to /profile to claim your NFT." });
-      } else if (m.includes("rejected") || m.includes("cancelled")) {
-        setMsg({ type: "err", text: "Transaction cancelled." });
-      } else {
-        setMsg({ type: "err", text: m || "Demo check-in failed" });
-      }
-    } finally { setDemoChecking(null); }
-  }
-
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!client || !COMMUNITY_PDA_STR) return;
@@ -214,7 +215,7 @@ export default function OrganizerPage() {
     try {
       const bal = await connection.getBalance(publicKey!);
       if (bal < 10_000_000) {
-        setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com then try again" });
+        setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com" });
         setLoading(false); return;
       }
       const community = new PublicKey(COMMUNITY_PDA_STR);
@@ -222,24 +223,25 @@ export default function OrganizerPage() {
       if (!registered) await client.registerMember(community, publicKey!.toBase58().slice(0, 12));
       const unixDate = Math.floor(new Date(eventDate).getTime() / 1000);
       await client.createEvent({
-        community, title, description, location, country,
-        eventDate: unixDate, capacity: parseInt(capacity, 10),
-        entryFeeLamports: 0, eventCode: eventCode.toUpperCase().slice(0, 8),
+        community, title, description: description || title,
+        location, country, eventDate: unixDate,
+        capacity: parseInt(capacity, 10), entryFeeLamports: 0,
+        eventCode: eventCode.toUpperCase().slice(0, 8),
       });
-      setMsg({ type: "ok", text: `Event "${title}" created on-chain!` });
+      setMsg({ type: "ok", text: `✓ "${title}" deployed on-chain! Click GO LIVE when ready.` });
       setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode());
       await loadEvents();
     } catch (err: any) {
-      const msg = err?.message ?? "";
-      if (msg.includes("already been processed") || msg.includes("already in use")) {
-        setMsg({ type: "ok", text: "Event created! (transaction already confirmed)" });
+      const m = err?.message ?? "";
+      if (m.includes("already been processed") || m.includes("already in use")) {
+        setMsg({ type: "ok", text: "Event created! (already confirmed)" });
         await loadEvents();
-      } else if (msg.includes("rejected") || msg.includes("cancelled") || msg.includes("denied")) {
-        setMsg({ type: "err", text: "Transaction cancelled — click the button again and Approve in Phantom." });
-      } else if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
+      } else if (m.includes("rejected") || m.includes("cancelled") || m.includes("denied")) {
+        setMsg({ type: "err", text: "Transaction cancelled — click DEPLOY again and Approve in Phantom." });
+      } else if (m.includes("debit") || m.includes("insufficient") || m.includes("0x1")) {
         setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com" });
       } else {
-        setMsg({ type: "err", text: msg || "Transaction failed" });
+        setMsg({ type: "err", text: m || "Transaction failed" });
       }
     }
     finally { setLoading(false); }
@@ -250,8 +252,9 @@ export default function OrganizerPage() {
     setLoading(true); setMsg(null);
     try {
       await client.startEvent(new PublicKey(ev.pubkey));
-      setMsg({ type: "ok", text: "Event is now LIVE. Share the QR code!" });
-      setQrEvent({ ...ev, account: { ...ev.account, status: { live: {} } as any } });
+      setMsg({ type: "ok", text: "◉ Event is now LIVE — share the QR code below!" });
+      const updated = { ...ev, account: { ...ev.account, status: { live: {} } as any } };
+      setQrEvent(updated);
       await loadEvents();
     } catch (err: any) { setMsg({ type: "err", text: err?.message }); }
     finally { setLoading(false); }
@@ -268,8 +271,40 @@ export default function OrganizerPage() {
     finally { setLoading(false); }
   }
 
+  async function handleDemoCheckIn(ev: LocalEvent) {
+    if (!publicKey || !wallet.signTransaction) return;
+    setDemoChecking(ev.pubkey); setMsg(null);
+    try {
+      const origin = typeof window !== "undefined" ? window.location.origin : APP_URL;
+      const res = await fetch(`${origin}/api/actions/checkin?eventCode=${ev.account.eventCode}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account: publicKey.toBase58() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? data.detail ?? "Check-in failed");
+      const txBytes = Buffer.from(data.transaction, "base64");
+      const tx = Transaction.from(txBytes);
+      const signed = await wallet.signTransaction(tx);
+      const sig = await connection.sendRawTransaction(signed.serialize());
+      await connection.confirmTransaction(sig, "confirmed");
+      setMsg({ type: "ok", text: `✓ Demo check-in confirmed! Now go to /profile to CLAIM your NFT.\nTx: ${sig}` });
+      await loadEvents();
+    } catch (err: any) {
+      const m = err?.message ?? "";
+      if (m.includes("already in use") || m.includes("already been processed")) {
+        setMsg({ type: "ok", text: "Already checked in! Go to /profile → CLAIM NFT." });
+      } else if (m.includes("rejected") || m.includes("cancelled")) {
+        setMsg({ type: "err", text: "Transaction cancelled." });
+      } else {
+        setMsg({ type: "err", text: m || "Demo check-in failed" });
+      }
+    } finally { setDemoChecking(null); }
+  }
+
   function blinkUrl(code: string) {
-    return `solana-action:${APP_URL}/api/actions/checkin?eventCode=${code}`;
+    const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
+    return `solana-action:${base}/api/actions/checkin?eventCode=${code}`;
   }
 
   function copyUrl(code: string) {
@@ -280,30 +315,37 @@ export default function OrganizerPage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="scanline" />
       <div className="page">
+
         {/* Nav */}
-        <div className="top-nav">
-          <span className="nav-brand">STRATA</span>
+        <nav className="top-nav">
+          <a href="/" className="nav-brand" style={{ textDecoration: "none" }}>STRATA</a>
           <div className="nav-links">
-            <a href="/" className="nav-link">← MAIN</a>
+            <a href="/" className="nav-link">HOME</a>
             <a href="/organizer" className="nav-link active">ORGANIZER</a>
             <a href="/profile" className="nav-link">PROFILE</a>
-            <WalletMultiButton style={{ height: "32px", fontSize: "0.75rem", padding: "0 0.75rem", background: "#991b1b" }} />
+            <WalletMultiButton />
           </div>
-        </div>
+        </nav>
 
         <h1>ORGANIZER</h1>
-        <p className="sub">CREATE EVENTS · GENERATE QR · GET CHECK-INS ON-CHAIN</p>
+        <p className="sub">DEPLOY EVENTS · GENERATE QR · GET CHECK-INS ON-CHAIN</p>
 
+        {/* Messages */}
         {msg && (
-          <div className={msg.type === "ok" ? "msg-ok" : "msg-err"}>
+          <div className={msg.type === "ok" ? "msg-ok" : "msg-err"} style={{ whiteSpace: "pre-wrap" }}>
             {msg.text}
             {msg.type === "err" && msg.text.includes("SOL") && (
-              <div style={{ marginTop: "0.5rem" }}>
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
-                  style={{ color: "#fbbf24", textDecoration: "underline" }}>
+              <div style={{ marginTop: ".4rem" }}>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" style={{ color: "#fbbf24" }}>
                   → faucet.solana.com ↗
                 </a>
+              </div>
+            )}
+            {msg.type === "ok" && msg.text.includes("profile") && (
+              <div style={{ marginTop: ".4rem" }}>
+                <a href="/profile" style={{ color: "#4ade80" }}>→ Go to /profile now ↗</a>
               </div>
             )}
           </div>
@@ -316,43 +358,56 @@ export default function OrganizerPage() {
           </div>
         )}
 
-        {/* Live QR Panel */}
+        {/* LIVE QR Panel */}
         {qrEvent && (
-          <div className="card">
-            <h2>◉ LIVE EVENT — SHARE THIS QR</h2>
+          <div className="card" style={{ borderColor: "#065f46", animation: "none" }}>
+            <div className="card-title" style={{ color: "#34d399" }}>◉ LIVE — SHARE THIS QR</div>
             <div className="qr-panel">
               <div className="code-badge">{qrEvent.account.eventCode}</div>
-              <p style={{ fontSize: "0.75rem", color: "#6b7280", marginBottom: "0.75rem" }}>
-                Share this Blink URL — opens as one-tap check-in in Phantom
+              <div style={{ marginBottom: ".5rem" }}>
+                <div className="qr-wrap">
+                  <QRCodeSVG
+                    value={blinkUrl(qrEvent.account.eventCode)}
+                    size={180}
+                    bgColor="#ffffff"
+                    fgColor="#0a0000"
+                    level="H"
+                  />
+                </div>
+              </div>
+              <p style={{ fontSize: ".72rem", color: "#4b5563", marginBottom: ".6rem" }}>
+                Attendees scan with Phantom → one-tap check-in on Solana
               </p>
               <div className="blink-url" onClick={() => copyUrl(qrEvent.account.eventCode)} title="Click to copy">
                 {blinkUrl(qrEvent.account.eventCode)}
               </div>
-              <button className="btn btn-ghost" style={{ fontSize: "0.75rem" }} onClick={() => copyUrl(qrEvent.account.eventCode)}>
-                {copied ? "✓ COPIED!" : "COPY BLINK URL"}
-              </button>
-              <p style={{ fontSize: "0.72rem", color: "#4b5563", marginTop: "0.75rem" }}>
-                Paste into a QR generator (e.g. qr-code-generator.com) to print for your venue
-              </p>
+              <div style={{ display: "flex", gap: ".5rem", justifyContent: "center", flexWrap: "wrap" }}>
+                <button className="btn btn-ghost" style={{ fontSize: ".75rem" }} onClick={() => copyUrl(qrEvent.account.eventCode)}>
+                  {copied ? "✓ COPIED!" : "COPY BLINK URL"}
+                </button>
+                <button className="btn btn-ghost" style={{ fontSize: ".75rem" }} onClick={() => setQrEvent(null)}>
+                  HIDE QR
+                </button>
+              </div>
             </div>
           </div>
         )}
 
         {/* How it works */}
         {connected && (
-          <div className="card" style={{ borderColor: "#1f1f1f" }}>
-            <h2 style={{ color: "#6b7280" }}>HOW IT WORKS</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "0.75rem", fontSize: "0.72rem", color: "#6b7280" }}>
+          <div className="card" style={{ borderColor: "#0a0a0a" }}>
+            <div className="card-title" style={{ color: "#374151" }}>HOW IT WORKS</div>
+            <div className="how-grid">
               {[
-                ["1", "Fill form below & click DEPLOY EVENT ON-CHAIN"],
-                ["2", "Click GO LIVE on your event when ready"],
-                ["3", "Copy the Blink URL → paste into qr-code-generator.com → print QR"],
-                ["4", "Attendees scan QR with Phantom → one-tap check-in on-chain"],
-                ["5", "Attendees go to /profile → click CLAIM NFT"],
+                ["STEP 1", "Fill the form & click DEPLOY EVENT ON-CHAIN"],
+                ["STEP 2", "Click GO LIVE when you're ready to accept check-ins"],
+                ["STEP 3", "Share QR code — attendees scan with Phantom"],
+                ["STEP 4", "Attendees scan → one-tap check-in on Solana"],
+                ["STEP 5", "Attendees go to /profile → click CLAIM NFT"],
               ].map(([n, t]) => (
-                <div key={n} style={{ background: "#050505", border: "1px solid #1a1a1a", padding: "0.6rem 0.75rem", borderRadius: "2px" }}>
-                  <span style={{ color: "#dc2626", fontWeight: 700, display: "block", marginBottom: "0.2rem" }}>STEP {n}</span>
-                  {t}
+                <div className="how-step" key={n}>
+                  <div className="how-num">{n}</div>
+                  <div className="how-text">{t}</div>
                 </div>
               ))}
             </div>
@@ -362,33 +417,49 @@ export default function OrganizerPage() {
         {/* Create Event Form */}
         {connected && idlLoaded && (
           <div className="card">
-            <h2>+ CREATE EVENT ON-CHAIN</h2>
+            <div className="card-title">+ CREATE EVENT ON-CHAIN</div>
             <form onSubmit={handleCreate}>
-              <label>Event Title</label>
+              <label>Event Title *</label>
               <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Strata Bangkok #1" required />
 
-              <label>Description <span style={{ color: "#4b5563", fontWeight: 400 }}>(optional)</span></label>
+              <label>Description <span style={{ color: "#1f2937", textTransform: "lowercase", letterSpacing: 0 }}>(optional)</span></label>
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What is this event about?" />
 
               <div className="row">
-                <div><label>Location / Venue</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Hubba-TO Co-working" required /></div>
-                <div><label>Country</label><input value={country} onChange={e => setCountry(e.target.value)} placeholder="Thailand" required /></div>
+                <div>
+                  <label>Location / Venue *</label>
+                  <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Hubba-TO, Bangkok" required />
+                </div>
+                <div>
+                  <label>Country *</label>
+                  <input value={country} onChange={e => setCountry(e.target.value)} placeholder="Thailand" required />
+                </div>
               </div>
 
               <div className="row">
-                <div><label>Date &amp; Time</label><input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} required /></div>
-                <div><label>Capacity</label><input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} min="1" required /></div>
+                <div>
+                  <label>Date &amp; Time *</label>
+                  <input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} required />
+                </div>
+                <div>
+                  <label>Capacity *</label>
+                  <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} min="1" required />
+                </div>
               </div>
 
-              <label>Event Code (8 chars — printed in QR)</label>
-              <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0" }}>
-                <input value={eventCode} onChange={e => setEventCode(e.target.value.toUpperCase().slice(0, 8))} maxLength={8} style={{ marginBottom: 0, flex: 1 }} required />
+              <label>Event Code (8 chars)</label>
+              <div style={{ display: "flex", gap: ".5rem" }}>
+                <input
+                  value={eventCode}
+                  onChange={e => setEventCode(e.target.value.toUpperCase().slice(0, 8))}
+                  maxLength={8} style={{ flex: 1, marginBottom: 0 }} required
+                />
                 <button type="button" className="btn btn-ghost" onClick={() => setEventCode(randomCode())}>RANDOM</button>
               </div>
-              <p className="code-note">Attendees scan this QR → wallet auto-registers → check-in confirmed on-chain</p>
+              <p className="field-note" style={{ marginTop: ".4rem" }}>This code is embedded in the QR — attendees use it to check in</p>
 
-              <button className="btn btn-primary" type="submit" disabled={loading}>
-                {loading ? "DEPLOYING..." : "DEPLOY EVENT ON-CHAIN"}
+              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop: ".5rem" }}>
+                {loading ? "DEPLOYING…" : "⬡ DEPLOY EVENT ON-CHAIN"}
               </button>
             </form>
           </div>
@@ -397,7 +468,7 @@ export default function OrganizerPage() {
         {/* My Events */}
         {events.length > 0 && (
           <div className="card">
-            <h2>MY EVENTS ({events.length})</h2>
+            <div className="card-title">MY EVENTS ({events.length})</div>
             {events.map(ev => {
               const status = parseEventStatus(ev.account.status);
               return (
@@ -405,27 +476,40 @@ export default function OrganizerPage() {
                   <div className="event-title">{ev.account.title}</div>
                   <div className="event-meta">
                     {ev.account.location}, {ev.account.country} ·{" "}
-                    {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString()} ·{" "}
+                    {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle: "medium" })} ·{" "}
                     {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} attendees ·{" "}
-                    CODE: {ev.account.eventCode}
+                    #{ev.account.eventCode}
                   </div>
                   <span className={`status-${status.toLowerCase()}`}>● {status.toUpperCase()}</span>
                   <div className="event-actions">
-                    {status === "Upcoming" && <button className="btn btn-green" disabled={loading} onClick={() => handleStart(ev)}>GO LIVE</button>}
-                    {status === "Live" && <>
-                      <button className="btn btn-ghost" onClick={() => setQrEvent(ev)}>SHOW QR</button>
+                    {status === "Upcoming" && (
+                      <button className="btn btn-green" disabled={loading} onClick={() => handleStart(ev)}>
+                        ▶ GO LIVE
+                      </button>
+                    )}
+                    {status === "Live" && (<>
+                      <button className="btn btn-ghost" onClick={() => setQrEvent(qrEvent?.pubkey === ev.pubkey ? null : ev)}>
+                        {qrEvent?.pubkey === ev.pubkey ? "HIDE QR" : "⬡ SHOW QR"}
+                      </button>
                       <button
-                        className="btn btn-ghost"
+                        className="btn btn-yellow"
                         disabled={!!demoChecking}
                         onClick={() => handleDemoCheckIn(ev)}
-                        title="Simulate an attendee check-in with your own wallet (for demo/testing)"
-                        style={{ borderColor: "#fbbf24", color: "#fbbf24" }}
+                        title="Check yourself in as a demo attendee — then go to /profile to CLAIM NFT"
                       >
-                        {demoChecking === ev.pubkey ? "CHECKING IN…" : "DEMO CHECK-IN"}
+                        {demoChecking === ev.pubkey ? "CHECKING IN…" : "✦ DEMO CHECK-IN"}
                       </button>
-                      <button className="btn btn-red" disabled={loading} onClick={() => handleEnd(ev)}>END EVENT</button>
-                    </>}
-                    <a href={`https://explorer.solana.com/address/${ev.pubkey}?cluster=devnet`} target="_blank" rel="noreferrer" style={{ fontSize: "0.72rem", alignSelf: "center" }}>EXPLORER ↗</a>
+                      <button className="btn btn-red" disabled={loading} onClick={() => handleEnd(ev)}>
+                        END EVENT
+                      </button>
+                    </>)}
+                    <a
+                      href={`https://explorer.solana.com/address/${ev.pubkey}?cluster=devnet`}
+                      target="_blank" rel="noreferrer"
+                      style={{ fontSize: ".68rem", color: "#374151", alignSelf: "center" }}
+                    >
+                      EXPLORER ↗
+                    </a>
                   </div>
                 </div>
               );
