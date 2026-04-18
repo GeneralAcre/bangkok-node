@@ -5,7 +5,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { QRCodeSVG } from "qrcode.react";
+// qrcode generates data URLs in-browser (qrcode.react not installed)
 import {
   StrataClient, findEventPDA, parseEventStatus, EventAccount,
 } from "../../utils/strata-client";
@@ -157,6 +157,7 @@ export default function OrganizerPage() {
   const [client,       setClient]       = useState<StrataClient | null>(null);
   const [idlLoaded,    setIdlLoaded]    = useState(false);
   const [events,       setEvents]       = useState<LocalEvent[]>([]);
+  const [qrDataUrl,    setQrDataUrl]    = useState<string>("");
   const [loading,      setLoading]      = useState(false);
   const [msg,          setMsg]          = useState<{ type: "ok"|"err"; text: string } | null>(null);
   const [qrEvent,      setQrEvent]      = useState<LocalEvent | null>(null);
@@ -255,6 +256,7 @@ export default function OrganizerPage() {
       setMsg({ type: "ok", text: "◉ Event is now LIVE — share the QR code below!" });
       const updated = { ...ev, account: { ...ev.account, status: { live: {} } as any } };
       setQrEvent(updated);
+      await generateQr(ev.account.eventCode);
       await loadEvents();
     } catch (err: any) { setMsg({ type: "err", text: err?.message }); }
     finally { setLoading(false); }
@@ -305,6 +307,14 @@ export default function OrganizerPage() {
   function blinkUrl(code: string) {
     const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
     return `solana-action:${base}/api/actions/checkin?eventCode=${code}`;
+  }
+
+  async function generateQr(code: string) {
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const url = await QRCode.toDataURL(blinkUrl(code), { width: 200, margin: 1, color: { dark: "#000", light: "#fff" } });
+      setQrDataUrl(url);
+    } catch {}
   }
 
   function copyUrl(code: string) {
@@ -366,13 +376,13 @@ export default function OrganizerPage() {
               <div className="code-badge">{qrEvent.account.eventCode}</div>
               <div style={{ marginBottom: ".5rem" }}>
                 <div className="qr-wrap">
-                  <QRCodeSVG
-                    value={blinkUrl(qrEvent.account.eventCode)}
-                    size={180}
-                    bgColor="#ffffff"
-                    fgColor="#0a0000"
-                    level="H"
-                  />
+                  {qrDataUrl ? (
+                    <img src={qrDataUrl} alt="QR Code" width={180} height={180} style={{ display: "block" }} />
+                  ) : (
+                    <div style={{ width: 180, height: 180, background: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: ".7rem", color: "#999" }}>
+                      Loading QR…
+                    </div>
+                  )}
                 </div>
               </div>
               <p style={{ fontSize: ".72rem", color: "#4b5563", marginBottom: ".6rem" }}>
@@ -488,7 +498,11 @@ export default function OrganizerPage() {
                       </button>
                     )}
                     {status === "Live" && (<>
-                      <button className="btn btn-ghost" onClick={() => setQrEvent(qrEvent?.pubkey === ev.pubkey ? null : ev)}>
+                      <button className="btn btn-ghost" onClick={() => {
+                        const next = qrEvent?.pubkey === ev.pubkey ? null : ev;
+                        setQrEvent(next);
+                        if (next) generateQr(ev.account.eventCode);
+                      }}>
                         {qrEvent?.pubkey === ev.pubkey ? "HIDE QR" : "⬡ SHOW QR"}
                       </button>
                       <button
