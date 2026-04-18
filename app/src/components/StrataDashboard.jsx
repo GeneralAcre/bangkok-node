@@ -503,7 +503,7 @@ function CheckInPanel({ event, members }) {
 
 // ─── Main Dashboard ──────────────────────────────────────────────────
 
-export default function StrataDashboard({ onBack }) {
+export default function StrataDashboard({ onBack = null }) {
   const [activeTab, setActiveTab]         = useState("events");
   const [events, setEvents]               = useState(INITIAL_EVENTS);
   const [members]                         = useState(INITIAL_MEMBERS);
