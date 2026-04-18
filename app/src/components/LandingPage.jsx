@@ -230,7 +230,7 @@ export default function LandingPage({ onEnter }) {
 
   return (
     <>
-      <style>{LANDING_STYLES}</style>
+      <style dangerouslySetInnerHTML={{ __html: LANDING_STYLES }} />
 
       <div style={{
         minHeight: "100vh", background: "#000000",

@@ -610,7 +610,7 @@ export default function StrataDashboard({ onBack }) {
   return (
     <>
       {/* Inject global styles + keyframes */}
-      <style>{GLOBAL_STYLES}</style>
+      <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
 
       <div
         className="scrollbar-necro"
@@ -716,11 +716,24 @@ export default function StrataDashboard({ onBack }) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {onBack && (
-              <button onClick={onBack} className="btn-necro" style={{ fontSize: "12px", padding: "7px 14px" }}>
-                ← Sanctum
-              </button>
-            )}
+            <a href="/organizer" style={{
+              fontSize: "11px", color: "#9ca3af", textDecoration: "none", letterSpacing: "0.1em",
+              padding: "5px 12px", border: "1px solid #374151", borderRadius: "2px",
+              fontFamily: "'Share Tech Mono', monospace",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.target.style.color="#dc2626"; e.target.style.borderColor="#dc2626"; }}
+              onMouseLeave={e => { e.target.style.color="#9ca3af"; e.target.style.borderColor="#374151"; }}
+            >ORGANIZER</a>
+            <a href="/profile" style={{
+              fontSize: "11px", color: "#9ca3af", textDecoration: "none", letterSpacing: "0.1em",
+              padding: "5px 12px", border: "1px solid #374151", borderRadius: "2px",
+              fontFamily: "'Share Tech Mono', monospace",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={e => { e.target.style.color="#dc2626"; e.target.style.borderColor="#dc2626"; }}
+              onMouseLeave={e => { e.target.style.color="#9ca3af"; e.target.style.borderColor="#374151"; }}
+            >PROFILE</a>
             <div style={{
               padding: "4px 12px", fontSize: "12px", fontWeight: 600,
               background: "#111111", color: "#aaaaaa", border: "1px solid #333333",
