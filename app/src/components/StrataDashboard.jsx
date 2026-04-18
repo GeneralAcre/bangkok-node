@@ -437,71 +437,6 @@ function StatCard({ label, value, accent }) {
 
 // ─── Create Event Modal ──────────────────────────────────────────────
 
-function CreateEventModal({ onClose, onCreate }) {
-  const [title, setTitle]       = useState("");
-  const [description, setDesc]  = useState("");
-  const [location, setLocation] = useState("");
-  const [country, setCountry]   = useState("Thailand");
-  const [city, setCity]         = useState("");
-  const [eventDate, setDate]    = useState("");
-  const [capacity, setCapacity] = useState("");
-  const [entryFee, setFee]      = useState("0");
-
-  const handleSubmit = () => {
-    if (!title || !location || !eventDate || !capacity) return;
-    const code = generateId().toUpperCase().slice(0, 8);
-    onCreate({
-      id: generateId(), eventCode: code,
-      title, description, location, country, city,
-      eventDate: new Date(eventDate).getTime(),
-      capacity: parseInt(capacity), attendeeCount: 0,
-      entryFee: parseFloat(entryFee) || 0,
-      organizer: "you", status: "upcoming",
-      copilotScore: null, createdAt: Date.now(),
-    });
-    onClose();
-  };
-
-  const F = ({ label, children }) => (
-    <div>
-      <label style={{ display: "block", fontSize: "11px", color: "#999999", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "2px", fontFamily: "'Share Tech Mono', monospace" }}>{label}</label>
-      {children}
-    </div>
-  );
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "#000000dd", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, backdropFilter: "blur(6px)" }} onClick={onClose}>
-      <div className="necro-card scrollbar-necro" style={{ padding: "32px", width: "90%", maxWidth: "560px", maxHeight: "92vh", overflow: "auto", background: "#080508" }} onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px" }}>
-          <div style={{ width: "3px", height: "24px", background: "linear-gradient(to bottom, #888888, #222222)" }} />
-          <h2 style={{ margin: 0, fontSize: "14px", color: "#cc4444", fontFamily: "'Cinzel Decorative', serif", letterSpacing: "3px" }}>Host an Event</h2>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <F label="Event Title"><input className="input-necro" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Bangkok Web3 Hacker House" /></F>
-          <F label="Description"><textarea className="input-necro" style={{ minHeight: "72px", resize: "vertical" }} value={description} onChange={(e) => setDesc(e.target.value)} placeholder="What's happening at this event..." /></F>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <F label="Location / Venue"><input className="input-necro" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Hubba-TO Co-working" /></F>
-            <F label="City"><input className="input-necro" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Bangkok" /></F>
-          </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <F label="Country"><input className="input-necro" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="Thailand" /></F>
-            <F label="Date"><input className="input-necro" type="date" value={eventDate} onChange={(e) => setDate(e.target.value)} /></F>
-          </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <F label="Capacity"><input className="input-necro" type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} placeholder="100" /></F>
-            <F label="Entry Fee (SOL)"><input className="input-necro" type="number" step="0.01" value={entryFee} onChange={(e) => setFee(e.target.value)} placeholder="0" /></F>
-          </div>
-          <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-            <button onClick={onClose} className="btn-necro" style={{ flex: 1 }}>Cancel</button>
-            <button onClick={handleSubmit} className="btn-necro btn-necro-primary" style={{ flex: 1, opacity: title && location && eventDate && capacity ? 1 : 0.4 }}>
-              Deploy Event On-Chain
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ─── Check-in QR Panel ───────────────────────────────────────────────
 
@@ -572,7 +507,6 @@ export default function StrataDashboard({ onBack }) {
   const [activeTab, setActiveTab]         = useState("events");
   const [events, setEvents]               = useState(INITIAL_EVENTS);
   const [members]                         = useState(INITIAL_MEMBERS);
-  const [showCreateModal, setShowCreate]  = useState(false);
   const [walletConnected, setWallet]      = useState(false);
   const [expandedEvent, setExpanded]      = useState(null);
   const [copilotLogs, setCopilotLogs]     = useState([
@@ -787,9 +721,9 @@ export default function StrataDashboard({ onBack }) {
                     // EVENT_REGISTRY
                   </h2>
                 </div>
-                <button onClick={() => setShowCreate(true)} className="btn-necro btn-necro-primary">
+                <a href="/organizer" className="btn-necro btn-necro-primary" style={{ textDecoration: "none" }}>
                   + Host Event
-                </button>
+                </a>
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -1038,7 +972,6 @@ export default function StrataDashboard({ onBack }) {
         </div>
       </div>
 
-      {showCreateModal && <CreateEventModal onClose={() => setShowCreate(false)} onCreate={handleCreateEvent} />}
     </>
   );
 }
