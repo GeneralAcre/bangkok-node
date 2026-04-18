@@ -189,8 +189,12 @@ export default function ProfilePage() {
       await loadProfile();
     } catch (e: any) {
       const msg = e?.message ?? "";
-      if (msg.includes("rejected") || msg.includes("cancelled") || msg.includes("denied")) {
-        setError("Transaction cancelled — you rejected the Phantom popup. Click Register again and then Approve in Phantom.");
+      if (msg.includes("already in use") || msg.includes("already initialized")) {
+        // Account exists — user is already registered, just reload
+        await loadProfile();
+        return;
+      } else if (msg.includes("rejected") || msg.includes("cancelled") || msg.includes("denied")) {
+        setError("Transaction cancelled — click Register again and Approve in Phantom.");
       } else if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
         setError("INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com then try again");
       } else {

@@ -1,5 +1,5 @@
 {
-  "address": "11111111111111111111111111111111",
+  "address": "49u7b39dxetV3Jojzx5b1zgfb2XiYEYPdmxnhBJK8VWG",
   "metadata": {
     "name": "strata",
     "version": "0.1.0",
@@ -9,7 +9,7 @@
   "instructions": [
     {
       "name": "initializeCommunity",
-      "discriminator": [35, 198, 174, 226, 101, 215, 218, 254],
+      "discriminator": [200,51,132,44,192,86,125,41],
       "accounts": [
         { "name": "community", "writable": true },
         { "name": "authority", "writable": true, "signer": true },
@@ -23,7 +23,7 @@
     },
     {
       "name": "registerMember",
-      "discriminator": [54, 90, 177, 131, 175, 85, 15, 88],
+      "discriminator": [44,19,160,59,17,122,38,16],
       "accounts": [
         { "name": "community", "writable": true },
         { "name": "member", "writable": true },
@@ -36,7 +36,7 @@
     },
     {
       "name": "updateReputation",
-      "discriminator": [44, 61, 188, 67, 199, 149, 14, 12],
+      "discriminator": [194,220,43,201,54,209,49,178],
       "accounts": [
         { "name": "community" },
         { "name": "member", "writable": true },
@@ -49,7 +49,7 @@
     },
     {
       "name": "createEvent",
-      "discriminator": [155, 234, 16, 301, 125, 35, 82, 137],
+      "discriminator": [49,219,29,203,22,98,100,87],
       "accounts": [
         { "name": "community", "writable": true },
         { "name": "event", "writable": true },
@@ -70,7 +70,7 @@
     },
     {
       "name": "startEvent",
-      "discriminator": [191, 190, 106, 119, 86, 7, 110, 42],
+      "discriminator": [61,196,227,97,8,81,107,23],
       "accounts": [
         { "name": "event", "writable": true },
         { "name": "organizer", "signer": true }
@@ -79,7 +79,7 @@
     },
     {
       "name": "checkIn",
-      "discriminator": [148, 174, 197, 21, 123, 0, 150, 166],
+      "discriminator": [209,253,4,217,250,241,207,50],
       "accounts": [
         { "name": "community", "writable": true },
         { "name": "event", "writable": true },
@@ -94,7 +94,7 @@
     },
     {
       "name": "recordNftMint",
-      "discriminator": [214, 49, 232, 241, 4, 233, 207, 119],
+      "discriminator": [12,17,121,204,15,101,68,196],
       "accounts": [
         { "name": "attendance", "writable": true },
         { "name": "authority", "signer": true }
@@ -105,7 +105,7 @@
     },
     {
       "name": "endEvent",
-      "discriminator": [51, 246, 153, 195, 175, 58, 181, 120],
+      "discriminator": [210,72,122,58,113,167,161,20],
       "accounts": [
         { "name": "event", "writable": true },
         { "name": "organizer", "signer": true }
@@ -114,7 +114,7 @@
     },
     {
       "name": "copilotScoreEvent",
-      "discriminator": [22, 50, 188, 201, 99, 201, 105, 133],
+      "discriminator": [32,100,37,19,48,2,94,240],
       "accounts": [
         { "name": "community" },
         { "name": "event" },
@@ -127,10 +127,10 @@
     }
   ],
   "accounts": [
-    { "name": "Community", "discriminator": [192, 125, 31, 37, 77, 196, 117, 164] },
-    { "name": "Member", "discriminator": [0, 0, 0, 0, 0, 0, 0, 0] },
-    { "name": "Event", "discriminator": [0, 0, 0, 0, 0, 0, 0, 1] },
-    { "name": "Attendance", "discriminator": [0, 0, 0, 0, 0, 0, 0, 2] }
+    { "name": "Community", "discriminator": [192,73,211,158,178,81,19,112] },
+    { "name": "Member",    "discriminator": [54,19,162,21,29,166,17,198] },
+    { "name": "Event",     "discriminator": [125,192,125,158,9,115,152,233] },
+    { "name": "Attendance","discriminator": [86,179,13,208,153,204,118,63] }
   ],
   "types": [
     {
@@ -138,15 +138,15 @@
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "authority", "type": "pubkey" },
-          { "name": "name", "type": "string" },
-          { "name": "description", "type": "string" },
-          { "name": "country", "type": "string" },
-          { "name": "memberCount", "type": "u64" },
-          { "name": "eventCount", "type": "u64" },
+          { "name": "authority",     "type": "pubkey" },
+          { "name": "name",          "type": "string" },
+          { "name": "description",   "type": "string" },
+          { "name": "country",       "type": "string" },
+          { "name": "memberCount",   "type": "u64" },
+          { "name": "eventCount",    "type": "u64" },
           { "name": "totalCheckins", "type": "u64" },
-          { "name": "bump", "type": "u8" },
-          { "name": "createdAt", "type": "i64" }
+          { "name": "bump",          "type": "u8" },
+          { "name": "createdAt",     "type": "i64" }
         ]
       }
     },
@@ -155,15 +155,15 @@
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "wallet", "type": "pubkey" },
-          { "name": "community", "type": "pubkey" },
-          { "name": "username", "type": "string" },
+          { "name": "wallet",          "type": "pubkey" },
+          { "name": "community",       "type": "pubkey" },
+          { "name": "username",        "type": "string" },
           { "name": "reputationScore", "type": "u64" },
-          { "name": "eventsAttended", "type": "u64" },
-          { "name": "tier", "type": { "defined": { "name": "MemberTier" } } },
-          { "name": "bump", "type": "u8" },
-          { "name": "joinedAt", "type": "i64" },
-          { "name": "lastActive", "type": "i64" }
+          { "name": "eventsAttended",  "type": "u64" },
+          { "name": "tier",            "type": { "defined": { "name": "MemberTier" } } },
+          { "name": "bump",            "type": "u8" },
+          { "name": "joinedAt",        "type": "i64" },
+          { "name": "lastActive",      "type": "i64" }
         ]
       }
     },
@@ -172,22 +172,22 @@
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "community", "type": "pubkey" },
-          { "name": "organizer", "type": "pubkey" },
-          { "name": "title", "type": "string" },
-          { "name": "description", "type": "string" },
-          { "name": "location", "type": "string" },
-          { "name": "country", "type": "string" },
-          { "name": "eventDate", "type": "i64" },
-          { "name": "capacity", "type": "u64" },
-          { "name": "attendeeCount", "type": "u64" },
+          { "name": "community",        "type": "pubkey" },
+          { "name": "organizer",        "type": "pubkey" },
+          { "name": "title",            "type": "string" },
+          { "name": "description",      "type": "string" },
+          { "name": "location",         "type": "string" },
+          { "name": "country",          "type": "string" },
+          { "name": "eventDate",        "type": "i64" },
+          { "name": "capacity",         "type": "u64" },
+          { "name": "attendeeCount",    "type": "u64" },
           { "name": "entryFeeLamports", "type": "u64" },
-          { "name": "eventCode", "type": "string" },
-          { "name": "status", "type": { "defined": { "name": "EventStatus" } } },
-          { "name": "eventIndex", "type": "u64" },
-          { "name": "escrowBump", "type": "u8" },
-          { "name": "bump", "type": "u8" },
-          { "name": "createdAt", "type": "i64" }
+          { "name": "eventCode",        "type": "string" },
+          { "name": "status",           "type": { "defined": { "name": "EventStatus" } } },
+          { "name": "eventIndex",       "type": "u64" },
+          { "name": "escrowBump",       "type": "u8" },
+          { "name": "bump",             "type": "u8" },
+          { "name": "createdAt",        "type": "i64" }
         ]
       }
     },
@@ -196,12 +196,12 @@
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "event", "type": "pubkey" },
-          { "name": "attendee", "type": "pubkey" },
-          { "name": "edition", "type": "u64" },
+          { "name": "event",       "type": "pubkey" },
+          { "name": "attendee",    "type": "pubkey" },
+          { "name": "edition",     "type": "u64" },
           { "name": "checkedInAt", "type": "i64" },
-          { "name": "nftMint", "type": { "option": "pubkey" } },
-          { "name": "bump", "type": "u8" }
+          { "name": "nftMint",     "type": { "option": "pubkey" } },
+          { "name": "bump",        "type": "u8" }
         ]
       }
     },
@@ -233,18 +233,18 @@
     }
   ],
   "errors": [
-    { "code": 6000, "name": "NameTooLong", "msg": "Name exceeds maximum length" },
-    { "code": 6001, "name": "DescriptionTooLong", "msg": "Description exceeds maximum length" },
-    { "code": 6002, "name": "InvalidAmount", "msg": "Invalid amount" },
-    { "code": 6003, "name": "InvalidDeadline", "msg": "Date must be in the future" },
-    { "code": 6004, "name": "InvalidEventCode", "msg": "Event code must be exactly 8 characters" },
-    { "code": 6005, "name": "EventNotLive", "msg": "Event is not currently live" },
-    { "code": 6006, "name": "EventFull", "msg": "Event is at full capacity" },
-    { "code": 6007, "name": "InvalidEventStatus", "msg": "Invalid event status for this operation" },
+    { "code": 6000, "name": "NameTooLong",          "msg": "Name exceeds maximum length" },
+    { "code": 6001, "name": "DescriptionTooLong",   "msg": "Description exceeds maximum length" },
+    { "code": 6002, "name": "InvalidAmount",        "msg": "Invalid amount" },
+    { "code": 6003, "name": "InvalidDeadline",      "msg": "Date must be in the future" },
+    { "code": 6004, "name": "InvalidEventCode",     "msg": "Event code must be exactly 8 characters" },
+    { "code": 6005, "name": "EventNotLive",         "msg": "Event is not currently live" },
+    { "code": 6006, "name": "EventFull",            "msg": "Event is at full capacity" },
+    { "code": 6007, "name": "InvalidEventStatus",   "msg": "Invalid event status for this operation" },
     { "code": 6008, "name": "MemberNotInCommunity", "msg": "Member does not belong to this community" },
-    { "code": 6009, "name": "InvalidMember", "msg": "Invalid member account" },
-    { "code": 6010, "name": "EventNotInCommunity", "msg": "Event does not belong to this community" },
-    { "code": 6011, "name": "NftAlreadyMinted", "msg": "NFT already minted for this attendance" },
-    { "code": 6012, "name": "Unauthorized", "msg": "Unauthorized" }
+    { "code": 6009, "name": "InvalidMember",        "msg": "Invalid member account" },
+    { "code": 6010, "name": "EventNotInCommunity",  "msg": "Event does not belong to this community" },
+    { "code": 6011, "name": "NftAlreadyMinted",     "msg": "NFT already minted for this attendance" },
+    { "code": 6012, "name": "Unauthorized",         "msg": "Unauthorized" }
   ]
 }
