@@ -122,6 +122,7 @@ export default function ProfilePage() {
   const [attended,  setAttended]  = useState<AttendedEvent[]>([]);
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
+  const [balance,   setBalance]   = useState<number | null>(null);
 
   useEffect(() => {
     if (!connected || !publicKey) return;
@@ -143,6 +144,9 @@ export default function ProfilePage() {
     setLoading(true);
     setError(null);
     try {
+      const bal = await connection.getBalance(publicKey);
+      setBalance(bal / 1e9);
+
       const community = new PublicKey(COMMUNITY_PDA_STR);
       const mem = await client.getMember(community, publicKey);
       setMember(mem);
@@ -173,12 +177,23 @@ export default function ProfilePage() {
     setLoading(true);
     setError(null);
     try {
+      const bal = await connection.getBalance(publicKey!);
+      if (bal < 10_000_000) {
+        setError("INSUFFICIENT SOL — your wallet needs devnet SOL to register. Get some free at faucet.solana.com");
+        setLoading(false);
+        return;
+      }
       const community = new PublicKey(COMMUNITY_PDA_STR);
       const username  = publicKey!.toBase58().slice(0, 12);
       await client.registerMember(community, username);
       await loadProfile();
     } catch (e: any) {
-      setError(e?.message ?? "Registration failed");
+      const msg = e?.message ?? "";
+      if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
+        setError("INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com then try again");
+      } else {
+        setError(msg || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -261,7 +276,19 @@ export default function ProfilePage() {
         <h1>PROFILE</h1>
         <p className="sub">On-chain reputation · Permanent record.</p>
 
-        {error && <div className="msg-err">{error}</div>}
+        {error && (
+          <div className="msg-err">
+            {error}
+            {(error.includes("SOL") || error.includes("debit")) && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
+                  style={{ color: "#fbbf24", textDecoration: "underline" }}>
+                  → Get free devnet SOL at faucet.solana.com ↗
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {loading && !member && (
           <div className="card">
@@ -272,12 +299,29 @@ export default function ProfilePage() {
         {!loading && !member && (
           <div className="card">
             <div className="card-title">Identity</div>
+            <div className="wallet-addr" style={{ marginBottom: "0.75rem" }}>
+              {publicKey.toBase58()}
+              {balance !== null && (
+                <span style={{ marginLeft: "1rem", color: balance < 0.01 ? "#f87171" : "#4ade80" }}>
+                  {balance.toFixed(4)} SOL
+                  {balance < 0.01 && " ⚠ Need SOL"}
+                </span>
+              )}
+            </div>
             <p style={{ fontSize: "0.85rem", color: "#9ca3af", marginBottom: "1.2rem" }}>
-              You are not yet a member of this community. Register to start building your reputation.
+              You are not yet a member of this community. Register to start building your on-chain reputation.
             </p>
-            <button className="btn" disabled={loading} onClick={handleRegister}>
-              {loading ? "Registering…" : "Register as Member"}
-            </button>
+            {balance !== null && balance < 0.01 ? (
+              <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
+                style={{ display: "inline-block", padding: "0.6rem 1.4rem", border: "1px solid #fbbf24",
+                  color: "#fbbf24", fontSize: "0.8rem", letterSpacing: "0.1em", borderRadius: "2px" }}>
+                GET DEVNET SOL FIRST ↗
+              </a>
+            ) : (
+              <button className="btn" disabled={loading} onClick={handleRegister}>
+                {loading ? "Registering…" : "Register as Member"}
+              </button>
+            )}
           </div>
         )}
 

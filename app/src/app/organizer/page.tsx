@@ -180,6 +180,11 @@ export default function OrganizerPage() {
     if (!client || !COMMUNITY_PDA_STR) return;
     setLoading(true); setMsg(null);
     try {
+      const bal = await connection.getBalance(publicKey!);
+      if (bal < 10_000_000) {
+        setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com then try again" });
+        setLoading(false); return;
+      }
       const community = new PublicKey(COMMUNITY_PDA_STR);
       const registered = await client.isMemberRegistered(community, publicKey!);
       if (!registered) await client.registerMember(community, publicKey!.toBase58().slice(0, 12));
@@ -192,7 +197,14 @@ export default function OrganizerPage() {
       setMsg({ type: "ok", text: `Event "${title}" created on-chain!` });
       setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode());
       await loadEvents();
-    } catch (err: any) { setMsg({ type: "err", text: err?.message ?? "Create failed" }); }
+    } catch (err: any) {
+      const msg = err?.message ?? "";
+      if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
+        setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com" });
+      } else {
+        setMsg({ type: "err", text: msg || "Transaction failed" });
+      }
+    }
     finally { setLoading(false); }
   }
 
@@ -246,7 +258,19 @@ export default function OrganizerPage() {
         <h1>ORGANIZER</h1>
         <p className="sub">CREATE EVENTS · GENERATE QR · GET CHECK-INS ON-CHAIN</p>
 
-        {msg && <div className={msg.type === "ok" ? "msg-ok" : "msg-err"}>{msg.text}</div>}
+        {msg && (
+          <div className={msg.type === "ok" ? "msg-ok" : "msg-err"}>
+            {msg.text}
+            {msg.type === "err" && msg.text.includes("SOL") && (
+              <div style={{ marginTop: "0.5rem" }}>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
+                  style={{ color: "#fbbf24", textDecoration: "underline" }}>
+                  → faucet.solana.com ↗
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         {!connected && (
           <div className="card connect-box">
