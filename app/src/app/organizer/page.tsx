@@ -199,7 +199,9 @@ export default function OrganizerPage() {
       await loadEvents();
     } catch (err: any) {
       const msg = err?.message ?? "";
-      if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
+      if (msg.includes("rejected") || msg.includes("cancelled") || msg.includes("denied")) {
+        setMsg({ type: "err", text: "Transaction cancelled — click the button again and Approve in Phantom." });
+      } else if (msg.includes("debit") || msg.includes("insufficient") || msg.includes("0x1")) {
         setMsg({ type: "err", text: "INSUFFICIENT SOL — get free devnet SOL at faucet.solana.com" });
       } else {
         setMsg({ type: "err", text: msg || "Transaction failed" });
