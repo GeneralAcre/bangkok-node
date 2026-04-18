@@ -123,6 +123,8 @@ export default function ProfilePage() {
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState<string | null>(null);
   const [balance,   setBalance]   = useState<number | null>(null);
+  const [claiming,  setClaiming]  = useState<string | null>(null); // eventPubkey being claimed
+  const [minted,    setMinted]    = useState<Record<string, string>>({}); // eventPubkey → mintAddr
 
   useEffect(() => {
     if (!connected || !publicKey) return;
@@ -222,6 +224,31 @@ export default function ProfilePage() {
       Builder: "Core", Core: "Legend", Legend: "Legend",
     };
     return { pct, next: `${hi - events} more to ${nextTier[tier].toUpperCase()}` };
+  }
+
+  async function handleClaimNft(rec: AttendedEvent) {
+    if (!publicKey) return;
+    setClaiming(rec.eventPubkey);
+    setError(null);
+    try {
+      const res = await fetch("/api/mint-nft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userWallet:  publicKey.toBase58(),
+          eventTitle:  rec.event?.title ?? "Strata Event",
+          eventCode:   rec.event?.eventCode ?? "",
+          checkedInAt: rec.attendance.checkedInAt.toNumber(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Mint failed");
+      setMinted(prev => ({ ...prev, [rec.eventPubkey]: data.mint }));
+    } catch (e: any) {
+      setError(e?.message ?? "NFT mint failed");
+    } finally {
+      setClaiming(null);
+    }
   }
 
   const Nav = () => (
@@ -399,6 +426,29 @@ export default function ProfilePage() {
                     <a href={`https://explorer.solana.com/address/${rec.eventPubkey}?cluster=devnet`} target="_blank" rel="noreferrer">
                       Explorer ↗
                     </a>
+                  </div>
+                  <div style={{ marginTop: "0.6rem" }}>
+                    {rec.attendance.nftMint || minted[rec.eventPubkey] ? (
+                      <a
+                        href={`https://explorer.solana.com/address/${rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey]}?cluster=devnet`}
+                        target="_blank" rel="noreferrer"
+                        style={{ fontSize: "0.72rem", color: "#4ade80", border: "1px solid #166534",
+                          padding: "2px 10px", borderRadius: "2px", textDecoration: "none" }}
+                      >
+                        ✓ NFT MINTED — VIEW ↗
+                      </a>
+                    ) : (
+                      <button
+                        onClick={() => handleClaimNft(rec)}
+                        disabled={claiming === rec.eventPubkey}
+                        style={{ fontSize: "0.72rem", color: "#dc2626", border: "1px solid #7f1d1d",
+                          background: "transparent", padding: "2px 10px", borderRadius: "2px",
+                          cursor: "pointer", fontFamily: "'Share Tech Mono', monospace",
+                          opacity: claiming === rec.eventPubkey ? 0.5 : 1 }}
+                      >
+                        {claiming === rec.eventPubkey ? "MINTING…" : "CLAIM NFT"}
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
