@@ -8,6 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
   AttendanceAccount, TIER_COLOR, TIER_THRESHOLD, MemberTier,
+  findEventPDA, findAttendancePDA,
 } from "../../utils/strata-client";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
@@ -271,17 +272,48 @@ export default function ProfilePage() {
       const bal = await connection.getBalance(publicKey);
       setBalance(bal / 1e9);
       const community = new PublicKey(COMMUNITY_PDA_STR);
-      const mem = await client.getMember(community, publicKey);
+
+      // Load member (may not exist yet for new wallets)
+      let mem: MemberAccount | null = null;
+      try { mem = await client.getMember(community, publicKey); } catch {}
       setMember(mem);
-      if (mem) {
-        const records = await client.getAllAttendanceByWallet(publicKey);
-        const rich: AttendedEvent[] = await Promise.all(
-          records.map(async ({ account }) => {
-            let event: EventAccount | null = null;
-            try { event = await client.getEvent(account.event); } catch {}
-            return { eventPubkey: account.event.toBase58(), attendance: account, event };
-          })
-        );
+
+      // Scan all events to find attendance PDAs for this wallet
+      // This is more reliable than getProgramAccounts memcmp filter on public RPCs
+      const commInfo = await connection.getAccountInfo(community);
+      if (commInfo) {
+        const eventCountOffset = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64) + 8;
+        const eventCount = Number(commInfo.data.readBigUInt64LE(eventCountOffset));
+
+        const eventPDAs = Array.from({ length: eventCount }, (_, i) => findEventPDA(community, i)[0]);
+        const attendancePDAs = eventPDAs.map(ep => findAttendancePDA(ep, publicKey)[0]);
+
+        // Batch fetch all accounts
+        const chunk = async (arr: PublicKey[]) => {
+          const results = [];
+          for (let i = 0; i < arr.length; i += 100) {
+            const batch = await connection.getMultipleAccountsInfo(arr.slice(i, i + 100));
+            results.push(...batch);
+          }
+          return results;
+        };
+
+        const [, attendanceInfos] = await Promise.all([
+          chunk(eventPDAs),
+          chunk(attendancePDAs),
+        ]);
+
+        const rich: AttendedEvent[] = [];
+        for (let i = 0; i < eventCount; i++) {
+          if (!attendanceInfos[i]) continue; // no attendance for this event
+          let event: EventAccount | null = null;
+          let attendance: AttendanceAccount | null = null;
+          try { event = await client.getEvent(eventPDAs[i]); } catch {}
+          try { attendance = await (client as any).program.account.attendance.fetch(attendancePDAs[i]); } catch {}
+          if (attendance) {
+            rich.push({ eventPubkey: eventPDAs[i].toBase58(), attendance, event });
+          }
+        }
         rich.sort((a, b) => b.attendance.checkedInAt.toNumber() - a.attendance.checkedInAt.toNumber());
         setAttended(rich);
       }

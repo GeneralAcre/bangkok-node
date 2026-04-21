@@ -358,12 +358,11 @@ export default function OrganizerPage() {
       const signed = await wallet.signTransaction(tx);
       const sig = await connection.sendRawTransaction(signed.serialize());
       await connection.confirmTransaction(sig, "confirmed");
-      setMsg({ type:"ok", text:`✓ Demo check-in confirmed!\nNow go to /profile → click CLAIM NFT to mint your attendance NFT.` });
-      await loadEvents();
+      window.location.href = "/profile";
     } catch (err: any) {
       const m = err?.message ?? "";
       if (m.includes("already in use") || m.includes("already been processed")) {
-        setMsg({ type:"ok", text:"Already checked in! Go to /profile → CLAIM NFT." });
+        window.location.href = "/profile";
       } else if (m.includes("rejected") || m.includes("cancelled")) {
         setMsg({ type:"err", text:"Transaction cancelled." });
       } else { setMsg({ type:"err", text: m || "Demo check-in failed" }); }
