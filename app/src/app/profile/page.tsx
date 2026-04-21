@@ -69,19 +69,15 @@ const CSS = `
 
   .nav {
     position:sticky; top:0; z-index:100;
-    background:rgba(0,0,0,.75); backdrop-filter:blur(24px);
-    border-bottom:1px solid rgba(30,30,46,.6); padding:0 1.5rem;
+    background:rgba(0,0,0,.5); backdrop-filter:blur(24px);
+    padding:0 1.5rem;
   }
   .nav-inner {
     max-width:900px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; height:60px;
+    display:flex; align-items:center; justify-content:space-between; height:72px;
   }
-  .nav-brand {
-    font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700;
-    background:linear-gradient(135deg,var(--p),var(--g));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    text-decoration:none;
-  }
+  .nav-brand { text-decoration:none; display:flex; align-items:center; }
+  .nav-brand img { height:44px; display:block; }
   .nav-links { display:flex; gap:.4rem; align-items:center; }
   .nav-link {
     font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:500;
@@ -380,7 +376,7 @@ export default function ProfilePage() {
   const Nav = () => (
     <nav className="nav">
       <div className="nav-inner">
-        <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" style={{ height:"28px", display:"block" }} /></a>
+        <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" /></a>
         <div className="nav-links">
           <a href="/" className="nav-link">Home</a>
           <a href="/organizer" className="nav-link">Organizer</a>

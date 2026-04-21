@@ -119,19 +119,14 @@ const CSS = `
   /* ── Nav ── */
   .nav {
     position:fixed; top:0; left:0; right:0; z-index:100;
-    background:rgba(0,0,0,.6); backdrop-filter:blur(24px);
-    border-bottom:1px solid var(--border);
+    background:rgba(0,0,0,.5); backdrop-filter:blur(24px);
   }
   .nav-inner {
     max-width:1100px; margin:0 auto; padding:0 1.5rem;
-    display:flex; align-items:center; justify-content:space-between; height:64px;
+    display:flex; align-items:center; justify-content:space-between; height:72px;
   }
-  .nav-brand {
-    font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:800;
-    background:linear-gradient(135deg,#fff 0%,var(--p2) 50%,var(--g) 100%);
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
-    letter-spacing:.08em; text-decoration:none;
-  }
+  .nav-brand { text-decoration:none; display:flex; align-items:center; }
+  .nav-brand img { height:44px; display:block; }
   .nav-links { display:flex; gap:.5rem; align-items:center; }
   .nav-link {
     font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:500;
@@ -437,7 +432,7 @@ export default function HomePage() {
       {/* Nav */}
       <nav className="nav">
         <div className="nav-inner">
-          <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" style={{ height:"28px", display:"block" }} /></a>
+          <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" /></a>
           <div className="nav-links">
             <a href="/" className="nav-link active">Home</a>
             <a href="/organizer" className="nav-link">Organizer</a>

@@ -26,16 +26,13 @@ const CSS = `
   }
 
   .nav {
-    position:sticky; top:0; z-index:100; background:rgba(0,0,0,.9);
-    backdrop-filter:blur(20px); border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:100;
+    background:rgba(0,0,0,.5); backdrop-filter:blur(24px);
     padding:0 1.5rem;
   }
-  .nav-inner { max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:60px; }
-  .nav-brand {
-    font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700;
-    background:linear-gradient(135deg,var(--purple),var(--green));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; text-decoration:none;
-  }
+  .nav-inner { max-width:600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:72px; }
+  .nav-brand { text-decoration:none; display:flex; align-items:center; }
+  .nav-brand img { height:44px; display:block; }
   .wallet-adapter-button {
     background:var(--purple) !important; color:#fff !important;
     font-family:'Space Grotesk',sans-serif !important; font-size:.8rem !important;
@@ -292,7 +289,7 @@ export default function CheckInPage() {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <nav className="nav">
         <div className="nav-inner">
-          <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" style={{ height:"28px", display:"block" }} /></a>
+          <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" /></a>
           <WalletMultiButton />
         </div>
       </nav>
