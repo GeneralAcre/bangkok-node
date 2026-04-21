@@ -25,30 +25,51 @@ const CSS = `
   html, body { background: #000; color: #fff; font-family: 'Inter', sans-serif; min-height: 100vh; }
 
   :root {
-    --green: #8CE9A4; --purple: #7A57E9;
-    --green-dim: #8CE9A415; --purple-dim: #7A57E915;
-    --green-border: #8CE9A440; --purple-border: #7A57E940;
-    --surface: #0a0a0f; --surface2: #111118; --border: #1e1e2e;
+    --g: #8CE9A4; --p: #7A57E9;
+    --g-dim: #8CE9A415; --p-dim: #7A57E915;
+    --g-border: #8CE9A440; --p-border: #7A57E940;
+    --p-glow: #7A57E930; --g-glow: #8CE9A430;
+    --surface: rgba(10,10,15,.7); --surface2: rgba(17,17,24,.8); --border: rgba(30,30,46,.8);
     --text-muted: #6b7280; --text-dim: #374151;
   }
 
-  @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes pulse   { 0%,100%{opacity:.7} 50%{opacity:1} }
-  @keyframes spin    { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes glow    { 0%,100%{box-shadow:0 0 16px #7A57E920} 50%{box-shadow:0 0 32px #7A57E950} }
-  @keyframes scanline{ 0%{top:-4px} 100%{top:100vh} }
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+  @keyframes fadeUp   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse    { 0%,100%{opacity:.7} 50%{opacity:1} }
+  @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes glow     { 0%,100%{box-shadow:0 0 16px #7A57E920} 50%{box-shadow:0 0 40px #7A57E960} }
+  @keyframes scanline { 0%{top:-4px} 100%{top:100vh} }
+  @keyframes float    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+  @keyframes orb1     { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(60px,-40px) scale(1.08)} 66%{transform:translate(-30px,30px) scale(.95)} }
+  @keyframes orb2     { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(-50px,40px) scale(1.05)} 66%{transform:translate(40px,-30px) scale(.97)} }
+  @keyframes gradMove { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  @keyframes nftFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-4px) rotate(.5deg)} }
+
+  /* Ambient orbs */
+  .orb-wrap { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .orb { position:absolute; border-radius:50%; filter:blur(80px); }
+  .orb1 { width:500px; height:500px; background:#7A57E9; opacity:.1; top:-150px; right:-100px; animation:orb1 22s ease-in-out infinite; }
+  .orb2 { width:400px; height:400px; background:#8CE9A4; opacity:.08; bottom:-100px; left:-50px; animation:orb2 28s ease-in-out infinite; }
+  .orb3 { width:250px; height:250px; background:#7A57E9; opacity:.06; top:50%; left:50%; animation:orb1 35s ease-in-out infinite reverse; }
+
+  /* Grid overlay */
+  .grid-bg {
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size:60px 60px;
+  }
 
   .scanline {
     position:fixed; top:0; left:0; right:0; height:2px; z-index:999; pointer-events:none;
-    background:linear-gradient(transparent,#7A57E915,transparent);
-    animation:scanline 12s linear infinite;
+    background:linear-gradient(transparent,#7A57E918,transparent);
+    animation:scanline 10s linear infinite;
   }
 
   .nav {
     position:sticky; top:0; z-index:100;
-    background:rgba(0,0,0,.85); backdrop-filter:blur(20px);
-    border-bottom:1px solid var(--border); padding:0 1.5rem;
+    background:rgba(0,0,0,.75); backdrop-filter:blur(24px);
+    border-bottom:1px solid rgba(30,30,46,.6); padding:0 1.5rem;
   }
   .nav-inner {
     max-width:900px; margin:0 auto;
@@ -56,7 +77,7 @@ const CSS = `
   }
   .nav-brand {
     font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700;
-    background:linear-gradient(135deg,var(--purple),var(--green));
+    background:linear-gradient(135deg,var(--p),var(--g));
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     text-decoration:none;
   }
@@ -66,31 +87,44 @@ const CSS = `
     color:var(--text-muted); text-decoration:none; padding:.4rem .8rem;
     border-radius:6px; transition:all .2s;
   }
-  .nav-link:hover { color:#fff; background:var(--purple-dim); }
-  .nav-link.active { color:var(--purple); }
+  .nav-link:hover { color:#fff; background:var(--p-dim); }
+  .nav-link.active { color:var(--p); }
   @media(max-width:600px){.nav-link:not(.active){display:none}}
 
-  .page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+  .page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; position:relative; z-index:1; }
 
-  .page-header { margin-bottom:2rem; animation:fadeUp .4s ease both; }
-  .page-title { font-family:'Space Grotesk',sans-serif; font-size:1.75rem; font-weight:700; color:#fff; margin-bottom:.3rem; }
+  .page-header { margin-bottom:2rem; animation:fadeUp .5s ease both; }
+  .page-title {
+    font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.4rem;
+    background:linear-gradient(135deg,#fff 0%,#c4b5fd 40%,var(--p) 65%,var(--g) 90%);
+    background-size:200% auto;
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    animation:gradMove 6s ease infinite;
+  }
   .page-sub { font-size:.85rem; color:var(--text-muted); }
 
   .card {
-    background:var(--surface); border:1px solid var(--border); border-radius:14px;
-    padding:1.5rem; margin-bottom:1.25rem; animation:fadeUp .4s ease both;
+    background:rgba(10,10,15,.6); backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,.06); border-radius:16px;
+    padding:1.5rem; margin-bottom:1.25rem; animation:fadeUp .5s ease both;
+    transition:border-color .3s, box-shadow .3s;
   }
+  .card:hover { border-color:rgba(122,87,233,.2); box-shadow:0 8px 40px rgba(0,0,0,.4); }
   .card-title { font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; color:var(--text-muted); letter-spacing:.1em; text-transform:uppercase; margin-bottom:1.25rem; }
 
   /* Identity card */
   .identity-top { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem; }
-  .username { font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700; color:#fff; }
+  .username {
+    font-family:'Space Grotesk',sans-serif; font-size:1.5rem; font-weight:700;
+    background:linear-gradient(135deg,#fff,var(--p));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
   .wallet-addr { font-family:'Space Mono',monospace; font-size:.62rem; color:var(--text-muted); margin-top:.3rem; word-break:break-all; }
   .sol-pill {
     display:inline-flex; align-items:center; gap:.35rem; font-size:.75rem; font-weight:600;
     padding:.3rem .8rem; border-radius:100px;
   }
-  .sol-ok  { color:var(--green); background:var(--green-dim); border:1px solid var(--green-border); }
+  .sol-ok  { color:var(--g); background:var(--g-dim); border:1px solid var(--g-border); }
   .sol-low { color:#f87171; background:#f871710d; border:1px solid #7f1d1d; animation:pulse 2s infinite; }
 
   .tier-pill {
@@ -101,61 +135,72 @@ const CSS = `
   .tier-dot { width:8px; height:8px; border-radius:50%; }
 
   .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.75rem; margin-bottom:1.25rem; }
-  .stat-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:1rem; text-align:center; }
+  .stat-box {
+    background:rgba(17,17,24,.5); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.05); border-radius:12px;
+    padding:1rem; text-align:center; transition:all .25s;
+  }
+  .stat-box:hover { border-color:var(--p-border); transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,0,0,.4); }
   .stat-val { font-family:'Space Grotesk',sans-serif; font-size:1.8rem; font-weight:700; color:#fff; line-height:1; margin-bottom:.3rem; }
   .stat-lbl { font-size:.65rem; font-weight:500; color:var(--text-muted); letter-spacing:.08em; text-transform:uppercase; }
   @media(max-width:400px){.stat-grid{grid-template-columns:1fr 1fr}}
 
-  .prog-track { height:4px; background:var(--surface2); border-radius:4px; overflow:hidden; margin-bottom:.4rem; }
+  .prog-track { height:4px; background:rgba(17,17,24,.8); border-radius:4px; overflow:hidden; margin-bottom:.4rem; }
   .prog-fill  { height:100%; border-radius:4px; transition:width .8s ease; }
   .prog-labels{ display:flex; justify-content:space-between; font-size:.68rem; color:var(--text-muted); }
 
   /* Attendance */
   .attendance-row {
-    border-bottom:1px solid #0d0d14; padding:1rem 0;
+    border-bottom:1px solid rgba(13,13,20,.9); padding:1rem 0;
     display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+    transition:background .2s;
   }
+  .attendance-row:hover { background:rgba(122,87,233,.03); }
   .attendance-row:last-child { border-bottom:none; }
   .att-name { font-family:'Space Grotesk',sans-serif; font-size:.92rem; font-weight:600; color:#fff; margin-bottom:.2rem; }
   .att-meta { font-size:.72rem; color:var(--text-muted); line-height:1.6; }
-  .att-meta a { color:var(--purple); text-decoration:none; }
+  .att-meta a { color:var(--p); text-decoration:none; }
   .att-meta a:hover { text-decoration:underline; }
 
   .btn-claim {
     display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
-    padding:.55rem 1.25rem; background:var(--purple); color:#fff; border:none;
+    padding:.55rem 1.25rem; background:var(--p); color:#fff; border:none;
     font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:600;
     border-radius:8px; cursor:pointer; transition:all .2s;
     animation:glow 2.5s ease-in-out infinite;
     letter-spacing:.03em;
   }
-  .btn-claim:hover { background:#8B6EF0; transform:translateY(-1px); box-shadow:0 8px 25px #7A57E940; animation:none; }
+  .btn-claim:hover { background:#8B6EF0; transform:translateY(-1px); box-shadow:0 8px 30px #7A57E950; animation:none; }
   .btn-claim:disabled { background:#2d2060; color:#6b7280; cursor:not-allowed; animation:none; transform:none; box-shadow:none; }
 
   .nft-minted {
     display:inline-flex; align-items:center; gap:.4rem; white-space:nowrap;
-    padding:.45rem 1rem; background:var(--green-dim); color:var(--green);
-    border:1px solid var(--green-border); border-radius:8px; font-size:.78rem;
+    padding:.45rem 1rem; background:var(--g-dim); color:var(--g);
+    border:1px solid var(--g-border); border-radius:8px; font-size:.78rem;
     font-weight:600; text-decoration:none; font-family:'Space Grotesk',sans-serif;
     transition:all .2s;
   }
-  .nft-minted:hover { background:#8CE9A425; border-color:var(--green); text-decoration:none; }
+  .nft-minted:hover { background:#8CE9A425; border-color:var(--g); text-decoration:none; transform:translateY(-1px); }
 
   /* NFT Gallery */
   .nft-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:1rem; margin-top:1rem; }
   .nft-card {
-    background:var(--surface2); border:1px solid var(--border); border-radius:14px;
-    overflow:hidden; transition:all .25s; cursor:pointer; text-decoration:none; display:block;
+    background:rgba(17,17,24,.6); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.06); border-radius:14px;
+    overflow:hidden; transition:all .3s; cursor:pointer; text-decoration:none; display:block;
+    animation:nftFloat 6s ease-in-out infinite;
   }
-  .nft-card:hover { border-color:var(--purple-border); transform:translateY(-3px); box-shadow:0 12px 30px #7A57E920; text-decoration:none; }
+  .nft-card:nth-child(2n) { animation-delay:.8s; }
+  .nft-card:nth-child(3n) { animation-delay:1.6s; }
+  .nft-card:hover { border-color:var(--p-border); transform:translateY(-6px) !important; box-shadow:0 16px 40px rgba(122,87,233,.25); text-decoration:none; }
   .nft-img { width:100%; aspect-ratio:1; display:block; background:#111; }
   .nft-info { padding:.75rem; }
   .nft-name { font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; color:#fff; margin-bottom:.2rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .nft-edition { font-size:.68rem; color:var(--purple); font-weight:600; }
-  .nft-date { font-size:.65rem; color:var(--muted); margin-top:.15rem; }
+  .nft-edition { font-size:.68rem; color:var(--p); font-weight:600; }
+  .nft-date { font-size:.65rem; color:var(--text-muted); margin-top:.15rem; }
 
-  .msg-err { background:#1a0a0f; border:1px solid #7f1d1d; color:#f87171; padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
-  .msg-ok  { background:#0a1f0f; border:1px solid #166534; color:var(--green); padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
+  .msg-err { background:rgba(26,10,15,.8); backdrop-filter:blur(10px); border:1px solid #7f1d1d; color:#f87171; padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
+  .msg-ok  { background:rgba(10,31,15,.8); backdrop-filter:blur(10px); border:1px solid #166534; color:var(--g); padding:.85rem 1.1rem; margin-bottom:1rem; font-size:.82rem; border-radius:10px; }
 
   .connect-center { text-align:center; padding:4rem 1.5rem; }
   .connect-center p { font-size:.9rem; color:var(--text-muted); margin-bottom:1.5rem; }
@@ -163,26 +208,27 @@ const CSS = `
   .empty-state { text-align:center; padding:2rem 0; }
   .empty-text { font-size:.88rem; color:var(--text-muted); margin-bottom:1.25rem; }
   .how-to-box {
-    background:var(--surface2); border:1px solid var(--border); border-radius:12px;
+    background:rgba(17,17,24,.5); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.05); border-radius:12px;
     padding:1.25rem 1.5rem; text-align:left;
   }
-  .how-to-title { font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:700; color:var(--purple); letter-spacing:.08em; text-transform:uppercase; margin-bottom:.75rem; }
+  .how-to-title { font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:700; color:var(--p); letter-spacing:.08em; text-transform:uppercase; margin-bottom:.75rem; }
   .how-to-step { font-size:.8rem; color:var(--text-muted); line-height:2; }
   .how-to-step strong { color:#fff; }
-  .how-to-step a { color:var(--purple); text-decoration:none; }
+  .how-to-step a { color:var(--p); text-decoration:none; }
   .how-to-step a:hover { text-decoration:underline; }
 
   .btn {
     display:inline-flex; align-items:center; gap:.4rem;
-    padding:.65rem 1.4rem; border:1px solid var(--purple); background:transparent;
-    color:var(--purple); cursor:pointer; font-family:'Space Grotesk',sans-serif;
+    padding:.65rem 1.4rem; border:1px solid var(--p); background:transparent;
+    color:var(--p); cursor:pointer; font-family:'Space Grotesk',sans-serif;
     font-size:.85rem; font-weight:600; border-radius:8px; transition:all .2s;
   }
-  .btn:hover { background:var(--purple); color:#fff; }
-  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .btn:hover { background:var(--p); color:#fff; transform:translateY(-1px); box-shadow:0 6px 20px var(--p-glow); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
 
   .wallet-adapter-button {
-    background:var(--purple) !important; color:#fff !important;
+    background:var(--p) !important; color:#fff !important;
     font-family:'Space Grotesk',sans-serif !important; font-size:.8rem !important;
     font-weight:600 !important; border-radius:8px !important;
     padding:.45rem 1rem !important; height:auto !important; border:none !important;
@@ -340,6 +386,12 @@ export default function ProfilePage() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
+      <div className="grid-bg" />
+      <div className="orb-wrap">
+        <div className="orb orb1" />
+        <div className="orb orb2" />
+        <div className="orb orb3" />
+      </div>
       <div className="scanline" />
       <Nav />
 
@@ -425,11 +477,11 @@ export default function ProfilePage() {
 
               <div className="stat-grid">
                 <div className="stat-box">
-                  <div className="stat-val" style={{ color:"var(--purple)" }}>{events}</div>
+                  <div className="stat-val" style={{ color:"var(--p)" }}>{events}</div>
                   <div className="stat-lbl">Events</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-val" style={{ color:"var(--green)" }}>{rep}</div>
+                  <div className="stat-val" style={{ color:"var(--g)" }}>{rep}</div>
                   <div className="stat-lbl">Rep Score</div>
                 </div>
                 <div className="stat-box">
@@ -443,7 +495,7 @@ export default function ProfilePage() {
               {progress && (
                 <>
                   <div className="prog-track">
-                    <div className="prog-fill" style={{ width:`${progress.pct}%`, background:`linear-gradient(90deg,var(--purple),var(--green))` }} />
+                    <div className="prog-fill" style={{ width:`${progress.pct}%`, background:`linear-gradient(90deg,var(--p),var(--g))` }} />
                   </div>
                   <div className="prog-labels">
                     <span>{progress.pct}% progress</span>
@@ -458,7 +510,7 @@ export default function ProfilePage() {
               <div className="card">
                 <div className="card-title">
                   My NFT Collection
-                  <span style={{ marginLeft:".5rem", color:"var(--green)" }}>({mintedCount})</span>
+                  <span style={{ marginLeft:".5rem", color:"var(--g)" }}>({mintedCount})</span>
                 </div>
                 <div className="nft-grid">
                   {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).map(rec => {
@@ -495,7 +547,7 @@ export default function ProfilePage() {
               <div className="card-title">
                 Attendance History ({attended.length})
                 {mintedCount > 0 && (
-                  <span style={{ marginLeft:".75rem", color:"var(--green)" }}>
+                  <span style={{ marginLeft:".75rem", color:"var(--g)" }}>
                     · {mintedCount} NFT{mintedCount > 1 ? "s" : ""} minted
                   </span>
                 )}
@@ -510,7 +562,7 @@ export default function ProfilePage() {
                       1. Organizer creates &amp; starts an event at <a href="/organizer">/organizer</a><br />
                       2. Attendees go to <a href="/checkin">/checkin?code=EVENTCODE</a> or scan the QR<br />
                       3. <strong>One tap</strong> → check-in confirmed on-chain<br />
-                      4. Return here → glowing <strong style={{ color:"var(--purple)" }}>Claim NFT</strong> button appears below
+                      4. Return here → glowing <strong style={{ color:"var(--p)" }}>Claim NFT</strong> button appears below
                     </div>
                   </div>
                 </div>
