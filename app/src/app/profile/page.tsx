@@ -348,7 +348,7 @@ export default function ProfilePage() {
   const Nav = () => (
     <nav className="nav">
       <div className="nav-inner">
-        <a href="/" className="nav-brand">STRATA</a>
+        <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" style={{ height:"28px", display:"block" }} /></a>
         <div className="nav-links">
           <a href="/" className="nav-link">Home</a>
           <a href="/organizer" className="nav-link">Organizer</a>

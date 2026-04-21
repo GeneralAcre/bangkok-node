@@ -292,7 +292,7 @@ export default function CheckInPage() {
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <nav className="nav">
         <div className="nav-inner">
-          <a href="/" className="nav-brand">STRATA</a>
+          <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" style={{ height:"28px", display:"block" }} /></a>
           <WalletMultiButton />
         </div>
       </nav>
