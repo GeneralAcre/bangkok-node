@@ -119,26 +119,40 @@ const CSS = `
   /* ── Nav ── */
   .nav {
     position:fixed; top:0; left:0; right:0; z-index:100;
-    background:rgba(0,0,0,.5); backdrop-filter:blur(24px);
+    background:transparent; backdrop-filter:blur(0px);
+    transition:background .3s, backdrop-filter .3s;
   }
   .nav-inner {
-    max-width:1100px; margin:0 auto; padding:0 1.5rem;
-    display:flex; align-items:center; justify-content:space-between; height:72px;
+    max-width:1400px; margin:0 auto; padding:0 2.5rem;
+    display:flex; align-items:center; justify-content:space-between; height:80px;
   }
   .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:44px; display:block; }
-  .nav-links { display:flex; gap:.5rem; align-items:center; }
+  .nav-brand img { height:56px; display:block; }
+  .nav-links { display:flex; gap:.3rem; align-items:center; }
   .nav-link {
-    font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:500;
-    color:var(--muted); text-decoration:none; padding:.4rem .9rem; border-radius:8px; transition:all .2s;
+    font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:500;
+    color:rgba(255,255,255,.5); text-decoration:none; padding:.3rem .7rem; border-radius:6px; transition:all .2s;
   }
-  .nav-link:hover { color:#fff; background:var(--surface2); }
+  .nav-link:hover { color:#fff; }
   .nav-link.active { color:#fff; }
   @media(max-width:640px){.nav-links .nav-link:not(.active){display:none}}
 
+  /* Wallet adapter — compact pill */
+  .wallet-adapter-button {
+    background:rgba(122,87,233,.25) !important; color:#fff !important;
+    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
+    font-weight:600 !important; border-radius:20px !important;
+    padding:.3rem .85rem !important; height:auto !important;
+    border:1px solid rgba(122,87,233,.4) !important;
+    min-width:0 !important;
+  }
+  .wallet-adapter-button:hover { background:rgba(122,87,233,.45) !important; }
+  .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
+
   /* ── Page ── */
   .page { position:relative; z-index:1; }
-  .container { max-width:1100px; margin:0 auto; padding:0 1.5rem; }
+  .container { max-width:1400px; margin:0 auto; padding:0 2.5rem; }
+  @media(max-width:768px){ .nav-inner,.container{ padding:0 1.25rem; } }
 
   /* ── Hero ── */
   .hero {

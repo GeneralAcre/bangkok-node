@@ -69,26 +69,27 @@ const CSS = `
 
   .nav {
     position:sticky; top:0; z-index:100;
-    background:rgba(0,0,0,.5); backdrop-filter:blur(24px);
-    padding:0 1.5rem;
+    background:transparent; backdrop-filter:blur(0px);
+    padding:0 2.5rem;
   }
   .nav-inner {
-    max-width:900px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; height:72px;
+    max-width:1400px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between; height:80px;
   }
   .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:44px; display:block; }
+  .nav-brand img { height:56px; display:block; }
   .nav-links { display:flex; gap:.4rem; align-items:center; }
   .nav-link {
-    font-family:'Space Grotesk',sans-serif; font-size:.8rem; font-weight:500;
-    color:var(--text-muted); text-decoration:none; padding:.4rem .8rem;
+    font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:500;
+    color:rgba(255,255,255,.5); text-decoration:none; padding:.3rem .7rem;
     border-radius:6px; transition:all .2s;
   }
-  .nav-link:hover { color:#fff; background:var(--p-dim); }
-  .nav-link.active { color:var(--p); }
+  .nav-link:hover { color:#fff; }
+  .nav-link.active { color:#fff; }
   @media(max-width:600px){.nav-link:not(.active){display:none}}
 
-  .page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; position:relative; z-index:1; }
+  .page { max-width:1400px; margin:0 auto; padding:6rem 2.5rem 2rem; position:relative; z-index:1; }
+  @media(max-width:768px){ .page{ padding:5rem 1.25rem 2rem; } }
 
   .page-header { margin-bottom:2rem; animation:fadeUp .5s ease both; }
   .page-title {
@@ -225,12 +226,14 @@ const CSS = `
   .btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
 
   .wallet-adapter-button {
-    background:var(--p) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.8rem !important;
-    font-weight:600 !important; border-radius:8px !important;
-    padding:.45rem 1rem !important; height:auto !important; border:none !important;
+    background:rgba(122,87,233,.25) !important; color:#fff !important;
+    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
+    font-weight:600 !important; border-radius:20px !important;
+    padding:.3rem .85rem !important; height:auto !important;
+    border:1px solid rgba(122,87,233,.4) !important; min-width:0 !important;
   }
-  .wallet-adapter-button:hover { background:#8B6EF0 !important; }
+  .wallet-adapter-button:hover { background:rgba(122,87,233,.45) !important; }
+  .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
 `;
 
 export default function ProfilePage() {
