@@ -18,6 +18,7 @@ import {
   TransactionInstruction,
   SystemProgram,
 } from "@solana/web3.js";
+import { AnchorProvider } from "@coral-xyz/anchor";
 import { createHash } from "crypto";
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -79,72 +80,59 @@ function borshString(s: string): Buffer {
   return Buffer.concat([len, encoded]);
 }
 
-// ── Event data fetcher ───────────────────────────────────────────────────────
+// ── Event data fetcher (uses Anchor for correct deserialization) ─────────────
 
 interface EventData {
-  title:        string;
-  location:     string;
-  country:      string;
-  eventDate:    number;
-  capacity:     bigint;
+  title:         string;
+  location:      string;
+  country:       string;
+  eventDate:     number;
+  capacity:      bigint;
   attendeeCount: bigint;
-  eventIndex:   bigint;
-  communityKey: PublicKey;
+  eventIndex:    bigint;
+  communityKey:  PublicKey;
 }
 
-// Reads on-chain event account.
-// Scans all events in the community to find one matching the eventCode.
 async function fetchEventByCode(
   connection: Connection,
   community: PublicKey,
   eventCode: string
 ): Promise<{ pubkey: PublicKey; data: EventData } | null> {
-  // Get community to learn event_count
-  const commInfo = await connection.getAccountInfo(community);
-  if (!commInfo) return null;
+  // Use Anchor for proper borsh deserialization — manual byte offsets break
+  // on variable-length strings which Anchor stores as (u32 len + bytes).
+  const { default: idl } = await import("../../../idl/strata.json");
+  const dummy = {
+    publicKey: PublicKey.default,
+    signTransaction: async (t: any) => t,
+    signAllTransactions: async (ts: any[]) => ts,
+  };
+  const provider = new AnchorProvider(connection, dummy as any, { commitment: "confirmed" });
+  const { StrataClient, findEventPDA: findEPDA } = await import("../../../../utils/strata-client");
+  const client = new StrataClient(provider, idl);
 
-  // Parse event_count from community account
-  // Layout: 8 disc + 32 authority + 4+64 name + 4+256 desc + 4+64 country + 8 member_count + 8 event_count
-  const eventCountOffset = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64) + 8;
-  const eventCount = commInfo.data.readBigUInt64LE(eventCountOffset);
+  const commAcc = await client.getCommunity(community);
+  const count = commAcc.eventCount.toNumber();
 
-  for (let i = BigInt(0); i < eventCount; i++) {
-    const ePDA = eventPDA(community, i);
-    const info = await connection.getAccountInfo(ePDA);
-    if (!info) continue;
-
-    // Parse event_code from account data
-    // Layout offsets (approx): 8 disc + 32 comm + 32 org + 4+64 title + 4+512 desc + 4+128 loc + 4+64 country
-    //   + 8 event_date + 8 capacity + 8 attendee_count + 8 fee + 4+8 event_code
-    const offset = 8 + 32 + 32 + (4 + 64) + (4 + 512) + (4 + 128) + (4 + 64) + 8 + 8 + 8 + 8;
-    const codeLen  = info.data.readUInt32LE(offset);
-    const onChainCode = info.data.slice(offset + 4, offset + 4 + codeLen).toString("utf-8");
-
-    if (onChainCode.toUpperCase() !== eventCode.toUpperCase()) continue;
-
-    // Parse remaining fields
-    const titleOffset = 8 + 32 + 32;
-    const titleLen    = info.data.readUInt32LE(titleOffset);
-    const title       = info.data.slice(titleOffset + 4, titleOffset + 4 + titleLen).toString("utf-8");
-
-    const descOffset  = titleOffset + 4 + 64;
-    const locOffset   = descOffset + 4 + 512;
-    const locLen      = info.data.readUInt32LE(locOffset);
-    const location    = info.data.slice(locOffset + 4, locOffset + 4 + locLen).toString("utf-8");
-
-    const countryOffset = locOffset + 4 + 128;
-    const countryLen    = info.data.readUInt32LE(countryOffset);
-    const country       = info.data.slice(countryOffset + 4, countryOffset + 4 + countryLen).toString("utf-8");
-
-    const dateOffset      = countryOffset + 4 + 64;
-    const eventDate       = Number(info.data.readBigInt64LE(dateOffset));
-    const capacity        = info.data.readBigUInt64LE(dateOffset + 8);
-    const attendeeCount   = info.data.readBigUInt64LE(dateOffset + 16);
-
-    return {
-      pubkey: ePDA,
-      data: { title, location, country, eventDate, capacity, attendeeCount, eventIndex: i, communityKey: community },
-    };
+  for (let i = 0; i < count; i++) {
+    const [ePDA] = findEPDA(community, i);
+    try {
+      const ev = await client.getEvent(ePDA);
+      if (ev.eventCode.toUpperCase() === eventCode.toUpperCase()) {
+        return {
+          pubkey: ePDA,
+          data: {
+            title:         ev.title,
+            location:      ev.location,
+            country:       ev.country,
+            eventDate:     ev.eventDate.toNumber(),
+            capacity:      BigInt(ev.capacity.toNumber()),
+            attendeeCount: BigInt(ev.attendeeCount.toNumber()),
+            eventIndex:    BigInt(i),
+            communityKey:  community,
+          },
+        };
+      }
+    } catch {}
   }
   return null;
 }
