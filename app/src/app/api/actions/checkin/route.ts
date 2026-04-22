@@ -18,7 +18,6 @@ import {
   TransactionInstruction,
   SystemProgram,
 } from "@solana/web3.js";
-import { AnchorProvider } from "@coral-xyz/anchor";
 import { createHash } from "crypto";
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -43,14 +42,14 @@ function discriminator(name: string): Buffer {
   return createHash("sha256").update(`global:${name}`).digest().slice(0, 8);
 }
 
-const CHECK_IN_DISC       = discriminator("check_in");
+const CHECK_IN_DISC        = discriminator("check_in");
 const REGISTER_MEMBER_DISC = discriminator("register_member");
 
 // ── PDA helpers ─────────────────────────────────────────────────────────────
 
-function eventPDA(community: PublicKey, index: bigint): PublicKey {
+function eventPDA(community: PublicKey, index: number): PublicKey {
   const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(index);
+  buf.writeBigUInt64LE(BigInt(index));
   return PublicKey.findProgramAddressSync(
     [Buffer.from("event"), community.toBuffer(), buf],
     PROGRAM_ID
@@ -71,7 +70,7 @@ function memberPDA(community: PublicKey, wallet: PublicKey): PublicKey {
   )[0];
 }
 
-// ── Borsh string encoder ─────────────────────────────────────────────────────
+// ── Borsh helpers ────────────────────────────────────────────────────────────
 
 function borshString(s: string): Buffer {
   const encoded = Buffer.from(s, "utf-8");
@@ -80,7 +79,30 @@ function borshString(s: string): Buffer {
   return Buffer.concat([len, encoded]);
 }
 
-// ── Event data fetcher (uses Anchor for correct deserialization) ─────────────
+// Read a variable-length Anchor string: u32 len + bytes
+function readStr(data: Buffer, offset: number): { value: string; next: number } {
+  const len   = data.readUInt32LE(offset);
+  const value = data.slice(offset + 4, offset + 4 + len).toString("utf-8");
+  return { value, next: offset + 4 + len };
+}
+
+// ── Community parser ─────────────────────────────────────────────────────────
+// Layout: disc(8) + authority(32) + name(str) + description(str) + country(str)
+//         + member_count(u64=8) + event_count(u64=8)
+
+function parseCommunityEventCount(data: Buffer): number {
+  let off = 8 + 32; // skip discriminator + authority pubkey
+  off = readStr(data, off).next; // name
+  off = readStr(data, off).next; // description
+  off = readStr(data, off).next; // country
+  off += 8;                      // member_count
+  return Number(data.readBigUInt64LE(off)); // event_count
+}
+
+// ── Event parser ─────────────────────────────────────────────────────────────
+// Layout: disc(8) + community(32) + organizer(32) + title(str) + description(str)
+//         + location(str) + country(str) + event_date(i64=8) + capacity(u64=8)
+//         + attendee_count(u64=8) + fee(u64=8) + event_code(str) + status(u8=1)
 
 interface EventData {
   title:         string;
@@ -93,46 +115,60 @@ interface EventData {
   communityKey:  PublicKey;
 }
 
+// ── Full event parser (returns event_code too) ───────────────────────────────
+
+function parseEventFull(data: Buffer, index: number, community: PublicKey): EventData & { eventCode: string } {
+  let off = 8 + 32 + 32; // disc + community + organizer
+  const title         = readStr(data, off); off = title.next;
+  const _description  = readStr(data, off); off = _description.next;
+  const location      = readStr(data, off); off = location.next;
+  const country       = readStr(data, off); off = country.next;
+  const eventDate     = Number(data.readBigInt64LE(off));  off += 8;
+  const capacity      = data.readBigUInt64LE(off);         off += 8;
+  const attendeeCount = data.readBigUInt64LE(off);         off += 8;
+  /* fee */                                                 off += 8;
+  const eventCode     = readStr(data, off);
+
+  return {
+    title:         title.value,
+    location:      location.value,
+    country:       country.value,
+    eventDate,
+    capacity,
+    attendeeCount,
+    eventIndex:    BigInt(index),
+    communityKey:  community,
+    eventCode:     eventCode.value,
+  };
+}
+
+// ── Event fetcher (pure borsh — no Anchor dynamic imports) ───────────────────
+
 async function fetchEventByCode(
   connection: Connection,
   community: PublicKey,
   eventCode: string
 ): Promise<{ pubkey: PublicKey; data: EventData } | null> {
-  // Use Anchor for proper borsh deserialization — manual byte offsets break
-  // on variable-length strings which Anchor stores as (u32 len + bytes).
-  const { default: idl } = await import("../../../idl/strata.json");
-  const dummy = {
-    publicKey: PublicKey.default,
-    signTransaction: async (t: any) => t,
-    signAllTransactions: async (ts: any[]) => ts,
-  };
-  const provider = new AnchorProvider(connection, dummy as any, { commitment: "confirmed" });
-  const { StrataClient, findEventPDA: findEPDA } = await import("../../../../utils/strata-client");
-  const client = new StrataClient(provider, idl);
+  const commInfo = await connection.getAccountInfo(community);
+  if (!commInfo) return null;
 
-  const commAcc = await client.getCommunity(community);
-  const count = commAcc.eventCount.toNumber();
+  const count = parseCommunityEventCount(commInfo.data);
+
+  // Batch-fetch all event accounts
+  const ePDAs    = Array.from({ length: count }, (_, i) => eventPDA(community, i));
+  const accounts = await connection.getMultipleAccountsInfo(ePDAs);
 
   for (let i = 0; i < count; i++) {
-    const [ePDA] = findEPDA(community, i);
+    const acc = accounts[i];
+    if (!acc) continue;
     try {
-      const ev = await client.getEvent(ePDA);
+      const ev = parseEventFull(acc.data, i, community);
       if (ev.eventCode.toUpperCase() === eventCode.toUpperCase()) {
-        return {
-          pubkey: ePDA,
-          data: {
-            title:         ev.title,
-            location:      ev.location,
-            country:       ev.country,
-            eventDate:     ev.eventDate.toNumber(),
-            capacity:      BigInt(ev.capacity.toNumber()),
-            attendeeCount: BigInt(ev.attendeeCount.toNumber()),
-            eventIndex:    BigInt(i),
-            communityKey:  community,
-          },
-        };
+        return { pubkey: ePDAs[i], data: ev };
       }
-    } catch {}
+    } catch (e) {
+      console.error(`[fetchEventByCode] parse error at index ${i}:`, e);
+    }
   }
   return null;
 }
@@ -234,8 +270,8 @@ export async function POST(req: NextRequest) {
     }
 
     const { pubkey: ePDA, data } = found;
-    const mPDA  = memberPDA(communityKey, attendee);
-    const aPDA  = attendancePDA(ePDA, attendee);
+    const mPDA = memberPDA(communityKey, attendee);
+    const aPDA = attendancePDA(ePDA, attendee);
 
     const ixs: TransactionInstruction[] = [];
 
