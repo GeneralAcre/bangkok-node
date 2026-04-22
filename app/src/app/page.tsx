@@ -355,15 +355,7 @@ const CSS = `
   .footer-link:hover { color:#fff; }
 
   /* ── Wallet ── */
-  .wallet-adapter-button {
-    background:var(--p) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.8rem !important;
-    font-weight:700 !important; border-radius:10px !important;
-    padding:.45rem 1.1rem !important; height:auto !important; border:none !important;
-    transition:all .2s !important; letter-spacing:.02em !important;
-  }
-  .wallet-adapter-button:hover { background:#8B6EF0 !important; box-shadow:0 4px 15px var(--p-glow) !important; }
-  .wallet-adapter-button-trigger { background:var(--p) !important; }
+  .wallet-adapter-button-trigger { background:rgba(122,87,233,.25) !important; }
 
   /* Scan line */
   .scan-line {
