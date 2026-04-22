@@ -440,23 +440,27 @@ export default function OrganizerPage() {
               <div className="blink-url" onClick={() => copyUrl(qrEvent.account.eventCode)} title="Click to copy">
                 {blinkUrl(qrEvent.account.eventCode)}
               </div>
-              <div style={{ display:"flex", gap:".5rem", justifyContent:"center", flexWrap:"wrap", marginBottom:".75rem" }}>
+              {/* Primary demo action */}
+              <div style={{ display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap", marginBottom:"1rem" }}>
+                <a
+                  href={`/checkin?code=${qrEvent.account.eventCode}`}
+                  target="_blank" rel="noreferrer"
+                  className="btn btn-primary"
+                  style={{ fontSize:".9rem", padding:".7rem 1.5rem" }}
+                >
+                  ⬡ Open Check-In Page ↗
+                </a>
                 <button className="btn btn-ghost" onClick={() => copyUrl(qrEvent.account.eventCode)}>
                   {copied ? "✓ Copied!" : "Copy Blink URL"}
                 </button>
                 <button className="btn btn-ghost" onClick={() => setQrEvent(null)}>Hide QR</button>
               </div>
-              <div style={{ background:"#111118", border:"1px solid #1e1e2e", borderRadius:10, padding:".85rem 1rem", fontSize:".78rem", color:"#6b7280", textAlign:"left" }}>
-                <span style={{ color:"var(--g)", fontWeight:600 }}>💻 Demo on your computer:</span>{" "}
-                Share this link instead of the QR —{" "}
-                <a
-                  href={`/checkin?code=${qrEvent.account.eventCode}`}
-                  target="_blank" rel="noreferrer"
-                  style={{ color:"var(--p)", fontFamily:"'Space Mono',monospace", wordBreak:"break-all" }}
-                >
+              <div style={{ background:"rgba(17,17,24,.6)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:".75rem 1rem", fontSize:".75rem", color:"#6b7280", textAlign:"center" }}>
+                Event code: <span style={{ color:"var(--p)", fontFamily:"'Space Mono',monospace", fontWeight:700, letterSpacing:".1em" }}>{qrEvent.account.eventCode}</span>
+                {" · "}
+                <a href={`/checkin?code=${qrEvent.account.eventCode}`} target="_blank" rel="noreferrer" style={{ color:"var(--g)" }}>
                   /checkin?code={qrEvent.account.eventCode}
                 </a>
-                {" "}— works in any browser with Phantom installed.
               </div>
             </div>
           </div>

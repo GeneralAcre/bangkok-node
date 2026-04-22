@@ -216,9 +216,21 @@ function CheckInContent() {
   if (notFound || !code) return (
     <div className="checkin-card">
       <div className="error-big">Event not found</div>
-      <p style={{ color:"#6b7280", fontSize:".85rem", marginTop:".5rem" }}>
-        Check the event code and try again, or ask the organizer for the correct link.
+      {code && (
+        <p style={{ color:"#f87171", fontSize:".8rem", marginTop:".5rem", fontFamily:"'Space Mono',monospace" }}>
+          Code tried: <strong>{code}</strong>
+        </p>
+      )}
+      <p style={{ color:"#6b7280", fontSize:".82rem", marginTop:".75rem", lineHeight:1.7 }}>
+        {!code
+          ? "No event code in URL. Go to the organizer page, start your event, and click \"Open Check-In Page\"."
+          : "This event code doesn't exist on-chain. Make sure the event is Live before checking in."}
       </p>
+      <div style={{ marginTop:"1.25rem", display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap" }}>
+        <a href="/organizer" style={{ display:"inline-flex", alignItems:"center", gap:".4rem", padding:".55rem 1.25rem", background:"var(--purple)", color:"#fff", borderRadius:8, fontSize:".82rem", fontWeight:600, textDecoration:"none", fontFamily:"'Space Grotesk',sans-serif" }}>
+          → Go to Organizer
+        </a>
+      </div>
     </div>
   );
 
