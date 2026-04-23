@@ -84,7 +84,7 @@ export async function GET() {
     const entries = Array.from(map.entries())
       .map(([wallet, evs]) => {
         const ec = evs.size;
-        const hc = [...evs].filter(e => hackathonSet.has(e)).length;
+        const hc = Array.from(evs).filter(e => hackathonSet.has(e)).length;
         const { score, tier } = computeStrataScore(ec, hc);
         return { wallet, score, tier, eventCount: ec, hackathonCount: hc };
       })
