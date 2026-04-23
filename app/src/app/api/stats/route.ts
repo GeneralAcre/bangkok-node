@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { Connection, PublicKey } from "@solana/web3.js";
-import { createHash } from "crypto";
 
 const RPC_URL       = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.devnet.solana.com";
 const COMMUNITY_PDA = process.env.NEXT_PUBLIC_COMMUNITY_PDA;
 const PROGRAM_ID    = process.env.NEXT_PUBLIC_PROGRAM_ID;
 
-// Cache for 60 seconds to avoid hammering devnet
-let cache: { data: any; ts: number } | null = null;
+let cache: { data: unknown; ts: number } | null = null;
 const CACHE_TTL = 60_000;
 
-function discriminator(name: string) {
-  return createHash("sha256").update(`account:${name}`).digest().slice(0, 8);
+function readStr(data: Buffer, off: number): { value: string; next: number } {
+  const len = data.readUInt32LE(off);
+  return { value: data.slice(off + 4, off + 4 + len).toString("utf-8"), next: off + 4 + len };
 }
 
 function eventPDA(community: PublicKey, index: bigint, programId: PublicKey): PublicKey {
@@ -23,75 +22,55 @@ function eventPDA(community: PublicKey, index: bigint, programId: PublicKey): Pu
   )[0];
 }
 
-function parseStatus(data: Buffer, offset: number) {
-  const variant = data[offset];
-  if (variant === 0) return "Upcoming";
-  if (variant === 1) return "Live";
-  if (variant === 2) return "Ended";
-  return "Upcoming";
-}
-
 export async function GET() {
-  // Serve from cache
-  if (cache && Date.now() - cache.ts < CACHE_TTL) {
-    return NextResponse.json(cache.data);
-  }
-
-  if (!COMMUNITY_PDA || !PROGRAM_ID) {
-    return NextResponse.json({ events: 0, members: 0, checkins: 0, recentEvents: [] });
-  }
+  if (cache && Date.now() - cache.ts < CACHE_TTL) return NextResponse.json(cache.data);
+  if (!COMMUNITY_PDA || !PROGRAM_ID) return NextResponse.json({ events: 0, members: 0, checkins: 0, recentEvents: [] });
 
   try {
-    const connection = new Connection(RPC_URL, { commitment: "confirmed", disableRetryOnRateLimit: true });
-    const community  = new PublicKey(COMMUNITY_PDA);
-    const programId  = new PublicKey(PROGRAM_ID);
+    const conn      = new Connection(RPC_URL, { commitment: "confirmed", disableRetryOnRateLimit: true });
+    const community = new PublicKey(COMMUNITY_PDA);
+    const programId = new PublicKey(PROGRAM_ID);
 
-    const commInfo = await connection.getAccountInfo(community);
+    const commInfo = await conn.getAccountInfo(community);
     if (!commInfo) return NextResponse.json({ events: 0, members: 0, checkins: 0, recentEvents: [] });
 
-    const eventCountOffset  = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64) + 8;
-    const memberCountOffset = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64);
+    // Community: disc(8) + authority(32) + name(str) + description(str) + country(str)
+    //            + member_count(u64) + event_count(u64)
+    let off = 8 + 32;
+    off = readStr(commInfo.data, off).next; // name
+    off = readStr(commInfo.data, off).next; // description
+    off = readStr(commInfo.data, off).next; // country
+    const memberCount = Number(commInfo.data.readBigUInt64LE(off)); off += 8;
+    const eventCount  = Number(commInfo.data.readBigUInt64LE(off));
 
-    const eventCount  = Number(commInfo.data.readBigUInt64LE(eventCountOffset));
-    const memberCount = Number(commInfo.data.readBigUInt64LE(memberCountOffset));
+    const pdas   = Array.from({ length: eventCount }, (_, i) => eventPDA(community, BigInt(i), programId));
+    const infos  = await conn.getMultipleAccountsInfo(pdas);
 
-    const recentEvents: any[] = [];
+    const recentEvents: unknown[] = [];
     let totalCheckins = 0;
-
-    // Fetch all events in parallel
-    const pdas = Array.from({ length: eventCount }, (_, i) => eventPDA(community, BigInt(i), programId));
-    const infos = await connection.getMultipleAccountsInfo(pdas);
 
     for (const info of infos) {
       if (!info) continue;
       try {
         const d = info.data;
-        const titleOffset = 8 + 32 + 32;
-        const titleLen    = d.readUInt32LE(titleOffset);
-        const title       = d.slice(titleOffset + 4, titleOffset + 4 + titleLen).toString("utf-8");
-
-        const descOffset  = titleOffset + 4 + 64;
-        const locOffset   = descOffset  + 4 + 512;
-        const locLen      = d.readUInt32LE(locOffset);
-        const location    = d.slice(locOffset + 4, locOffset + 4 + locLen).toString("utf-8");
-
-        const countryOffset = locOffset + 4 + 128;
-        const countryLen    = d.readUInt32LE(countryOffset);
-        const country       = d.slice(countryOffset + 4, countryOffset + 4 + countryLen).toString("utf-8");
-
-        const dateOffset     = countryOffset + 4 + 64;
-        const capacity       = Number(d.readBigUInt64LE(dateOffset + 8));
-        const attendeeCount  = Number(d.readBigUInt64LE(dateOffset + 16));
-
-        const codeOffset = dateOffset + 8 + 8 + 8 + 8;
-        const codeLen    = d.readUInt32LE(codeOffset);
-        const eventCode  = d.slice(codeOffset + 4, codeOffset + 4 + codeLen).toString("utf-8");
-
-        const statusOffset = codeOffset + 4 + 8;
-        const status       = parseStatus(d, statusOffset);
+        // Event: disc(8) + community(32) + organizer(32) + title(str) + description(str)
+        //        + location(str) + country(str) + event_date(8) + capacity(8)
+        //        + attendee_count(8) + fee(8) + event_code(str) + status(1)
+        let o = 8 + 32 + 32;
+        const title       = readStr(d, o); o = title.next;
+        o = readStr(d, o).next;             // description (skip)
+        const location    = readStr(d, o); o = location.next;
+        const country     = readStr(d, o); o = country.next;
+        o += 8;                             // event_date
+        const capacity      = Number(d.readBigUInt64LE(o)); o += 8;
+        const attendeeCount = Number(d.readBigUInt64LE(o)); o += 8;
+        o += 8;                             // fee
+        const eventCode   = readStr(d, o); o = eventCode.next;
+        const statusByte  = d[o];
+        const status      = statusByte === 1 ? "Live" : statusByte === 2 ? "Ended" : "Upcoming";
 
         totalCheckins += attendeeCount;
-        recentEvents.push({ title, location, country, status, attendeeCount, capacity, eventCode });
+        recentEvents.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value });
       } catch {}
     }
 
@@ -104,7 +83,6 @@ export async function GET() {
 
     cache = { data: result, ts: Date.now() };
     return NextResponse.json(result);
-
   } catch (e: any) {
     return NextResponse.json({ events: 0, members: 0, checkins: 0, recentEvents: [], error: e?.message });
   }

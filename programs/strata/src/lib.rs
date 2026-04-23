@@ -110,6 +110,7 @@ pub mod strata {
         capacity: u64,
         entry_fee_lamports: u64,
         event_code: String,   // 8-char code embedded in QR
+        is_hackathon: bool,
     ) -> Result<()> {
         require!(title.len() <= 64, StrataError::NameTooLong);
         require!(description.len() <= 512, StrataError::DescriptionTooLong);
@@ -141,6 +142,7 @@ pub mod strata {
         event.escrow_bump        = ctx.bumps.escrow_vault;
         event.bump               = ctx.bumps.event;
         event.created_at         = Clock::get()?.unix_timestamp;
+        event.is_hackathon       = is_hackathon;
 
         community.event_count = community.event_count.checked_add(1).unwrap();
 
@@ -355,6 +357,7 @@ pub struct Event {
     pub escrow_bump:        u8,
     pub bump:               u8,
     pub created_at:         i64,
+    pub is_hackathon:       bool,
 }
 
 /// Created once per (event, attendee) — the on-chain Proof of Presence
@@ -447,14 +450,15 @@ pub struct UpdateReputation<'info> {
 
 #[derive(Accounts)]
 #[instruction(title: String, _description: String, _location: String, _country: String,
-              _event_date: i64, _capacity: u64, _entry_fee_lamports: u64, event_code: String)]
+              _event_date: i64, _capacity: u64, _entry_fee_lamports: u64, event_code: String,
+              _is_hackathon: bool)]
 pub struct CreateEvent<'info> {
     #[account(mut)]
     pub community: Account<'info, Community>,
     #[account(
         init, payer = organizer,
         space = 8 + 32 + 32 + (4+64) + (4+512) + (4+128) + (4+64)
-              + 8 + 8 + 8 + 8 + (4+8) + 1 + 8 + 1 + 1 + 8,
+              + 8 + 8 + 8 + 8 + (4+8) + 1 + 8 + 1 + 1 + 8 + 1,
         seeds = [b"event", community.key().as_ref(), &community.event_count.to_le_bytes()],
         bump
     )]

@@ -6,6 +6,7 @@ import { PublicKey } from "@solana/web3.js";
 import { Nav } from "../components/Nav";
 import { PageBackground } from "../components/PageBackground";
 import { StatBox } from "../components/StatBox";
+import { SCORE_TIER_COLOR, SCORE_TIER_BG, SCORE_TIER_ICON, StrataScoreTier } from "../utils/scoring";
 
 const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
@@ -13,6 +14,10 @@ const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 interface OnChainEvent {
   title: string; location: string; country: string;
   status: string; attendeeCount: number; capacity: number; eventCode: string;
+}
+
+interface LbEntry {
+  wallet: string; score: number; tier: StrataScoreTier; eventCount: number;
 }
 
 const PAGE_CSS = `
@@ -200,6 +205,41 @@ const PAGE_CSS = `
   .badge-upcoming { font-size: .7rem; font-weight: 500; color: #fbbf24; background: #fbbf2410; border: 1px solid #fbbf2435; padding: .25rem .8rem; border-radius: 100px; }
   .badge-ended { font-size: .7rem; color: #374151; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.05); padding: .25rem .8rem; border-radius: 100px; }
 
+  /* ── Wallet search bar ── */
+  .wallet-search {
+    display: flex; gap: .5rem; max-width: 480px; margin: 2rem auto 0;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.1);
+    backdrop-filter: blur(12px); border-radius: 14px; padding: .4rem .4rem .4rem 1rem;
+    align-items: center;
+  }
+  .wallet-search input {
+    flex: 1; background: transparent; border: none; outline: none; color: #fff;
+    font-family: 'Space Mono', monospace; font-size: .75rem;
+  }
+  .wallet-search input::placeholder { color: rgba(255,255,255,.3); }
+  .wallet-search button {
+    background: var(--p); color: #fff; border: none; border-radius: 9px; padding: .45rem 1rem;
+    font-family: 'Space Grotesk', sans-serif; font-size: .78rem; font-weight: 700; cursor: pointer;
+    transition: background .15s; white-space: nowrap;
+  }
+  .wallet-search button:hover { background: #8B6EF0; }
+
+  /* ── Hall of Fame ── */
+  .hof-section { padding: 3rem 0 0; }
+  .hof-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; margin-top: 1.5rem; }
+  @media(max-width:600px) { .hof-grid { grid-template-columns: 1fr; } }
+  .hof-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 1.25rem 1.25rem 1rem; text-decoration: none; color: #fff;
+    transition: all .2s; display: block;
+  }
+  .hof-card:hover { border-color: rgba(122,87,233,.35); background: rgba(122,87,233,.05); transform: translateY(-3px); }
+  .hof-rank { font-family: 'Space Mono', monospace; font-size: 1.1rem; margin-bottom: .6rem; }
+  .hof-wallet { font-family: 'Space Mono', monospace; font-size: .72rem; color: var(--muted); margin-bottom: .5rem; }
+  .hof-score { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+  .hof-score-lbl { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-top: .1rem; }
+  .hof-tier { display: inline-flex; align-items: center; gap: .35rem; font-family: 'Space Grotesk', sans-serif; font-size: .7rem; font-weight: 600; padding: .25rem .7rem; border-radius: 100px; border: 1px solid currentColor; margin-top: .6rem; }
+
   /* ── Footer ── */
   .footer { border-top: 1px solid var(--border); padding: 3rem 0; margin-top: 2rem; position: relative; z-index: 1; }
   .footer-inner { max-width: 1400px; margin: 0 auto; padding: 0 2.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; }
@@ -235,6 +275,8 @@ export default function HomePage() {
   const [events,      setEvents]      = useState<OnChainEvent[]>([]);
   const [stats,       setStats]       = useState({ events: 0, members: 0, checkins: 0 });
   const [statsLoaded, setStatsLoaded] = useState(false);
+  const [hallOfFame,  setHallOfFame]  = useState<LbEntry[]>([]);
+  const [walletSearch, setWalletSearch] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -279,6 +321,19 @@ export default function HomePage() {
     load();
   }, [connection]);
 
+  useEffect(() => {
+    fetch("/api/leaderboard")
+      .then(r => r.json())
+      .then(d => setHallOfFame((d.entries ?? []).slice(0, 3)))
+      .catch(() => {});
+  }, []);
+
+  function handleWalletSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const addr = walletSearch.trim();
+    if (addr) window.location.href = `/profile/${addr}`;
+  }
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
@@ -296,13 +351,21 @@ export default function HomePage() {
               <span className="hero-title-grad">Proof of<br />Presence.</span>
             </h1>
             <p className="hero-sub">
-              Every event. Every check-in. Permanently on-chain.<br />
-              Scan a QR with Phantom — mint your NFT in one tap.
+              Your on-chain builder identity. Verified by Solana.<br />
+              Every check-in is permanent. Every event builds your score.
             </p>
             <div className="hero-ctas">
-              <a href="/organizer" className="btn-primary">⬡ &nbsp;Host an Event</a>
-              <a href="/profile"   className="btn-glass">My Profile →</a>
+              <a href="/organizer"   className="btn-primary">⬡ &nbsp;Host an Event</a>
+              <a href="/leaderboard" className="btn-glass">Leaderboard →</a>
             </div>
+            <form className="wallet-search" onSubmit={handleWalletSearch}>
+              <input
+                value={walletSearch}
+                onChange={e => setWalletSearch(e.target.value)}
+                placeholder="Look up any wallet address…"
+              />
+              <button type="submit">Search →</button>
+            </form>
           </div>
         </div>
 
@@ -315,13 +378,41 @@ export default function HomePage() {
           </div>
         </div>
 
+        {/* Hall of Fame */}
+        {hallOfFame.length > 0 && (
+          <div className="container hof-section">
+            <div className="section-eyebrow">Hall of Fame</div>
+            <h2 className="section-title">Top builders.</h2>
+            <div className="hof-grid">
+              {hallOfFame.map((entry, idx) => {
+                const tc = SCORE_TIER_COLOR[entry.tier];
+                const tb = SCORE_TIER_BG[entry.tier];
+                const ti = SCORE_TIER_ICON[entry.tier];
+                return (
+                  <a key={entry.wallet} href={`/profile/${entry.wallet}`} className="hof-card">
+                    <div className="hof-rank">{idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"}</div>
+                    <div className="hof-wallet">{entry.wallet.slice(0,6)}…{entry.wallet.slice(-4)}</div>
+                    <div className="hof-score">{entry.score.toLocaleString()}</div>
+                    <div className="hof-score-lbl">Strata Score</div>
+                    <div className="hof-tier" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
+                      {ti} {entry.tier}
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+            <div style={{ textAlign: "right", marginTop: ".75rem" }}>
+              <a href="/leaderboard" style={{ fontSize: ".78rem", color: "var(--muted)", textDecoration: "none" }}>
+                Full leaderboard →
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Why we win */}
         <div className="container">
           <div className="win-section">
             <div className="win-inner" style={{ textAlign: "center" }}>
-              <div className="win-trophy">🏆</div>
-              <h2 className="win-title">Built to win at Colosseum</h2>
-              <p className="win-sub">Real product. Real Solana transactions. Not a mock-up.</p>
               <div className="win-grid">
                 {WIN_CARDS.map(p => (
                   <div className="win-card" key={p.t}>
@@ -396,8 +487,9 @@ export default function HomePage() {
             <div style={{ fontSize: ".72rem", color: "#374151", marginTop: ".25rem" }}>Proof of Presence Protocol · Solana Devnet</div>
           </div>
           <div className="footer-links">
-            <a href="/organizer" className="footer-link">Organizer</a>
-            <a href="/profile"   className="footer-link">Profile</a>
+            <a href="/organizer"   className="footer-link">Organizer</a>
+            <a href="/leaderboard" className="footer-link">Leaderboard</a>
+            <a href="/profile"     className="footer-link">Profile</a>
             {PROGRAM_ID_STR && (
               <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`} target="_blank" rel="noreferrer" className="footer-link">Program ↗</a>
             )}

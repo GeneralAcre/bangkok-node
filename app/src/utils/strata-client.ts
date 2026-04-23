@@ -111,6 +111,7 @@ export interface EventAccount {
   escrowBump:         number;
   bump:               number;
   createdAt:          BN;
+  isHackathon:        boolean;
 }
 
 export interface AttendanceAccount {
@@ -249,6 +250,7 @@ export class StrataClient {
     capacity:           number;
     entryFeeLamports:   number;
     eventCode:          string;    // exactly 8 chars
+    isHackathon?:       boolean;
   }) {
     const communityAcc = await this.getCommunity(params.community);
     const idx          = communityAcc.eventCount.toNumber();
@@ -264,7 +266,8 @@ export class StrataClient {
         new BN(params.eventDate),
         new BN(params.capacity),
         new BN(params.entryFeeLamports),
-        params.eventCode
+        params.eventCode,
+        params.isHackathon ?? false
       )
       .accounts({
         community:     params.community,

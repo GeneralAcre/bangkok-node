@@ -219,13 +219,14 @@ export default function OrganizerPage() {
   const [copied,       setCopied]       = useState(false);
   const [demoChecking, setDemoChecking] = useState<string | null>(null);
 
-  const [title,       setTitle]       = useState("");
-  const [description, setDescription] = useState("");
-  const [location,    setLocation]    = useState("");
-  const [country,     setCountry]     = useState("Thailand");
-  const [eventDate,   setEventDate]   = useState("");
-  const [capacity,    setCapacity]    = useState("100");
-  const [eventCode,   setEventCode]   = useState("");
+  const [title,        setTitle]        = useState("");
+  const [description,  setDescription]  = useState("");
+  const [location,     setLocation]     = useState("");
+  const [country,      setCountry]      = useState("Thailand");
+  const [eventDate,    setEventDate]    = useState("");
+  const [capacity,     setCapacity]     = useState("100");
+  const [eventCode,    setEventCode]    = useState("");
+  const [isHackathon,  setIsHackathon]  = useState(false);
 
   useEffect(() => { setEventCode(randomCode()); }, []);
 
@@ -302,9 +303,10 @@ export default function OrganizerPage() {
         location, country, eventDate: Math.floor(new Date(eventDate).getTime() / 1000),
         capacity: parseInt(capacity, 10), entryFeeLamports: 0,
         eventCode: eventCode.toUpperCase().slice(0, 8),
+        isHackathon,
       });
       setMsg({ type:"ok", text:`✓ "${title}" deployed on-chain! Now click GO LIVE when ready.` });
-      setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode());
+      setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode()); setIsHackathon(false);
       await loadEvents();
     } catch (err: any) {
       const m = err?.message ?? "";
@@ -514,7 +516,22 @@ export default function OrganizerPage() {
               </div>
               <p className="field-note">Embedded in the QR — attendees use this to check in</p>
 
-              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop:".5rem", width:"100%", justifyContent:"center" }}>
+              <label style={{ display:"flex", alignItems:"center", gap:".6rem", cursor:"pointer", marginTop:".25rem" }}>
+                <input
+                  type="checkbox"
+                  checked={isHackathon}
+                  onChange={e => setIsHackathon(e.target.checked)}
+                  style={{ width:16, height:16, accentColor:"#a855f7", cursor:"pointer" }}
+                />
+                <span style={{ fontSize:".85rem", color:"#fff", fontWeight:500 }}>
+                  Hackathon event
+                  <span style={{ marginLeft:".4rem", fontSize:".72rem", color:"#c084fc", fontFamily:"'Space Mono',monospace" }}>
+                    (×3 score multiplier for attendees)
+                  </span>
+                </span>
+              </label>
+
+              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop:".75rem", width:"100%", justifyContent:"center" }}>
                 {loading ? "Deploying…" : "⬡ Deploy Event On-Chain"}
               </button>
             </form>

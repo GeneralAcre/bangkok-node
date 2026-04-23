@@ -65,7 +65,8 @@
         { "name": "eventDate", "type": "i64" },
         { "name": "capacity", "type": "u64" },
         { "name": "entryFeeLamports", "type": "u64" },
-        { "name": "eventCode", "type": "string" }
+        { "name": "eventCode", "type": "string" },
+        { "name": "isHackathon", "type": "bool" }
       ]
     },
     {
@@ -187,7 +188,8 @@
           { "name": "eventIndex",       "type": "u64" },
           { "name": "escrowBump",       "type": "u8" },
           { "name": "bump",             "type": "u8" },
-          { "name": "createdAt",        "type": "i64" }
+          { "name": "createdAt",        "type": "i64" },
+          { "name": "isHackathon",      "type": "bool" }
         ]
       }
     },
