@@ -204,7 +204,7 @@ const CSS = `
     overflow:hidden;
   }
   .nft-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-  .nft-thumb-placeholder { width:36px; height:36px; border-radius:6px; background:#1a1a1a; flex-shrink:0; }
+  .nft-thumb-placeholder { flex-shrink:0; display:flex; align-items:center; }
 
   /* ── Claim button ── */
   .btn-claim {
@@ -729,12 +729,9 @@ export default function ProfilePage() {
                               target="_blank" rel="noreferrer"
                             >
                               <div className="nft-thumb">
-                                <img
-                                  src={`${appUrl}/nft-badge.svg`}
-                                  alt="NFT"
-                                  onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                                />
+                                <img src="/nft-badge.svg" alt="NFT" />
                               </div>
+                              ↗
                             </a>
                           ) : (
                             <div className="nft-thumb-placeholder">
@@ -742,11 +739,10 @@ export default function ProfilePage() {
                                 className="btn-claim"
                                 onClick={() => handleClaimNft(rec)}
                                 disabled={claiming === rec.eventPubkey}
-                                style={{ fontSize:11 }}
                               >
                                 {claiming === rec.eventPubkey
                                   ? <span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span>
-                                  : "Claim"}
+                                  : "⬡ Claim NFT"}
                               </button>
                             </div>
                           )}
@@ -777,14 +773,7 @@ export default function ProfilePage() {
                       target="_blank" rel="noreferrer"
                     >
                       <div className="nft-square">
-                        <img
-                          src={`${appUrl}/nft-badge.svg`}
-                          alt={rec.event?.title ?? "Strata NFT"}
-                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                        {!appUrl && (
-                          <div className="nft-square-placeholder">◎</div>
-                        )}
+                        <img src="/nft-badge.svg" alt={rec.event?.title ?? "Strata NFT"} />
                       </div>
                       <div className="nft-body">
                         <div className="nft-title">{rec.event?.title ?? "Strata Event"}</div>
