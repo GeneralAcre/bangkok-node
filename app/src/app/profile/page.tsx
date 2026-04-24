@@ -8,7 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
   AttendanceAccount, TIER_COLOR, TIER_THRESHOLD, MemberTier,
-  findEventPDA, findAttendancePDA,
+  findEventPDA, findAttendancePDA, parseEventStatus,
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
 
@@ -275,6 +275,50 @@ const CSS = `
   }
   .btn-faucet:hover { background:#f59e0b15; }
 
+  /* ── Org event row ── */
+  .org-row {
+    display:flex; align-items:center; gap:10px; padding:14px 0;
+    border-bottom:0.5px solid #1a1a1a; flex-wrap:wrap;
+  }
+  .org-row:last-child { border-bottom:none; }
+  .org-left { flex:1; min-width:0; }
+  .org-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
+  .btn-org {
+    padding:4px 10px; background:#1D9E7518; color:#1D9E75;
+    border:0.5px solid #1D9E7540; border-radius:6px;
+    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .btn-org:hover { background:#1D9E7530; border-color:#1D9E75; }
+  .btn-org:disabled { background:#1a1a1a; color:#555; border-color:#222; cursor:not-allowed; }
+  .btn-org-danger {
+    padding:4px 10px; background:transparent; color:#f87171;
+    border:0.5px solid #7f1d1d; border-radius:6px;
+    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .btn-org-danger:hover { background:#f8717110; }
+  .btn-org-danger:disabled { opacity:.4; cursor:not-allowed; }
+  .org-badge-live     { font-size:10px; font-weight:600; color:#1D9E75; background:#1D9E7515; border:0.5px solid #1D9E7535; padding:2px 8px; border-radius:20px; }
+  .org-badge-upcoming { font-size:10px; font-weight:500; color:#fbbf24; background:#fbbf2415; border:0.5px solid #fbbf2440; padding:2px 8px; border-radius:20px; }
+  .org-badge-ended    { font-size:10px; font-weight:500; color:#444; background:#111; border:0.5px solid #222; padding:2px 8px; border-radius:20px; }
+
+  /* ── Inline QR ── */
+  .org-qr-panel {
+    background:#0f0f0f; border:0.5px solid #1D9E7530; border-radius:10px;
+    padding:16px; margin-top:12px; text-align:center;
+  }
+  .org-qr-wrap {
+    display:inline-block; padding:10px; background:#fff; border-radius:8px; margin-bottom:10px;
+  }
+  .org-qr-url {
+    font-family:'Space Mono',monospace; font-size:10px; color:#555;
+    word-break:break-all; background:#0a0a0a; border:0.5px solid #222;
+    border-radius:6px; padding:6px 10px; margin-bottom:8px; cursor:pointer;
+    display:block; transition:color .15s;
+  }
+  .org-qr-url:hover { color:#1D9E75; }
+
   /* ── Loading shimmer ── */
   .shimmer {
     background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%);
@@ -330,9 +374,15 @@ export default function ProfilePage() {
   const [minted,   setMinted]   = useState<Record<string, string>>({});
 
   // ── UI-only state ──
-  const [activeTab,    setActiveTab]    = useState<"all" | "hackathon">("all");
+  const [activeTab,    setActiveTab]    = useState<"all" | "hackathon" | "organized">("all");
   const [copiedAddr,   setCopiedAddr]   = useState(false);
   const [copiedLink,   setCopiedLink]   = useState(false);
+
+  // ── Organized events ──
+  const [organizedEvents, setOrganizedEvents] = useState<{ pubkey: string; account: EventAccount }[]>([]);
+  const [orgQrEvent,      setOrgQrEvent]      = useState<{ pubkey: string; account: EventAccount } | null>(null);
+  const [orgQrDataUrl,    setOrgQrDataUrl]    = useState("");
+  const [orgCopied,       setOrgCopied]       = useState(false);
 
   // ── All original effects & callbacks (unchanged) ──
   useEffect(() => {
@@ -402,6 +452,63 @@ export default function ProfilePage() {
   }, [client, publicKey, connection]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const loadOrganizedEvents = useCallback(async () => {
+    if (!client || !publicKey || !COMMUNITY_PDA_STR) return;
+    try {
+      const community = new PublicKey(COMMUNITY_PDA_STR);
+      const commAcc   = await client.getCommunity(community);
+      const count     = commAcc.eventCount.toNumber();
+      const loaded: { pubkey: string; account: EventAccount }[] = [];
+      for (let i = 0; i < count; i++) {
+        const [ePDA] = findEventPDA(community, i);
+        try {
+          const acc = await client.getEvent(ePDA);
+          if (acc.organizer.toBase58() === publicKey.toBase58())
+            loaded.push({ pubkey: ePDA.toBase58(), account: acc });
+        } catch {}
+      }
+      setOrganizedEvents(loaded.reverse());
+    } catch {}
+  }, [client, publicKey]);
+
+  useEffect(() => { loadOrganizedEvents(); }, [loadOrganizedEvents]);
+
+  async function generateOrgQr(code: string) {
+    try {
+      const QRCode = (await import("qrcode")).default;
+      const base   = window.location.origin;
+      const url    = `${base}/checkin?code=${code}`;
+      const dataUrl = await QRCode.toDataURL(url, { width:220, margin:2, color:{ dark:"#000", light:"#fff" } });
+      setOrgQrDataUrl(dataUrl);
+    } catch {}
+  }
+
+  async function handleOrgGoLive(ev: { pubkey: string; account: EventAccount }) {
+    if (!client) return;
+    setLoading(true); setError(null);
+    try {
+      await client.startEvent(new PublicKey(ev.pubkey));
+      const updated = { ...ev, account: { ...ev.account, status: { live: {} } as any } };
+      setOrgQrEvent(updated);
+      await generateOrgQr(ev.account.eventCode);
+      setSuccess("✓ Event is now LIVE — share the QR below!");
+      await loadOrganizedEvents();
+    } catch (e: any) { setError(e?.message); }
+    finally { setLoading(false); }
+  }
+
+  async function handleOrgEnd(ev: { pubkey: string; account: EventAccount }) {
+    if (!client) return;
+    setLoading(true); setError(null);
+    try {
+      await client.endEvent(new PublicKey(ev.pubkey));
+      setOrgQrEvent(null);
+      setSuccess("Event ended.");
+      await loadOrganizedEvents();
+    } catch (e: any) { setError(e?.message); }
+    finally { setLoading(false); }
+  }
 
   async function handleRegister() {
     if (!client || !COMMUNITY_PDA_STR) return;
@@ -685,11 +792,86 @@ export default function ProfilePage() {
                     <span style={{ marginLeft:5, fontSize:11, color:"#c084fc" }}>({hackathonCount})</span>
                   )}
                 </button>
+                <button
+                  className={`tab-btn${activeTab === "organized" ? " active" : ""}`}
+                  onClick={() => setActiveTab("organized")}
+                >
+                  Organized
+                  {organizedEvents.length > 0 && (
+                    <span style={{ marginLeft:5, fontSize:11, color:"#555" }}>({organizedEvents.length})</span>
+                  )}
+                </button>
               </div>
 
               {/* Event list */}
               <div style={{ padding:"0 16px 8px" }}>
-                {loading ? (
+                {activeTab === "organized" ? (
+                  <div style={{ padding:"0 0 8px" }}>
+                    {organizedEvents.length === 0 ? (
+                      <div className="empty-text">No events created yet. <a href="/organizer" style={{ color:"#1D9E75" }}>Create one →</a></div>
+                    ) : (
+                      <div className="event-list">
+                        {organizedEvents.map(ev => {
+                          const status  = parseEventStatus(ev.account.status);
+                          const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
+                          return (
+                            <div key={ev.pubkey}>
+                              <div className="org-row">
+                                <div className="org-left">
+                                  <div className="event-name">{ev.account.title}</div>
+                                  <div className="event-date">
+                                    {ev.account.location}, {ev.account.country} ·{" "}
+                                    {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} ·{" "}
+                                    {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
+                                  </div>
+                                </div>
+                                <div className="org-actions">
+                                  <span className={`org-badge-${status.toLowerCase()}`}>{status}</span>
+                                  {status === "Upcoming" && (
+                                    <button className="btn-org" disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
+                                  )}
+                                  {status === "Live" && (<>
+                                    <button className="btn-org" onClick={() => {
+                                      const next = isQrOpen ? null : ev;
+                                      setOrgQrEvent(next);
+                                      if (next) generateOrgQr(ev.account.eventCode);
+                                    }}>
+                                      {isQrOpen ? "Hide QR" : "⬡ QR"}
+                                    </button>
+                                    <button className="btn-org-danger" disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
+                                  </>)}
+                                </div>
+                              </div>
+                              {isQrOpen && orgQrDataUrl && (
+                                <div className="org-qr-panel">
+                                  <div className="org-qr-wrap">
+                                    <img src={orgQrDataUrl} alt="QR" width={200} height={200} style={{ display:"block", borderRadius:4 }} />
+                                  </div>
+                                  <div
+                                    className="org-qr-url"
+                                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`); setOrgCopied(true); setTimeout(() => setOrgCopied(false), 2000); }}
+                                    title="Click to copy"
+                                  >
+                                    {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
+                                  </div>
+                                  <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
+                                    <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="btn-org">Open Check-In ↗</a>
+                                    <button className="btn-org" onClick={() => {
+                                      const a = document.createElement("a");
+                                      a.href = orgQrDataUrl;
+                                      a.download = `strata-${ev.account.eventCode}.png`;
+                                      a.click();
+                                    }}>↓ Download QR</button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : loading ? (
                   <div style={{ display:"flex", flexDirection:"column", gap:12, padding:"12px 0" }}>
                     {[1,2,3].map(i => (
                       <div key={i} className="shimmer" style={{ height:52, borderRadius:8 }} />

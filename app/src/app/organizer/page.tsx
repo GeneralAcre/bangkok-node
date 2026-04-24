@@ -1,14 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
-import { PublicKey, Transaction } from "@solana/web3.js";
-import { StrataClient, findEventPDA, parseEventStatus, EventAccount } from "../../utils/strata-client";
+import { PublicKey } from "@solana/web3.js";
+import { StrataClient } from "../../utils/strata-client";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "";
 
 function randomCode() {
   const c = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -202,22 +201,16 @@ const CSS = `
   .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
 `;
 
-interface LocalEvent { pubkey: string; account: EventAccount; }
 
 export default function OrganizerPage() {
   const { connection } = useConnection();
   const wallet = useWallet();
   const { publicKey, connected } = wallet;
 
-  const [client,       setClient]       = useState<StrataClient | null>(null);
-  const [idlLoaded,    setIdlLoaded]    = useState(false);
-  const [events,       setEvents]       = useState<LocalEvent[]>([]);
-  const [loading,      setLoading]      = useState(false);
-  const [msg,          setMsg]          = useState<{ type:"ok"|"err"; text:string } | null>(null);
-  const [qrEvent,      setQrEvent]      = useState<LocalEvent | null>(null);
-  const [qrDataUrl,    setQrDataUrl]    = useState("");
-  const [copied,       setCopied]       = useState(false);
-  const [demoChecking, setDemoChecking] = useState<string | null>(null);
+  const [client,    setClient]    = useState<StrataClient | null>(null);
+  const [idlLoaded, setIdlLoaded] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [msg,     setMsg]     = useState<{ type:"ok"|"err"; text:string } | null>(null);
 
   const [title,        setTitle]        = useState("");
   const [description,  setDescription]  = useState("");
@@ -244,60 +237,6 @@ export default function OrganizerPage() {
     init();
   }, [connected, publicKey, connection, wallet]);
 
-  const loadEvents = useCallback(async () => {
-    if (!client || !COMMUNITY_PDA_STR) return;
-    try {
-      const community = new PublicKey(COMMUNITY_PDA_STR);
-      const commAcc = await client.getCommunity(community);
-      const count = commAcc.eventCount.toNumber();
-      const loaded: LocalEvent[] = [];
-      for (let i = 0; i < count; i++) {
-        const [ePDA] = findEventPDA(community, i);
-        try {
-          const acc = await client.getEvent(ePDA);
-          if (acc.organizer.toBase58() === publicKey!.toBase58())
-            loaded.push({ pubkey: ePDA.toBase58(), account: acc });
-        } catch {}
-      }
-      setEvents(loaded.reverse());
-    } catch {}
-  }, [client, publicKey]);
-
-  useEffect(() => { loadEvents(); }, [loadEvents]);
-
-  async function generateQr(code: string) {
-    try {
-      const QRCode = (await import("qrcode")).default;
-      const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
-      const url = `${base}/checkin?code=${code}`;
-      const dataUrl = await QRCode.toDataURL(url, { width:280, margin:2, color:{ dark:"#000", light:"#fff" } });
-      setQrDataUrl(dataUrl);
-    } catch {}
-  }
-
-  function checkinUrl(code: string) {
-    const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
-    return `${base}/checkin?code=${code}`;
-  }
-
-  function blinkUrl(code: string) {
-    const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
-    return `solana-action:${base}/api/actions/checkin?eventCode=${code}`;
-  }
-
-  function copyUrl(code: string) {
-    navigator.clipboard.writeText(checkinUrl(code));
-    setCopied(true); setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function downloadQr(code: string) {
-    if (!qrDataUrl) return;
-    const a = document.createElement("a");
-    a.href = qrDataUrl;
-    a.download = `strata-checkin-${code}.png`;
-    a.click();
-  }
-
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!client || !COMMUNITY_PDA_STR) return;
@@ -318,13 +257,12 @@ export default function OrganizerPage() {
         eventCode: eventCode.toUpperCase().slice(0, 8),
         isHackathon,
       });
-      setMsg({ type:"ok", text:`✓ "${title}" deployed on-chain! Now click GO LIVE when ready.` });
+      setMsg({ type:"ok", text:`✓ "${title}" deployed on-chain!\n\nGo to your Profile → Organized tab to go live and share the QR.` });
       setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode()); setIsHackathon(false);
-      await loadEvents();
     } catch (err: any) {
       const m = err?.message ?? "";
       if (m.includes("already been processed") || m.includes("already in use")) {
-        setMsg({ type:"ok", text:"Event created! (already confirmed)" }); await loadEvents();
+        setMsg({ type:"ok", text:"Event created! (already confirmed)" });
       } else if (m.includes("rejected") || m.includes("cancelled")) {
         setMsg({ type:"err", text:"Transaction cancelled — try again and Approve in Phantom." });
       } else if (m.includes("debit") || m.includes("insufficient") || m.includes("0x1")) {
@@ -333,55 +271,6 @@ export default function OrganizerPage() {
     } finally { setLoading(false); }
   }
 
-  async function handleStart(ev: LocalEvent) {
-    if (!client) return;
-    setLoading(true); setMsg(null);
-    try {
-      await client.startEvent(new PublicKey(ev.pubkey));
-      const updated = { ...ev, account: { ...ev.account, status: { live: {} } as any } };
-      setQrEvent(updated);
-      await generateQr(ev.account.eventCode);
-      setMsg({ type:"ok", text:"✓ Event is now LIVE — share the QR below!" });
-      await loadEvents();
-    } catch (err: any) { setMsg({ type:"err", text:err?.message }); }
-    finally { setLoading(false); }
-  }
-
-  async function handleEnd(ev: LocalEvent) {
-    if (!client) return;
-    setLoading(true); setMsg(null);
-    try {
-      await client.endEvent(new PublicKey(ev.pubkey));
-      setMsg({ type:"ok", text:"Event ended." }); setQrEvent(null); await loadEvents();
-    } catch (err: any) { setMsg({ type:"err", text:err?.message }); }
-    finally { setLoading(false); }
-  }
-
-  async function handleDemoCheckIn(ev: LocalEvent) {
-    if (!publicKey || !wallet.signTransaction) return;
-    setDemoChecking(ev.pubkey); setMsg(null);
-    try {
-      const origin = typeof window !== "undefined" ? window.location.origin : APP_URL;
-      const res = await fetch(`${origin}/api/actions/checkin?eventCode=${ev.account.eventCode}`, {
-        method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ account: publicKey.toBase58() }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? data.detail ?? "Check-in failed");
-      const tx = Transaction.from(Buffer.from(data.transaction, "base64"));
-      const signed = await wallet.signTransaction(tx);
-      const sig = await connection.sendRawTransaction(signed.serialize());
-      await connection.confirmTransaction(sig, "confirmed");
-      window.location.href = "/profile";
-    } catch (err: any) {
-      const m = err?.message ?? "";
-      if (m.includes("already in use") || m.includes("already been processed")) {
-        window.location.href = "/profile";
-      } else if (m.includes("rejected") || m.includes("cancelled")) {
-        setMsg({ type:"err", text:"Transaction cancelled." });
-      } else { setMsg({ type:"err", text: m || "Demo check-in failed" }); }
-    } finally { setDemoChecking(null); }
-  }
 
   return (
     <>
@@ -433,59 +322,6 @@ export default function OrganizerPage() {
           <div className="card connect-card">
             <p>Connect your wallet to create and manage events</p>
             <WalletMultiButton />
-          </div>
-        )}
-
-        {/* QR Panel */}
-        {qrEvent && (
-          <div className="card" style={{ borderColor: parseEventStatus(qrEvent.account.status) === "Live" ? "#8CE9A440" : "#7A57E940" }}>
-            <div className="card-title" style={{ color: parseEventStatus(qrEvent.account.status) === "Live" ? "var(--g)" : "var(--p)" }}>
-              {parseEventStatus(qrEvent.account.status) === "Live" ? "◉ Live Event — Share This QR" : "⬡ QR Code Preview"}
-            </div>
-            <div className="qr-panel">
-              <div className="event-code-display">{qrEvent.account.eventCode}</div>
-              <div style={{ marginBottom:".75rem" }}>
-                <div className="qr-img-wrap">
-                  {qrDataUrl
-                    ? <img src={qrDataUrl} alt="QR Code" width={260} height={260} style={{ display:"block", borderRadius:4 }} />
-                    : <div style={{ width:260, height:260, background:"#f5f5f5", display:"flex", alignItems:"center", justifyContent:"center", color:"#999", fontSize:".75rem", borderRadius:4 }}>Generating…</div>
-                  }
-                </div>
-              </div>
-              <p style={{ fontSize:".8rem", color:"var(--text-muted)", marginBottom:".75rem" }}>
-                Attendees scan with any phone camera → check-in page opens in browser
-              </p>
-              <div className="blink-url" onClick={() => copyUrl(qrEvent.account.eventCode)} title="Click to copy">
-                {checkinUrl(qrEvent.account.eventCode)}
-              </div>
-              <div style={{ display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap", marginBottom:"1rem" }}>
-                <a
-                  href={checkinUrl(qrEvent.account.eventCode)}
-                  target="_blank" rel="noreferrer"
-                  className="btn btn-primary"
-                  style={{ fontSize:".9rem", padding:".7rem 1.5rem" }}
-                >
-                  ⬡ Open Check-In Page ↗
-                </a>
-                <button className="btn btn-ghost" onClick={() => copyUrl(qrEvent.account.eventCode)}>
-                  {copied ? "✓ Copied!" : "Copy Link"}
-                </button>
-                <button className="btn btn-ghost" onClick={() => downloadQr(qrEvent.account.eventCode)}>
-                  ↓ Download QR
-                </button>
-                <button className="btn btn-ghost" onClick={() => setQrEvent(null)}>Hide</button>
-              </div>
-              <div style={{ background:"rgba(17,17,24,.6)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:".6rem 1rem", fontSize:".72rem", color:"#6b7280", textAlign:"center" }}>
-                Blink URL (Phantom in-app):
-                <span
-                  style={{ display:"block", color:"var(--p)", fontFamily:"'Space Mono',monospace", fontSize:".62rem", marginTop:".25rem", wordBreak:"break-all", cursor:"pointer" }}
-                  onClick={() => { navigator.clipboard.writeText(blinkUrl(qrEvent.account.eventCode)); }}
-                  title="Click to copy"
-                >
-                  {blinkUrl(qrEvent.account.eventCode)}
-                </span>
-              </div>
-            </div>
           </div>
         )}
 
@@ -552,66 +388,10 @@ export default function OrganizerPage() {
                 </span>
               </label>
 
-              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop:".75rem", width:"100%", justifyContent:"center" }}>
-                {loading ? "Deploying…" : "⬡ Deploy Event On-Chain"}
+              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop:".75rem" }}>
+                {loading ? "Deploying…" : "⬡ Deploy Event"}
               </button>
             </form>
-          </div>
-        )}
-
-        {/* My Events */}
-        {events.length > 0 && (
-          <div className="card">
-            <div className="card-title">My Events ({events.length})</div>
-            {events.map(ev => {
-              const status = parseEventStatus(ev.account.status);
-              return (
-                <div className="event-card" key={ev.pubkey}>
-                  <div className="event-name">{ev.account.title}</div>
-                  <div className="event-meta">
-                    {ev.account.location}, {ev.account.country} ·{" "}
-                    {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} ·{" "}
-                    {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in ·{" "}
-                    <span style={{ fontFamily:"'Space Mono',monospace" }}>#{ev.account.eventCode}</span>
-                  </div>
-                  <span className={`badge-${status.toLowerCase()}`}>{status}</span>
-                  <div className="event-actions">
-                    {status === "Upcoming" && (<>
-                      <button className="btn btn-green" disabled={loading} onClick={() => handleStart(ev)}>▶ Go Live</button>
-                      <button className="btn btn-ghost" onClick={() => {
-                        const next = qrEvent?.pubkey === ev.pubkey ? null : ev;
-                        setQrEvent(next);
-                        if (next) generateQr(ev.account.eventCode);
-                      }}>
-                        {qrEvent?.pubkey === ev.pubkey ? "Hide QR" : "⬡ Preview QR"}
-                      </button>
-                    </>)}
-                    {status === "Live" && (<>
-                      <button className="btn btn-ghost" onClick={() => {
-                        const next = qrEvent?.pubkey === ev.pubkey ? null : ev;
-                        setQrEvent(next);
-                        if (next) generateQr(ev.account.eventCode);
-                      }}>
-                        {qrEvent?.pubkey === ev.pubkey ? "Hide QR" : "⬡ Show QR"}
-                      </button>
-                      <button
-                        className="btn btn-demo"
-                        disabled={!!demoChecking}
-                        onClick={() => handleDemoCheckIn(ev)}
-                        title="Check yourself in as a demo attendee"
-                      >
-                        {demoChecking === ev.pubkey
-                          ? <><span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span> Checking in…</>
-                          : "✦ Demo Check-In"}
-                      </button>
-                      <button className="btn btn-danger" disabled={loading} onClick={() => handleEnd(ev)}>End Event</button>
-                    </>)}
-                    <a href={`https://explorer.solana.com/address/${ev.pubkey}?cluster=devnet`} target="_blank" rel="noreferrer"
-                      style={{ fontSize:".75rem", color:"var(--text-muted)", marginLeft:"auto", alignSelf:"center" }}>Explorer ↗</a>
-                  </div>
-                </div>
-              );
-            })}
           </div>
         )}
       </div>
