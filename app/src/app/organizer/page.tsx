@@ -269,10 +269,15 @@ export default function OrganizerPage() {
     try {
       const QRCode = (await import("qrcode")).default;
       const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
-      const url = `solana-action:${base}/api/actions/checkin?eventCode=${code}`;
-      const dataUrl = await QRCode.toDataURL(url, { width:200, margin:1, color:{ dark:"#000", light:"#fff" } });
+      const url = `${base}/checkin?code=${code}`;
+      const dataUrl = await QRCode.toDataURL(url, { width:280, margin:2, color:{ dark:"#000", light:"#fff" } });
       setQrDataUrl(dataUrl);
     } catch {}
+  }
+
+  function checkinUrl(code: string) {
+    const base = typeof window !== "undefined" ? window.location.origin : APP_URL;
+    return `${base}/checkin?code=${code}`;
   }
 
   function blinkUrl(code: string) {
@@ -281,8 +286,16 @@ export default function OrganizerPage() {
   }
 
   function copyUrl(code: string) {
-    navigator.clipboard.writeText(blinkUrl(code));
+    navigator.clipboard.writeText(checkinUrl(code));
     setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function downloadQr(code: string) {
+    if (!qrDataUrl) return;
+    const a = document.createElement("a");
+    a.href = qrDataUrl;
+    a.download = `strata-checkin-${code}.png`;
+    a.click();
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -387,6 +400,7 @@ export default function OrganizerPage() {
           <div className="nav-links">
             <a href="/" className="nav-link">Home</a>
             <a href="/organizer" className="nav-link active">Organizer</a>
+            <a href="/leaderboard" className="nav-link">Leaderboard</a>
             <a href="/profile" className="nav-link">Profile</a>
             <WalletMultiButton />
           </div>
@@ -422,30 +436,31 @@ export default function OrganizerPage() {
           </div>
         )}
 
-        {/* Live QR Panel */}
+        {/* QR Panel */}
         {qrEvent && (
-          <div className="card" style={{ borderColor:"#8CE9A440" }}>
-            <div className="card-title" style={{ color:"var(--g)" }}>◉ Live Event — Share This QR</div>
+          <div className="card" style={{ borderColor: parseEventStatus(qrEvent.account.status) === "Live" ? "#8CE9A440" : "#7A57E940" }}>
+            <div className="card-title" style={{ color: parseEventStatus(qrEvent.account.status) === "Live" ? "var(--g)" : "var(--p)" }}>
+              {parseEventStatus(qrEvent.account.status) === "Live" ? "◉ Live Event — Share This QR" : "⬡ QR Code Preview"}
+            </div>
             <div className="qr-panel">
               <div className="event-code-display">{qrEvent.account.eventCode}</div>
               <div style={{ marginBottom:".75rem" }}>
                 <div className="qr-img-wrap">
                   {qrDataUrl
-                    ? <img src={qrDataUrl} alt="QR Code" width={180} height={180} style={{ display:"block", borderRadius:4 }} />
-                    : <div style={{ width:180, height:180, background:"#f5f5f5", display:"flex", alignItems:"center", justifyContent:"center", color:"#999", fontSize:".75rem", borderRadius:4 }}>Generating…</div>
+                    ? <img src={qrDataUrl} alt="QR Code" width={260} height={260} style={{ display:"block", borderRadius:4 }} />
+                    : <div style={{ width:260, height:260, background:"#f5f5f5", display:"flex", alignItems:"center", justifyContent:"center", color:"#999", fontSize:".75rem", borderRadius:4 }}>Generating…</div>
                   }
                 </div>
               </div>
               <p style={{ fontSize:".8rem", color:"var(--text-muted)", marginBottom:".75rem" }}>
-                Attendees scan with Phantom → one-tap check-in on Solana
+                Attendees scan with any phone camera → check-in page opens in browser
               </p>
               <div className="blink-url" onClick={() => copyUrl(qrEvent.account.eventCode)} title="Click to copy">
-                {blinkUrl(qrEvent.account.eventCode)}
+                {checkinUrl(qrEvent.account.eventCode)}
               </div>
-              {/* Primary demo action */}
               <div style={{ display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap", marginBottom:"1rem" }}>
                 <a
-                  href={`/checkin?code=${qrEvent.account.eventCode}`}
+                  href={checkinUrl(qrEvent.account.eventCode)}
                   target="_blank" rel="noreferrer"
                   className="btn btn-primary"
                   style={{ fontSize:".9rem", padding:".7rem 1.5rem" }}
@@ -453,16 +468,22 @@ export default function OrganizerPage() {
                   ⬡ Open Check-In Page ↗
                 </a>
                 <button className="btn btn-ghost" onClick={() => copyUrl(qrEvent.account.eventCode)}>
-                  {copied ? "✓ Copied!" : "Copy Blink URL"}
+                  {copied ? "✓ Copied!" : "Copy Link"}
                 </button>
-                <button className="btn btn-ghost" onClick={() => setQrEvent(null)}>Hide QR</button>
+                <button className="btn btn-ghost" onClick={() => downloadQr(qrEvent.account.eventCode)}>
+                  ↓ Download QR
+                </button>
+                <button className="btn btn-ghost" onClick={() => setQrEvent(null)}>Hide</button>
               </div>
-              <div style={{ background:"rgba(17,17,24,.6)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:".75rem 1rem", fontSize:".75rem", color:"#6b7280", textAlign:"center" }}>
-                Event code: <span style={{ color:"var(--p)", fontFamily:"'Space Mono',monospace", fontWeight:700, letterSpacing:".1em" }}>{qrEvent.account.eventCode}</span>
-                {" · "}
-                <a href={`/checkin?code=${qrEvent.account.eventCode}`} target="_blank" rel="noreferrer" style={{ color:"var(--g)" }}>
-                  /checkin?code={qrEvent.account.eventCode}
-                </a>
+              <div style={{ background:"rgba(17,17,24,.6)", border:"1px solid rgba(255,255,255,.06)", borderRadius:10, padding:".6rem 1rem", fontSize:".72rem", color:"#6b7280", textAlign:"center" }}>
+                Blink URL (Phantom in-app):
+                <span
+                  style={{ display:"block", color:"var(--p)", fontFamily:"'Space Mono',monospace", fontSize:".62rem", marginTop:".25rem", wordBreak:"break-all", cursor:"pointer" }}
+                  onClick={() => { navigator.clipboard.writeText(blinkUrl(qrEvent.account.eventCode)); }}
+                  title="Click to copy"
+                >
+                  {blinkUrl(qrEvent.account.eventCode)}
+                </span>
               </div>
             </div>
           </div>
@@ -555,9 +576,16 @@ export default function OrganizerPage() {
                   </div>
                   <span className={`badge-${status.toLowerCase()}`}>{status}</span>
                   <div className="event-actions">
-                    {status === "Upcoming" && (
+                    {status === "Upcoming" && (<>
                       <button className="btn btn-green" disabled={loading} onClick={() => handleStart(ev)}>▶ Go Live</button>
-                    )}
+                      <button className="btn btn-ghost" onClick={() => {
+                        const next = qrEvent?.pubkey === ev.pubkey ? null : ev;
+                        setQrEvent(next);
+                        if (next) generateQr(ev.account.eventCode);
+                      }}>
+                        {qrEvent?.pubkey === ev.pubkey ? "Hide QR" : "⬡ Preview QR"}
+                      </button>
+                    </>)}
                     {status === "Live" && (<>
                       <button className="btn btn-ghost" onClick={() => {
                         const next = qrEvent?.pubkey === ev.pubkey ? null : ev;
