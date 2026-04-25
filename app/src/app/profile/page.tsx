@@ -8,7 +8,7 @@ import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
   AttendanceAccount, MemberTier,
-  findEventPDA, findAttendancePDA, parseEventStatus,
+  parseEventStatus,
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
 import { profileCSS } from "../../styles/profileStyles";
@@ -98,50 +98,33 @@ export default function ProfilePage() {
     if (!client || !publicKey || !COMMUNITY_PDA_STR) return;
     setLoading(true); setError(null);
     try {
-      const bal = await connection.getBalance(publicKey);
-      setBalance(bal / 1e9);
       const community = new PublicKey(COMMUNITY_PDA_STR);
 
-      let mem: MemberAccount | null = null;
-      try { mem = await client.getMember(community, publicKey); } catch {}
+      // Fetch balance + member + ALL attendance records in parallel
+      const [bal, mem, attendanceRecords] = await Promise.all([
+        connection.getBalance(publicKey),
+        client.getMember(community, publicKey).catch(() => null),
+        client.getAllAttendanceByWallet(publicKey),
+      ]);
+
+      setBalance(bal / 1e9);
       setMember(mem);
 
-      const commInfo = await connection.getAccountInfo(community);
-      if (commInfo) {
-        const eventCountOffset = 8 + 32 + (4 + 64) + (4 + 256) + (4 + 64) + 8;
-        const eventCount = Number(commInfo.data.readBigUInt64LE(eventCountOffset));
+      // Fetch event details for every attendance record in parallel
+      const eventAccounts = await Promise.all(
+        attendanceRecords.map(r =>
+          client.getEvent(new PublicKey(r.account.event)).catch(() => null)
+        )
+      );
 
-        const eventPDAs = Array.from({ length: eventCount }, (_, i) => findEventPDA(community, i)[0]);
-        const attendancePDAs = eventPDAs.map(ep => findAttendancePDA(ep, publicKey)[0]);
+      const rich: AttendedEvent[] = attendanceRecords.map((rec, i) => ({
+        eventPubkey: rec.account.event.toBase58(),
+        attendance:  rec.account,
+        event:       eventAccounts[i] ?? null,
+      }));
 
-        const chunk = async (arr: PublicKey[]) => {
-          const results = [];
-          for (let i = 0; i < arr.length; i += 100) {
-            const batch = await connection.getMultipleAccountsInfo(arr.slice(i, i + 100));
-            results.push(...batch);
-          }
-          return results;
-        };
-
-        const [, attendanceInfos] = await Promise.all([
-          chunk(eventPDAs),
-          chunk(attendancePDAs),
-        ]);
-
-        const rich: AttendedEvent[] = [];
-        for (let i = 0; i < eventCount; i++) {
-          if (!attendanceInfos[i]) continue;
-          let event: EventAccount | null = null;
-          let attendance: AttendanceAccount | null = null;
-          try { event = await client.getEvent(eventPDAs[i]); } catch {}
-          try { attendance = await (client as any).program.account.attendance.fetch(attendancePDAs[i]); } catch {}
-          if (attendance) {
-            rich.push({ eventPubkey: eventPDAs[i].toBase58(), attendance, event });
-          }
-        }
-        rich.sort((a, b) => b.attendance.checkedInAt.toNumber() - a.attendance.checkedInAt.toNumber());
-        setAttended(rich);
-      }
+      rich.sort((a, b) => b.attendance.checkedInAt.toNumber() - a.attendance.checkedInAt.toNumber());
+      setAttended(rich);
     } catch (e: any) {
       setError(e?.message ?? "Failed to load profile");
     } finally { setLoading(false); }
@@ -150,21 +133,12 @@ export default function ProfilePage() {
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
   const loadOrganizedEvents = useCallback(async () => {
-    if (!client || !publicKey || !COMMUNITY_PDA_STR) return;
+    if (!client || !publicKey) return;
     try {
-      const community = new PublicKey(COMMUNITY_PDA_STR);
-      const commAcc   = await client.getCommunity(community);
-      const count     = commAcc.eventCount.toNumber();
-      const loaded: { pubkey: string; account: EventAccount }[] = [];
-      for (let i = 0; i < count; i++) {
-        const [ePDA] = findEventPDA(community, i);
-        try {
-          const acc = await client.getEvent(ePDA);
-          if (acc.organizer.toBase58() === publicKey.toBase58())
-            loaded.push({ pubkey: ePDA.toBase58(), account: acc });
-        } catch {}
-      }
-      setOrganizedEvents(loaded.reverse());
+      const events = await client.getAllMyEvents();
+      setOrganizedEvents(
+        events.map(e => ({ pubkey: e.pubkey.toBase58(), account: e.account })).reverse()
+      );
     } catch {}
   }, [client, publicKey]);
 
