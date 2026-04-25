@@ -208,9 +208,9 @@ export async function GET(req: NextRequest) {
       icon:        `${APP_URL}/strata-icon.png`,
       title:       `[STRATA] ${data.title}`,
       description: [
-        `📍 ${data.location}, ${data.country}`,
-        `📅 ${dateStr}`,
-        `👥 ${data.attendeeCount} checked in — ${spotsLeft} spots left`,
+        `${data.location}, ${data.country}`,
+        `${dateStr}`,
+        `${data.attendeeCount} checked in — ${spotsLeft} spots left`,
         ``,
         `Tap Check In to create your on-chain Proof-of-Presence.`,
         `New here? You'll be auto-registered in the community.`,

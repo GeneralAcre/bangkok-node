@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
-  AttendanceAccount, TIER_COLOR, TIER_THRESHOLD, MemberTier,
+  AttendanceAccount, MemberTier,
   findEventPDA, findAttendancePDA, parseEventStatus,
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
+import { profileCSS } from "../../styles/profileStyles";
+import { Nav } from "../../components/Nav";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
@@ -19,312 +21,6 @@ interface AttendedEvent {
   attendance:  AttendanceAccount;
   event:       EventAccount | null;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CSS
-// ─────────────────────────────────────────────────────────────────────────────
-
-const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
-
-  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-  html, body { background:#0a0a0a; color:#fff; font-family:'Inter',sans-serif; min-height:100vh; }
-
-  @keyframes spin     { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes fadeIn   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-  @keyframes glow     { 0%,100%{box-shadow:0 0 0 0 #1D9E7500} 50%{box-shadow:0 0 16px 2px #1D9E7530} }
-  @keyframes shimmer  { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-
-  /* ── Nav ── */
-  .nav {
-    position:sticky; top:0; z-index:100; background:#0a0a0a;
-    border-bottom:0.5px solid #1a1a1a; padding:0 24px;
-  }
-  .nav-inner {
-    max-width:860px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; height:60px;
-  }
-  .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:44px; display:block; }
-  .nav-links { display:flex; gap:.25rem; align-items:center; }
-  .nav-link {
-    font-family:'Space Grotesk',sans-serif; font-size:.75rem; font-weight:500;
-    color:#555; text-decoration:none; padding:.3rem .65rem; border-radius:6px; transition:color .15s;
-  }
-  .nav-link:hover { color:#fff; }
-  .nav-link.active { color:#fff; }
-  @media(max-width:600px){ .nav-link:not(.active){ display:none; } }
-  .wallet-adapter-button {
-    background:rgba(29,158,117,.15) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
-    font-weight:600 !important; border-radius:20px !important;
-    padding:.28rem .8rem !important; height:auto !important;
-    border:0.5px solid rgba(29,158,117,.35) !important; min-width:0 !important;
-  }
-  .wallet-adapter-button:hover { background:rgba(29,158,117,.28) !important; }
-  .wallet-adapter-button-start-icon { width:14px !important; height:14px !important; margin-right:5px !important; }
-
-  /* ── Page shell ── */
-  .page {
-    max-width:860px; margin:0 auto;
-    padding:48px 24px 80px;
-    animation:fadeIn .35s ease both;
-  }
-  .section { margin-bottom:32px; }
-
-  /* ── Cards ── */
-  .card {
-    background:#111; border:0.5px solid #222; border-radius:12px; padding:20px;
-  }
-  .card-sm { background:#111; border:0.5px solid #222; border-radius:12px; padding:16px; }
-
-  /* ── Eyebrow labels ── */
-  .eyebrow {
-    font-size:11px; font-weight:600; color:#555; letter-spacing:.1em;
-    text-transform:uppercase; margin-bottom:14px;
-  }
-
-  /* ── Identity header ── */
-  .identity-row {
-    display:flex; align-items:center; gap:14px; margin-bottom:14px; flex-wrap:wrap;
-  }
-  .avatar {
-    width:48px; height:48px; border-radius:50%; flex-shrink:0;
-    background:#1D9E7520; border:0.5px solid #1D9E7540;
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:#1D9E75;
-  }
-  .identity-body { flex:1; min-width:0; }
-  .identity-name {
-    font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#fff;
-    margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-  }
-  .tier-badge {
-    display:inline-flex; align-items:center; gap:5px;
-    background:#1D9E7520; color:#1D9E75; border-radius:20px;
-    font-size:11px; font-weight:600; padding:3px 10px; white-space:nowrap;
-    border:0.5px solid #1D9E7540;
-  }
-  .wallet-row {
-    display:flex; align-items:center; gap:6px; margin-top:2px;
-  }
-  .wallet-mono {
-    font-family:'Space Mono',monospace; font-size:11px; color:#555;
-  }
-  .copy-icon {
-    background:none; border:none; color:#555; cursor:pointer; padding:0; font-size:12px;
-    line-height:1; transition:color .15s; display:flex; align-items:center;
-  }
-  .copy-icon:hover { color:#fff; }
-  .copy-icon.did-copy { color:#1D9E75; }
-  .identity-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px; }
-  .btn-secondary {
-    background:transparent; border:0.5px solid #333; color:#888; border-radius:8px;
-    font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:500;
-    padding:6px 14px; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px;
-  }
-  .btn-secondary:hover { border-color:#555; color:#fff; }
-  .btn-secondary.did-copy { border-color:#1D9E7540; color:#1D9E75; }
-  .sol-chip {
-    display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:500;
-    padding:4px 10px; border-radius:20px;
-  }
-  .sol-ok  { color:#1D9E75; background:#1D9E7515; border:0.5px solid #1D9E7535; }
-  .sol-low { color:#f87171; background:#f8717110; border:0.5px solid #7f1d1d; }
-
-  /* ── Score hero ── */
-  .score-hero {
-    display:flex; flex-direction:column; align-items:center;
-    padding:32px 20px 28px; background:#111; border:0.5px solid #222; border-radius:12px;
-    margin-bottom:32px;
-  }
-  .score-num {
-    font-family:'Space Grotesk',sans-serif; font-size:56px; font-weight:500;
-    color:#1D9E75; line-height:1; margin-bottom:8px; letter-spacing:-1px;
-  }
-  .score-label {
-    font-size:12px; color:#555; letter-spacing:.08em; text-transform:uppercase;
-    margin-bottom:20px;
-  }
-  .prog-wrap { width:100%; max-width:320px; margin-bottom:8px; }
-  .prog-track {
-    height:3px; background:#1a1a1a; border-radius:2px; overflow:hidden; width:100%;
-  }
-  .prog-fill { height:100%; background:#1D9E75; border-radius:2px; transition:width .8s ease; }
-  .prog-label { font-size:11px; color:#555; text-align:center; margin-top:6px; }
-
-  /* ── Stat grid ── */
-  .stat-grid {
-    display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:32px;
-  }
-  @media(max-width:540px){ .stat-grid{ grid-template-columns:repeat(2,1fr); } }
-  .stat-card {
-    background:#111; border:0.5px solid #222; border-radius:12px; padding:16px;
-  }
-  .stat-val {
-    font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:500;
-    color:#fff; line-height:1; margin-bottom:6px;
-  }
-  .stat-lbl { font-size:11px; color:#555; font-weight:500; }
-
-  /* ── Tabs ── */
-  .tabs { display:flex; gap:0; border-bottom:0.5px solid #1a1a1a; margin-bottom:16px; }
-  .tab-btn {
-    background:none; border:none; padding:10px 16px; font-family:'Inter',sans-serif;
-    font-size:13px; font-weight:500; cursor:pointer; transition:color .15s;
-    border-bottom:1.5px solid transparent; margin-bottom:-0.5px;
-  }
-  .tab-btn.active { color:#fff; border-bottom-color:#1D9E75; }
-  .tab-btn:not(.active) { color:#555; }
-  .tab-btn:not(.active):hover { color:#888; }
-
-  /* ── Event rows ── */
-  .event-list { display:flex; flex-direction:column; gap:0; }
-  .event-row {
-    display:flex; align-items:center; gap:12px; padding:14px 0;
-    border-bottom:0.5px solid #1a1a1a;
-  }
-  .event-row:last-child { border-bottom:none; }
-  .event-left { flex:1; min-width:0; }
-  .event-name {
-    font-size:14px; color:#fff; font-weight:500; white-space:nowrap;
-    overflow:hidden; text-overflow:ellipsis; margin-bottom:3px;
-  }
-  .event-date { font-size:12px; color:#555; }
-  .event-tags { display:flex; gap:5px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
-  .tag {
-    display:inline-flex; align-items:center;
-    background:#1D9E7520; color:#1D9E75; border-radius:20px;
-    font-size:11px; font-weight:600; padding:3px 10px; white-space:nowrap;
-  }
-  .tag-hackathon { background:rgba(168,85,247,.15); color:#c084fc; border-radius:20px; font-size:10px; font-weight:600; padding:2px 8px; }
-  .nft-thumb {
-    width:36px; height:36px; border-radius:6px; background:#1a1a1a;
-    flex-shrink:0; display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
-  }
-  .nft-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
-  .nft-thumb-placeholder { flex-shrink:0; display:flex; align-items:center; }
-
-  /* ── Claim button ── */
-  .btn-claim {
-    display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
-    padding:5px 12px; background:#1D9E7518; color:#1D9E75;
-    border:0.5px solid #1D9E7540; font-family:'Space Grotesk',sans-serif;
-    font-size:12px; font-weight:600; border-radius:8px; cursor:pointer; transition:all .2s;
-    animation:glow 3s ease-in-out infinite;
-  }
-  .btn-claim:hover { background:#1D9E7530; border-color:#1D9E75; animation:none; }
-  .btn-claim:disabled { background:#1a1a1a; color:#555; border-color:#222; cursor:not-allowed; animation:none; }
-  .nft-minted-link {
-    display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
-    padding:5px 10px; background:transparent; color:#1D9E75;
-    font-size:11px; font-weight:600; text-decoration:none; border-radius:6px; transition:color .15s;
-  }
-  .nft-minted-link:hover { color:#fff; text-decoration:none; }
-
-  /* ── NFT gallery ── */
-  .nft-gallery { margin-bottom:32px; }
-  .nft-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
-  @media(max-width:480px){ .nft-grid{ grid-template-columns:repeat(2,1fr); } }
-  .nft-card {
-    background:#111; border:0.5px solid #222; border-radius:12px; overflow:hidden;
-    text-decoration:none; display:block; transition:border-color .2s;
-  }
-  .nft-card:hover { border-color:#1D9E7540; text-decoration:none; }
-  .nft-square {
-    width:100%; aspect-ratio:1; background:#1a1a1a; display:flex;
-    align-items:center; justify-content:center; overflow:hidden;
-  }
-  .nft-square img { width:100%; height:100%; object-fit:cover; display:block; }
-  .nft-square-placeholder {
-    width:100%; height:100%; display:flex; align-items:center; justify-content:center;
-    font-size:24px; color:#333;
-  }
-  .nft-body { padding:12px; }
-  .nft-title { font-size:13px; color:#fff; font-weight:500; margin-bottom:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .nft-date2 { font-size:11px; color:#555; margin-bottom:3px; }
-  .nft-edition { font-size:11px; color:#1D9E75; font-weight:600; }
-
-  /* ── Notices ── */
-  .msg-err { background:#110a0a; border:0.5px solid #3f1010; color:#f87171; padding:12px 14px; margin-bottom:16px; font-size:13px; border-radius:10px; }
-  .msg-ok  { background:#0a1410; border:0.5px solid #103f2a; color:#1D9E75; padding:12px 14px; margin-bottom:16px; font-size:13px; border-radius:10px; }
-
-  /* ── Empty / connect ── */
-  .center-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; gap:16px; text-align:center; padding:0 24px; }
-  .center-wrap p { font-size:14px; color:#555; }
-  .empty-text { font-size:13px; color:#555; text-align:center; padding:24px 0; }
-
-  /* ── Not registered card ── */
-  .register-card { padding:24px; }
-  .register-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#fff; margin-bottom:6px; }
-  .register-sub   { font-size:13px; color:#555; line-height:1.6; margin-bottom:20px; }
-  .btn-primary {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:9px 18px; background:#1D9E75; color:#fff; border:none;
-    font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;
-    border-radius:8px; cursor:pointer; transition:background .15s;
-  }
-  .btn-primary:hover { background:#18876a; }
-  .btn-primary:disabled { background:#1a1a1a; color:#555; cursor:not-allowed; }
-  .btn-faucet {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:9px 18px; background:transparent; color:#f59e0b; border:0.5px solid #f59e0b50;
-    font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;
-    border-radius:8px; cursor:pointer; text-decoration:none; transition:all .15s;
-  }
-  .btn-faucet:hover { background:#f59e0b15; }
-
-  /* ── Org event row ── */
-  .org-row {
-    display:flex; align-items:center; gap:10px; padding:14px 0;
-    border-bottom:0.5px solid #1a1a1a; flex-wrap:wrap;
-  }
-  .org-row:last-child { border-bottom:none; }
-  .org-left { flex:1; min-width:0; }
-  .org-actions { display:flex; gap:6px; align-items:center; flex-shrink:0; flex-wrap:wrap; }
-  .btn-org {
-    padding:4px 10px; background:#1D9E7518; color:#1D9E75;
-    border:0.5px solid #1D9E7540; border-radius:6px;
-    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
-    cursor:pointer; transition:all .15s; white-space:nowrap;
-  }
-  .btn-org:hover { background:#1D9E7530; border-color:#1D9E75; }
-  .btn-org:disabled { background:#1a1a1a; color:#555; border-color:#222; cursor:not-allowed; }
-  .btn-org-danger {
-    padding:4px 10px; background:transparent; color:#f87171;
-    border:0.5px solid #7f1d1d; border-radius:6px;
-    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
-    cursor:pointer; transition:all .15s; white-space:nowrap;
-  }
-  .btn-org-danger:hover { background:#f8717110; }
-  .btn-org-danger:disabled { opacity:.4; cursor:not-allowed; }
-  .org-badge-live     { font-size:10px; font-weight:600; color:#1D9E75; background:#1D9E7515; border:0.5px solid #1D9E7535; padding:2px 8px; border-radius:20px; }
-  .org-badge-upcoming { font-size:10px; font-weight:500; color:#fbbf24; background:#fbbf2415; border:0.5px solid #fbbf2440; padding:2px 8px; border-radius:20px; }
-  .org-badge-ended    { font-size:10px; font-weight:500; color:#444; background:#111; border:0.5px solid #222; padding:2px 8px; border-radius:20px; }
-
-  /* ── Inline QR ── */
-  .org-qr-panel {
-    background:#0f0f0f; border:0.5px solid #1D9E7530; border-radius:10px;
-    padding:16px; margin-top:12px; text-align:center;
-  }
-  .org-qr-wrap {
-    display:inline-block; padding:10px; background:#fff; border-radius:8px; margin-bottom:10px;
-  }
-  .org-qr-url {
-    font-family:'Space Mono',monospace; font-size:10px; color:#555;
-    word-break:break-all; background:#0a0a0a; border:0.5px solid #222;
-    border-radius:6px; padding:6px 10px; margin-bottom:8px; cursor:pointer;
-    display:block; transition:color .15s;
-  }
-  .org-qr-url:hover { color:#1D9E75; }
-
-  /* ── Loading shimmer ── */
-  .shimmer {
-    background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%);
-    background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px;
-  }
-`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers (pure — no new data fetching)
@@ -566,7 +262,6 @@ export default function ProfilePage() {
   // ── Derived values (pure computation, no fetching) ──
   const tier       = member ? parseTier(member.tier) : null;
   const events     = member ? member.eventsAttended.toNumber() : 0;
-  const rep        = member ? member.reputationScore.toNumber() : 0;
   const progress   = tier ? tierProgress(tier, events) : null;
   const mintedCount = attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length;
 
@@ -581,6 +276,26 @@ export default function ProfilePage() {
     ? `${publicKey.toBase58().slice(0,6)}…${publicKey.toBase58().slice(-4)}`
     : "";
 
+  const monthActivity = useMemo(() => {
+    const now = new Date();
+    return Array.from({ length: 12 }, (_, i) => {
+      const d     = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+      const yr    = d.getFullYear();
+      const mo    = d.getMonth();
+      const count = attended.filter(r => {
+        const rd = new Date(r.attendance.checkedInAt.toNumber() * 1000);
+        return rd.getFullYear() === yr && rd.getMonth() === mo;
+      }).length;
+      const isCurrent = yr === now.getFullYear() && mo === now.getMonth();
+      return {
+        label: d.toLocaleString("default", { month: "short" }),
+        fullLabel: d.toLocaleString("default", { month: "long", year: "numeric" }),
+        count,
+        isCurrent,
+      };
+    });
+  }, [attended]);
+
   function copyAddr() {
     if (!publicKey) return;
     navigator.clipboard.writeText(publicKey.toBase58());
@@ -592,30 +307,13 @@ export default function ProfilePage() {
     setCopiedLink(true); setTimeout(() => setCopiedLink(false), 2000);
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-
-  // ── Nav ──
-  const Nav = () => (
-    <nav className="nav">
-      <div className="nav-inner">
-        <a href="/" className="nav-brand"><img src="/Strata-logo.svg" alt="STRATA" /></a>
-        <div className="nav-links">
-          <a href="/"            className="nav-link">Home</a>
-          <a href="/organizer"   className="nav-link">Organizer</a>
-          <a href="/leaderboard" className="nav-link">Leaderboard</a>
-          <a href="/profile"     className="nav-link active">Profile</a>
-          <WalletMultiButton />
-        </div>
-      </div>
-    </nav>
-  );
 
   // ── Disconnected ──
   if (!connected || !publicKey) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <Nav />
+        <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+        <Nav active="profile" />
         <div className="center-wrap">
           <p>Connect your wallet to view your Strata profile.</p>
           <WalletMultiButton />
@@ -628,8 +326,8 @@ export default function ProfilePage() {
   if (!loading && !member) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: CSS }} />
-        <Nav />
+        <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+        <Nav active="profile" />
         <div className="page">
           {error && <div className="msg-err">{error}</div>}
           <div className="card register-card">
@@ -658,8 +356,8 @@ export default function ProfilePage() {
   // ── Full profile ──
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <Nav />
+      <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+      <Nav active="profile" />
 
       <div className="page">
         {error && (
@@ -767,7 +465,51 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* ── 4. Event history ── */}
+        {/* ── 4. Activity heatmap ── */}
+        {member && attended.length > 0 && (
+          <div className="heatmap section">
+            <div className="eyebrow">Activity</div>
+            <div className="card" style={{ padding:"16px 20px 14px" }}>
+              <div className="heatmap-grid">
+                {monthActivity.map((m, i) => {
+                  const level = Math.min(m.count, 4);
+                  return (
+                    <div key={i} className="heatmap-col">
+                      <div
+                        className="heatmap-cell"
+                        data-count={level}
+                        title={`${m.fullLabel}: ${m.count} event${m.count !== 1 ? "s" : ""}`}
+                      />
+                      <div className={`heatmap-month${m.isCurrent ? " active" : ""}`}>
+                        {m.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="heatmap-legend">
+                <span className="heatmap-legend-label">Less</span>
+                {[0,1,2,3,4].map(n => (
+                  <div
+                    key={n}
+                    className="heatmap-legend-swatch"
+                    style={{
+                      background: n === 0 ? "#161616"
+                        : n === 1 ? "#1D9E7522"
+                        : n === 2 ? "#1D9E7545"
+                        : n === 3 ? "#1D9E7570"
+                        : "#1D9E75",
+                      border: `0.5px solid ${n === 0 ? "#1f1f1f" : "#1D9E7550"}`,
+                    }}
+                  />
+                ))}
+                <span className="heatmap-legend-label">More</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── 5. Event history ── */}
         {member && (
           <div className="section">
             <div className="eyebrow">Event History</div>
@@ -902,7 +644,7 @@ export default function ProfilePage() {
                             {tier && (
                               <span className="tag">{tier}</span>
                             )}
-                            {isHack && <span className="tag-hackathon">⚡ Hackathon</span>}
+                            {isHack && <span className="tag-hackathon"># Hackathon</span>}
                           </div>
                           {hasMint ? (
                             <a
@@ -938,7 +680,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* ── 5. NFT gallery ── */}
+        {/* ── 6. NFT gallery ── */}
         {mintedCount > 0 && (
           <div className="nft-gallery">
             <div className="eyebrow">My Strata NFTs</div>
