@@ -276,25 +276,41 @@ export default function ProfilePage() {
     ? `${publicKey.toBase58().slice(0,6)}…${publicKey.toBase58().slice(-4)}`
     : "";
 
-  const monthActivity = useMemo(() => {
-    const now = new Date();
-    return Array.from({ length: 12 }, (_, i) => {
-      const d     = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-      const yr    = d.getFullYear();
-      const mo    = d.getMonth();
-      const count = attended.filter(r => {
-        const rd = new Date(r.attendance.checkedInAt.toNumber() * 1000);
-        return rd.getFullYear() === yr && rd.getMonth() === mo;
-      }).length;
-      const isCurrent = yr === now.getFullYear() && mo === now.getMonth();
-      return {
-        label: d.toLocaleString("default", { month: "short" }),
-        fullLabel: d.toLocaleString("default", { month: "long", year: "numeric" }),
-        count,
-        isCurrent,
-      };
-    });
+  const dayActivity = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const r of attended) {
+      const d = new Date(r.attendance.checkedInAt.toNumber() * 1000);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      map[key] = (map[key] || 0) + 1;
+    }
+    return map;
   }, [attended]);
+
+  const heatmapData = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay() - 51 * 7);
+
+    type DayCell = { dateStr: string; count: number; isFuture: boolean };
+    const weeks: { days: DayCell[]; monthLabel: string | null }[] = [];
+    const cur = new Date(start);
+
+    for (let w = 0; w < 52; w++) {
+      const days: DayCell[] = [];
+      let monthLabel: string | null = null;
+      for (let d = 0; d < 7; d++) {
+        if (cur.getDate() === 1) {
+          monthLabel = cur.toLocaleString("default", { month: "short" });
+        }
+        const dateStr = `${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,"0")}-${String(cur.getDate()).padStart(2,"0")}`;
+        days.push({ dateStr, count: dayActivity[dateStr] ?? 0, isFuture: cur > today });
+        cur.setDate(cur.getDate() + 1);
+      }
+      weeks.push({ days, monthLabel });
+    }
+    return weeks;
+  }, [dayActivity]);
 
   function copyAddr() {
     if (!publicKey) return;
@@ -421,6 +437,24 @@ export default function ProfilePage() {
                   Public view ↗
                 </a>
               </div>
+              <div className="inline-stats">
+                <div className="inline-stat">
+                  <span className="inline-stat-val">{events}</span>
+                  <span className="inline-stat-lbl">Events</span>
+                </div>
+                <div className="inline-stat">
+                  <span className="inline-stat-val" style={{ color: hackathonCount > 0 ? "#c084fc" : undefined }}>{hackathonCount}</span>
+                  <span className="inline-stat-lbl">Hackathons</span>
+                </div>
+                <div className="inline-stat">
+                  <span className="inline-stat-val" style={{ color: streak > 0 ? "#1D9E75" : undefined }}>{streak}</span>
+                  <span className="inline-stat-lbl">Streak</span>
+                </div>
+                <div className="inline-stat">
+                  <span className="inline-stat-val" style={{ color: mintedCount > 0 ? "#1D9E75" : undefined }}>{mintedCount}</span>
+                  <span className="inline-stat-lbl">NFTs</span>
+                </div>
+              </div>
             </div>
 
             {/* Right: Strata Score + Stats */}
@@ -437,72 +471,60 @@ export default function ProfilePage() {
                   <div className="prog-label">{progress.label}</div>
                 </>
               )}
-              <div className="stat-grid-2">
-                <div className="stat-card">
-                  <div className="stat-val">{events}</div>
-                  <div className="stat-lbl">Events</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-val" style={{ color: hackathonCount > 0 ? "#c084fc" : undefined }}>
-                    {hackathonCount}
-                  </div>
-                  <div className="stat-lbl">Hackathons</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-val" style={{ color: streak > 0 ? "#1D9E75" : undefined }}>
-                    {streak}
-                  </div>
-                  <div className="stat-lbl">Streak</div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-val" style={{ color: mintedCount > 0 ? "#1D9E75" : undefined }}>
-                    {mintedCount}
-                  </div>
-                  <div className="stat-lbl">NFTs</div>
-                </div>
-              </div>
             </div>
 
           </div>
         )}
 
-        {/* ── 4. Activity heatmap ── */}
-        {member && attended.length > 0 && (
+        {/* ── 4. Activity heatmap (GitHub-style daily grid) ── */}
+        {member && (
           <div className="heatmap section">
             <div className="eyebrow">Activity</div>
-            <div className="card" style={{ padding:"16px 20px 14px" }}>
-              <div className="heatmap-grid">
-                {monthActivity.map((m, i) => {
-                  const level = Math.min(m.count, 4);
-                  return (
-                    <div key={i} className="heatmap-col">
-                      <div
-                        className="heatmap-cell"
-                        data-count={level}
-                        title={`${m.fullLabel}: ${m.count} event${m.count !== 1 ? "s" : ""}`}
-                      />
-                      <div className={`heatmap-month${m.isCurrent ? " active" : ""}`}>
-                        {m.label}
-                      </div>
+            <div className="card" style={{ padding:"16px 20px 14px", overflowX:"auto" }}>
+              {/* Month labels row */}
+              <div className="heatmap-months-row">
+                <div style={{ width:28, flexShrink:0 }} />
+                <div className="heatmap-weeks-labels">
+                  {heatmapData.map((week, wi) => (
+                    <div key={wi} className="heatmap-month-cell">
+                      {week.monthLabel ?? ""}
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
+              {/* Day labels + week grid */}
+              <div className="heatmap-body-row">
+                <div className="heatmap-day-labels">
+                  {["", "Mon", "", "Wed", "", "Fri", ""].map((lbl, i) => (
+                    <span key={i}>{lbl}</span>
+                  ))}
+                </div>
+                <div className="heatmap-weeks-grid">
+                  {heatmapData.map((week, wi) => (
+                    <div key={wi} className="heatmap-week">
+                      {week.days.map((day, di) => (
+                        <div
+                          key={di}
+                          className={`heatmap-day${day.isFuture ? " future" : ""}`}
+                          data-count={Math.min(day.count, 4)}
+                          title={day.isFuture ? "" : day.count > 0 ? `${day.dateStr}: ${day.count} event${day.count !== 1 ? "s" : ""}` : day.dateStr}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Legend */}
               <div className="heatmap-legend">
                 <span className="heatmap-legend-label">Less</span>
-                {[0,1,2,3,4].map(n => (
-                  <div
-                    key={n}
-                    className="heatmap-legend-swatch"
-                    style={{
-                      background: n === 0 ? "#161616"
-                        : n === 1 ? "#1D9E7522"
-                        : n === 2 ? "#1D9E7545"
-                        : n === 3 ? "#1D9E7570"
-                        : "#1D9E75",
-                      border: `0.5px solid ${n === 0 ? "#1f1f1f" : "#1D9E7550"}`,
-                    }}
-                  />
+                {([
+                  { bg:"#161616", border:"#1f1f1f" },
+                  { bg:"#1D9E7530", border:"#1D9E7540" },
+                  { bg:"#1D9E7555", border:"#1D9E7565" },
+                  { bg:"#1D9E7580", border:"#1D9E7590" },
+                  { bg:"#1D9E75",   border:"#1D9E75"   },
+                ] as const).map((s, n) => (
+                  <div key={n} className="heatmap-legend-cell" style={{ background:s.bg, border:`0.5px solid ${s.border}` }} />
                 ))}
                 <span className="heatmap-legend-label">More</span>
               </div>

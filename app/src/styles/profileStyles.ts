@@ -308,33 +308,58 @@ export const profileCSS = `
   }
   .org-qr-url:hover { color:#1D9E75; }
 
-  /* ── Activity heatmap ── */
+  /* ── GitHub-style daily activity heatmap ── */
   .heatmap { margin-bottom:32px; }
-  .heatmap-grid {
-    display:grid; grid-template-columns:repeat(12,1fr); gap:6px;
+  .heatmap-months-row { display:flex; margin-bottom:3px; }
+  .heatmap-weeks-labels { display:flex; }
+  .heatmap-month-cell {
+    width:13px; font-size:9px; color:#555;
+    font-family:'Space Mono',monospace; flex-shrink:0;
+    overflow:visible; white-space:nowrap; pointer-events:none;
   }
-  .heatmap-col { display:flex; flex-direction:column; align-items:center; gap:5px; }
-  .heatmap-cell {
-    width:100%; aspect-ratio:1; border-radius:5px;
+  .heatmap-body-row { display:flex; gap:6px; align-items:flex-start; }
+  .heatmap-day-labels {
+    display:flex; flex-direction:column; gap:2px;
+    width:22px; flex-shrink:0; padding-top:1px;
+  }
+  .heatmap-day-labels span {
+    height:11px; font-size:9px; color:#444;
+    font-family:'Space Mono',monospace;
+    display:flex; align-items:center; line-height:1;
+  }
+  .heatmap-weeks-grid { display:flex; gap:2px; overflow-x:auto; }
+  .heatmap-week { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+  .heatmap-day {
+    width:11px; height:11px; border-radius:2px; flex-shrink:0;
     background:#161616; border:0.5px solid #1f1f1f;
-    transition:transform .15s, border-color .15s; cursor:default;
+    transition:border-color .1s; cursor:default;
   }
-  .heatmap-cell:hover { transform:scale(1.12); border-color:#333; }
-  .heatmap-cell[data-count="1"] { background:#1D9E7522; border-color:#1D9E7530; }
-  .heatmap-cell[data-count="2"] { background:#1D9E7545; border-color:#1D9E7550; }
-  .heatmap-cell[data-count="3"] { background:#1D9E7570; border-color:#1D9E7580; }
-  .heatmap-cell[data-count="4"] { background:#1D9E75;   border-color:#1D9E75;   }
-  .heatmap-month {
-    font-family:'Space Mono',monospace; font-size:9px; color:#444;
-    text-align:center; letter-spacing:.02em; user-select:none;
-  }
-  .heatmap-month.active { color:#1D9E75; }
+  .heatmap-day:not(.future):hover { border-color:#555; }
+  .heatmap-day.future { opacity:0; pointer-events:none; }
+  .heatmap-day[data-count="1"] { background:#1D9E7530; border-color:#1D9E7540; }
+  .heatmap-day[data-count="2"] { background:#1D9E7555; border-color:#1D9E7565; }
+  .heatmap-day[data-count="3"] { background:#1D9E7580; border-color:#1D9E7590; }
+  .heatmap-day[data-count="4"] { background:#1D9E75;   border-color:#1D9E75;   }
   .heatmap-legend {
-    display:flex; align-items:center; gap:5px; margin-top:10px; justify-content:flex-end;
+    display:flex; align-items:center; gap:3px;
+    margin-top:8px; justify-content:flex-end;
   }
-  .heatmap-legend-label { font-size:10px; color:#444; }
-  .heatmap-legend-swatch {
-    width:10px; height:10px; border-radius:2px;
+  .heatmap-legend-label { font-size:9px; color:#444; font-family:'Space Mono',monospace; }
+  .heatmap-legend-cell { width:10px; height:10px; border-radius:2px; }
+
+  /* ── Inline stats (in left profile card) ── */
+  .inline-stats {
+    display:flex; gap:20px; margin-top:14px; padding-top:14px;
+    border-top:0.5px solid #1a1a1a; flex-wrap:wrap;
+  }
+  .inline-stat { display:flex; flex-direction:column; gap:3px; }
+  .inline-stat-val {
+    font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600;
+    color:#fff; line-height:1;
+  }
+  .inline-stat-lbl {
+    font-size:10px; color:#555; font-weight:500;
+    text-transform:uppercase; letter-spacing:.08em;
   }
 
   /* ── Loading shimmer ── */
