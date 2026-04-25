@@ -106,7 +106,22 @@ export const profileCSS = `
   .sol-ok  { color:#1D9E75; background:#1D9E7515; border:0.5px solid #1D9E7535; }
   .sol-low { color:#f87171; background:#f8717110; border:0.5px solid #7f1d1d; }
 
-  /* ── Score hero ── */
+  /* ── 2-column profile top layout ── */
+  .profile-top {
+    display:grid; grid-template-columns:1.3fr 1fr; gap:12px;
+    margin-bottom:32px; align-items:start;
+  }
+  @media(max-width:640px) { .profile-top { grid-template-columns:1fr; } }
+  .profile-left { display:flex; flex-direction:column; }
+  .profile-right {
+    display:flex; flex-direction:column; align-items:center; text-align:center;
+  }
+  .stat-grid-2 {
+    display:grid; grid-template-columns:repeat(2,1fr); gap:10px;
+    margin-top:20px; width:100%;
+  }
+
+  /* ── Score hero (legacy, kept for reference) ── */
   .score-hero {
     display:flex; flex-direction:column; align-items:center;
     padding:32px 20px 28px; background:#111; border:0.5px solid #222; border-radius:12px;

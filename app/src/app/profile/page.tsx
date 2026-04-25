@@ -372,10 +372,12 @@ export default function ProfilePage() {
         )}
         {success && <div className="msg-ok">{success}</div>}
 
-        {/* ── 1. Identity header ── */}
+        {/* ── 1+2+3. Profile top: identity (left) + score & stats (right) ── */}
         {member && tier && (
-          <div className="section">
-            <div className="card">
+          <div className="profile-top">
+
+            {/* Left: Address + Profile */}
+            <div className="card profile-left">
               <div className="identity-row">
                 <div className="avatar">
                   {member.username.charAt(0).toUpperCase()}
@@ -420,48 +422,47 @@ export default function ProfilePage() {
                 </a>
               </div>
             </div>
-          </div>
-        )}
 
-        {/* ── 2. Strata Score hero ── */}
-        {member && progress && (
-          <div className="score-hero">
-            <div className="score-num">{loading ? "…" : strataScore.toLocaleString()}</div>
-            <div className="score-label">Strata Score</div>
-            <div className="prog-wrap">
-              <div className="prog-track">
-                <div className="prog-fill" style={{ width:`${progress.pct}%` }} />
+            {/* Right: Strata Score + Stats */}
+            <div className="card profile-right">
+              <div className="score-num">{loading ? "…" : strataScore.toLocaleString()}</div>
+              <div className="score-label">Strata Score</div>
+              {progress && (
+                <>
+                  <div className="prog-wrap">
+                    <div className="prog-track">
+                      <div className="prog-fill" style={{ width:`${progress.pct}%` }} />
+                    </div>
+                  </div>
+                  <div className="prog-label">{progress.label}</div>
+                </>
+              )}
+              <div className="stat-grid-2">
+                <div className="stat-card">
+                  <div className="stat-val">{events}</div>
+                  <div className="stat-lbl">Events</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-val" style={{ color: hackathonCount > 0 ? "#c084fc" : undefined }}>
+                    {hackathonCount}
+                  </div>
+                  <div className="stat-lbl">Hackathons</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-val" style={{ color: streak > 0 ? "#1D9E75" : undefined }}>
+                    {streak}
+                  </div>
+                  <div className="stat-lbl">Streak</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-val" style={{ color: mintedCount > 0 ? "#1D9E75" : undefined }}>
+                    {mintedCount}
+                  </div>
+                  <div className="stat-lbl">NFTs</div>
+                </div>
               </div>
             </div>
-            <div className="prog-label">{progress.label}</div>
-          </div>
-        )}
 
-        {/* ── 3. Stats row ── */}
-        {member && (
-          <div className="stat-grid section">
-            <div className="stat-card">
-              <div className="stat-val">{events}</div>
-              <div className="stat-lbl">Events Attended</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-val" style={{ color: hackathonCount > 0 ? "#c084fc" : undefined }}>
-                {hackathonCount}
-              </div>
-              <div className="stat-lbl">Hackathon Events</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-val" style={{ color: streak > 0 ? "#1D9E75" : undefined }}>
-                {streak}
-              </div>
-              <div className="stat-lbl">Month Streak</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-val" style={{ color: mintedCount > 0 ? "#1D9E75" : undefined }}>
-                {mintedCount}
-              </div>
-              <div className="stat-lbl">NFTs Minted</div>
-            </div>
           </div>
         )}
 
