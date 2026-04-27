@@ -2,7 +2,7 @@ export const homeCSS = `
   /* ── Hero ── */
   .hero {
     min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    text-align: center; padding: 8rem 1.5rem 5rem; position: relative;
+    text-align: center; padding: 8rem 2.5rem 5rem; position: relative;
   }
   .hero-inner { position: relative; z-index: 1; animation: fadeUp .8s ease both; }
   .hero-badge {
@@ -140,7 +140,7 @@ export const homeCSS = `
 
   /* ── Win ── */
   .win-section {
-    position: relative; margin: 3rem 0; padding: 4rem 2.5rem; border-radius: 28px; overflow: hidden;
+    position: relative; margin: 3rem 0; padding: 4rem 0; border-radius: 28px; overflow: hidden;
     background: linear-gradient(135deg,rgba(122,87,233,.08) 0%,rgba(0,0,0,.5) 50%,rgba(140,233,164,.06) 100%);
     border: 1px solid rgba(122,87,233,.2);
     animation: fadeUp .6s .3s ease both; opacity: 0; animation-fill-mode: forwards;
