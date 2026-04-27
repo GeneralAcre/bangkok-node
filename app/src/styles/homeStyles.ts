@@ -140,14 +140,8 @@ export const homeCSS = `
 
   /* ── Win ── */
   .win-section {
-    position: relative; margin: 3rem 0; padding: 4rem 0; border-radius: 28px; overflow: hidden;
-    background: linear-gradient(135deg,rgba(122,87,233,.08) 0%,rgba(0,0,0,.5) 50%,rgba(140,233,164,.06) 100%);
-    border: 1px solid rgba(122,87,233,.2);
+    position: relative; margin: 3rem 0; padding: 4rem 0;
     animation: fadeUp .6s .3s ease both; opacity: 0; animation-fill-mode: forwards;
-  }
-  .win-section::before {
-    content: ''; position: absolute; inset: 0;
-    background: linear-gradient(135deg,transparent 0%,rgba(122,87,233,.05) 100%);
   }
   .win-inner { position: relative; z-index: 1; }
   .win-trophy { font-size: 2.5rem; margin-bottom: 1rem; animation: float 4s ease-in-out infinite; display: inline-block; }
