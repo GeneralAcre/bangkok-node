@@ -60,7 +60,7 @@ const TIER_NUM: Record<MemberTier, number> = {
 };
 
 // Reusable Tailwind card class
-const CARD = "rounded-xl border border-white/[0.07] bg-white/[0.03]";
+const CARD = "rounded-xl border border-white/[0.10] bg-white/[0.04]";
 const SG   = { fontFamily: "'Space Grotesk', sans-serif" };
 const SM   = { fontFamily: "'Space Mono', monospace" };
 
