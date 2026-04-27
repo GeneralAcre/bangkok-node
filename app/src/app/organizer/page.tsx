@@ -130,7 +130,7 @@ export default function OrganizerPage() {
 
         {/* How it works */}
         {connected && (
-          <div className="card" style={{ borderColor:"#1e1e2e" }}>
+          <div className="card">
             <div className="card-title">How it works</div>
             <div className="how-grid">
               {[
@@ -181,11 +181,11 @@ export default function OrganizerPage() {
                   type="checkbox"
                   checked={isHackathon}
                   onChange={e => setIsHackathon(e.target.checked)}
-                  style={{ width:16, height:16, accentColor:"#a855f7", cursor:"pointer" }}
+                  style={{ width:16, height:16, accentColor:"#5C7580", cursor:"pointer" }}
                 />
-                <span style={{ fontSize:".85rem", color:"#fff", fontWeight:500 }}>
+                <span style={{ fontSize:".85rem", color:"#D1D8B4", fontWeight:500 }}>
                   Hackathon event
-                  <span style={{ marginLeft:".4rem", fontSize:".72rem", color:"#c084fc", fontFamily:"'Space Mono',monospace" }}>
+                  <span style={{ marginLeft:".4rem", fontSize:".72rem", color:"#879989", fontFamily:"'Space Mono',monospace" }}>
                     (×3 score multiplier for attendees)
                   </span>
                 </span>

@@ -1,14 +1,14 @@
 export const walletProfileCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono&family=Inter:wght@400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-  html, body { background:#000; color:#fff; font-family:'Inter',sans-serif; min-height:100vh; }
+  html, body { background:#1F2C35; color:#D1D8B4; font-family:'Inter',sans-serif; min-height:100vh; }
   :root {
-    --g:#8CE9A4; --p:#7A57E9; --p2:#9B7CF4;
-    --g-dim:#8CE9A410; --p-dim:#7A57E910;
-    --g-glow:#8CE9A430; --p-glow:#7A57E930;
-    --surface:rgba(255,255,255,.03); --surface2:rgba(255,255,255,.05);
-    --border:rgba(255,255,255,.07); --border-bright:rgba(255,255,255,.12);
-    --muted:#6b7280;
+    --g:#D1D8B4; --p:#5C7580; --p2:#879989;
+    --g-dim:#D1D8B410; --p-dim:#5C758010;
+    --g-glow:#D1D8B430; --p-glow:#5C758030;
+    --surface:rgba(64,81,91,.2); --surface2:rgba(64,81,91,.3);
+    --border:rgba(64,81,91,.5); --border-bright:rgba(92,117,128,.65);
+    --muted:#879989;
   }
   @keyframes fadeUp  { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pulse   { 0%,100%{opacity:.6} 50%{opacity:1} }
@@ -19,8 +19,8 @@ export const walletProfileCSS = `
   @keyframes scanLine{ 0%{top:-2px} 100%{top:100vh} }
 
   .orb { position:fixed; border-radius:50%; filter:blur(100px); pointer-events:none; z-index:0; }
-  .orb1 { width:700px; height:700px; background:#7A57E9; opacity:.12; top:-200px; left:-150px; animation:orb1 25s ease-in-out infinite; }
-  .orb2 { width:600px; height:600px; background:#8CE9A4; opacity:.08; bottom:-150px; right:-100px; animation:orb2 30s ease-in-out infinite; }
+  .orb1 { width:700px; height:700px; background:#285B73; opacity:.18; top:-200px; left:-150px; animation:orb1 25s ease-in-out infinite; }
+  .orb2 { width:600px; height:600px; background:#879989; opacity:.10; bottom:-150px; right:-100px; animation:orb2 30s ease-in-out infinite; }
   .grid-bg {
     position:fixed; inset:0; z-index:0; pointer-events:none;
     background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
@@ -46,11 +46,11 @@ export const walletProfileCSS = `
   }
   .search-bar input::placeholder { color:var(--muted); }
   .search-bar button {
-    background:var(--p); color:#fff; border:none; border-radius:8px; padding:.4rem .9rem;
+    background:var(--p); color:#D1D8B4; border:none; border-radius:8px; padding:.4rem .9rem;
     font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; cursor:pointer;
     white-space:nowrap; transition:background .15s;
   }
-  .search-bar button:hover { background:#8B6EF0; }
+  .search-bar button:hover { background:#6b8a99; }
 
   .score-card {
     background:var(--surface); border:1px solid var(--border); border-radius:20px;

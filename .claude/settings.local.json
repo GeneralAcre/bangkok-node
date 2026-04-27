@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(node c:/Users/ACRESANPAPHAT/Desktop/strata-project/scripts/generate-idl.js 11111111111111111111111111111111)",
+      "Bash(cmd.exe /c \"node \\\\\"c:\\\\\\\\Users\\\\\\\\ACRESANPAPHAT\\\\\\\\Desktop\\\\\\\\strata-project\\\\\\\\scripts\\\\\\\\generate-idl.js\\\\\" \\\\\"11111111111111111111111111111111\\\\\"\")",
+      "Bash(powershell -Command \"Invoke-RestMethod -Uri 'https://api.devnet.solana.com' -Method POST -ContentType 'application/json' -Body '{\\\\\"jsonrpc\\\\\":\\\\\"2.0\\\\\",\\\\\"id\\\\\":1,\\\\\"method\\\\\":\\\\\"getBalance\\\\\",\\\\\"params\\\\\":[\\\\\"CeX6WaUMZxSr24nZYGuA3GsYNu58RFGh4BtXvrj9qhHJ\\\\\"]}'\")",
+      "PowerShell(node --version)",
+      "PowerShell(node_modules\\\\.bin\\\\next --version)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(solana-keygen --version)",
+      "PowerShell(Get-Command npm, npx, node -ErrorAction SilentlyContinue)",
+      "Read(//c/Users/ACRESANPAPHAT/AppData/Roaming/**)",
+      "Read(//c//**)"
     ]
   }
 }

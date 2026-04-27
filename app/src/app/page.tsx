@@ -118,9 +118,44 @@ export default function HomePage() {
             <div className="hero-badge">
               <span className="badge-dot" /> Built for Colosseum Hackathon · Solana Devnet
             </div>
-            <h1 className="hero-title">
-              <span className="hero-title-grad">Proof of<br />Presence.</span>
-            </h1>
+            <div style={{ margin: "0 auto 1.5rem", maxWidth: 900 }}>
+              <svg width="100%" viewBox="0 0 900 130" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", overflow: "visible" }}>
+                <defs>
+                  <linearGradient id="hChrome" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%"   stopColor="#ffffff" />
+                    <stop offset="20%"  stopColor="#dfe7ff" />
+                    <stop offset="45%"  stopColor="#aeb9d9" />
+                    <stop offset="65%"  stopColor="#f7f9ff" />
+                    <stop offset="100%" stopColor="#8b95b8" />
+                  </linearGradient>
+                  <filter id="hGlow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur"/>
+                    <feColorMatrix in="blur" type="matrix"
+                      values="1 0 0 0 0  0 0.9 0 0 0.1  0 0 1 0 0.4  0 0 0 1 0" result="colored"/>
+                    <feMerge><feMergeNode in="colored"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="hVhs" x="-20%" y="-20%" width="140%" height="140%">
+                    <feTurbulence type="fractalNoise" baseFrequency="0.9 0.02" numOctaves="1" seed="7" result="noise"/>
+                    <feDisplacementMap in="SourceGraphic" in2="noise" scale="6">
+                      <animate attributeName="scale" values="2;8;3;7;2" dur="5s" repeatCount="indefinite"/>
+                    </feDisplacementMap>
+                  </filter>
+                  <filter id="hShadow">
+                    <feDropShadow dx="0" dy="8" stdDeviation="8" floodColor="#285B73" floodOpacity="0.45"/>
+                  </filter>
+                </defs>
+                <g filter="url(#hVhs)">
+                  <text x="50%" y="80%" textAnchor="middle" fontFamily="Times New Roman, Georgia, serif" fontSize="90" fontStyle="italic" fontWeight="700" fill="url(#hChrome)" stroke="#f8fbff" strokeWidth="1.5" filter="url(#hShadow)">
+                    Proof of Presence
+                    <animate attributeName="opacity" values="0.95;1;0.96;1" dur="2.8s" repeatCount="indefinite"/>
+                  </text>
+                  <text x="50.3%" y="80.5%" textAnchor="middle" fontFamily="Times New Roman, Georgia, serif" fontSize="90" fontStyle="italic" fontWeight="700" fill="none" stroke="#879989" strokeWidth="1" opacity="0.5" filter="url(#hGlow)">
+                    Proof of Presence
+                    <animateTransform attributeName="transform" type="translate" values="0 0;1 -1;-1 1;0 0" dur="0.15s" repeatCount="indefinite"/>
+                  </text>
+                </g>
+              </svg>
+            </div>
             <p className="hero-sub">
               Your on-chain builder identity. Verified by Solana.<br />
               Every check-in is permanent. Every event builds your score.

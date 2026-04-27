@@ -18,14 +18,15 @@ const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 // Minimal CSS: only what Tailwind can't do (data-attr selectors + shimmer animation)
 const PROFILE_CSS = `
   @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 #1D9E7500} 50%{box-shadow:0 0 14px 2px #1D9E7530} }
-  .shimmer { background:linear-gradient(90deg,#111 25%,#1a1a1a 50%,#111 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+  @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 #5C758000} 50%{box-shadow:0 0 14px 2px #5C758030} }
+  .shimmer { background:linear-gradient(90deg,#1F2C35 25%,#285B73 50%,#1F2C35 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
   .claim-glow { animation:glow 3s ease-in-out infinite; }
   .claim-glow:hover,.claim-glow:disabled { animation:none; }
-  .hm-day[data-count="1"]{ background:#1D9E7530; border-color:#1D9E7540; }
-  .hm-day[data-count="2"]{ background:#1D9E7555; border-color:#1D9E7565; }
-  .hm-day[data-count="3"]{ background:#1D9E7580; border-color:#1D9E7590; }
-  .hm-day[data-count="4"]{ background:#1D9E75;   border-color:#1D9E75;   }
+  .hm-day{ background:#253340; border:0.5px solid #2d3f4a; }
+  .hm-day[data-count="1"]{ background:#D1D8B425; border-color:#D1D8B440; }
+  .hm-day[data-count="2"]{ background:#D1D8B460; border-color:#D1D8B475; }
+  .hm-day[data-count="3"]{ background:#D1D8B490; border-color:#D1D8B4aa; }
+  .hm-day[data-count="4"]{ background:#D1D8B4;   border-color:#D1D8B4;   }
   .hm-day:not(.hm-future):hover{ border-color:#555; }
   .hm-day.hm-future{ opacity:0; pointer-events:none; }
 `;
@@ -309,7 +310,7 @@ export default function ProfilePage() {
       <>
         <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
         <Nav active="profile" />
-        <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
+        <div className="max-w-225 mx-auto px-6 pt-25 pb-16">
           {error && (
             <div className="mb-6 rounded-xl bg-red-950/50 border border-red-900/60 text-red-400 px-4 py-3 text-sm">{error}</div>
           )}
@@ -327,7 +328,7 @@ export default function ProfilePage() {
               </a>
             ) : (
               <button
-                className="inline-flex items-center gap-1.5 bg-[#1D9E75] text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-[#18876a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 bg-[#5C7580] text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-[#18876a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={SG} disabled={loading} onClick={handleRegister}>
                 {loading ? "Registering…" : "Register as Member"}
               </button>
@@ -344,7 +345,7 @@ export default function ProfilePage() {
       <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
       <Nav active="profile" />
 
-      <div className="max-w-4xl mx-auto px-6 pt-24 pb-20">
+      <div className="max-w-225 mx-auto px-6 pt-25 pb-16">
 
         {/* Notices */}
         {error && (
@@ -358,31 +359,31 @@ export default function ProfilePage() {
           </div>
         )}
         {success && (
-          <div className="mb-6 rounded-xl bg-[#1D9E75]/10 border border-[#1D9E75]/30 text-[#1D9E75] px-4 py-3 text-sm">{success}</div>
+          <div className="mb-6 rounded-xl bg-[#5C7580]/10 border border-[#5C7580]/30 text-[#5C7580] px-4 py-3 text-sm">{success}</div>
         )}
 
         {/* ── Profile header: 2-column grid ── */}
         {member && tier && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-6 mb-6">
 
             {/* Left: Identity */}
             <div className={`${CARD} p-6`}>
               {/* Avatar + name row */}
               <div className="flex items-start gap-3.5 mb-5">
-                <div className="w-11 h-11 rounded-full bg-[#1D9E75]/10 border border-[#1D9E75]/25 flex items-center justify-center text-[#1D9E75] font-bold text-base shrink-0" style={SG}>
+                <div className="w-11 h-11 rounded-full bg-[#5C7580]/10 border border-[#5C7580]/25 flex items-center justify-center text-[#5C7580] font-bold text-base shrink-0" style={SG}>
                   {member.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="font-semibold text-white text-[15px]" style={SG}>@{member.username}</span>
-                    <span className="inline-flex items-center gap-1 bg-[#1D9E75]/10 text-[#1D9E75] rounded-full text-[11px] font-semibold px-2.5 py-0.5 border border-[#1D9E75]/25" style={SG}>
+                    <span className="inline-flex items-center gap-1 bg-[#5C7580]/10 text-[#5C7580] rounded-full text-[11px] font-semibold px-2.5 py-0.5 border border-[#5C7580]/25" style={SG}>
                       {SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"} {tier} · {TIER_NUM[tier]}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-white/40" style={SM}>{shortAddr}</span>
                     <button
-                      className={`text-[12px] leading-none transition-colors ${copiedAddr ? "text-[#1D9E75]" : "text-white/30 hover:text-white"}`}
+                      className={`text-[12px] leading-none transition-colors ${copiedAddr ? "text-[#5C7580]" : "text-white/30 hover:text-white"}`}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:0 }}
                       onClick={copyAddr} title="Copy address"
                     >
@@ -394,7 +395,7 @@ export default function ProfilePage() {
                   <span className={`shrink-0 inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full border ${
                     balance < 0.01
                       ? "text-red-400 bg-red-950/30 border-red-900/50"
-                      : "text-[#1D9E75] bg-[#1D9E75]/10 border-[#1D9E75]/25"
+                      : "text-[#5C7580] bg-[#5C7580]/10 border-[#5C7580]/25"
                   }`}>
                     {balance.toFixed(3)} SOL{balance < 0.01 ? " ⚠" : ""}
                   </span>
@@ -405,7 +406,7 @@ export default function ProfilePage() {
               <div className="flex gap-2 flex-wrap mb-5">
                 <button
                   className={`text-[12px] font-medium px-3.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                    copiedLink ? "border-[#1D9E75]/40 text-[#1D9E75]" : "border-white/10 text-white/50 hover:border-white/20 hover:text-white"
+                    copiedLink ? "border-[#5C7580]/40 text-[#5C7580]" : "border-white/10 text-white/50 hover:border-white/20 hover:text-white"
                   }`}
                   style={{ ...SG, background:"transparent" }}
                   onClick={copyLink}
@@ -422,12 +423,12 @@ export default function ProfilePage() {
               </div>
 
               {/* Stats row */}
-              <div className="grid grid-cols-4 gap-3 pt-5 border-t border-white/[0.06]">
+              <div className="grid grid-cols-4 gap-3 pt-5 border-t border-white/6">
                 {[
                   { val: events,        lbl: "Events",     color: undefined },
                   { val: hackathonCount,lbl: "Hackathons", color: hackathonCount > 0 ? "#c084fc" : undefined },
-                  { val: streak,        lbl: "Streak",     color: streak > 0        ? "#1D9E75" : undefined },
-                  { val: mintedCount,   lbl: "NFTs",       color: mintedCount > 0   ? "#1D9E75" : undefined },
+                  { val: streak,        lbl: "Streak",     color: streak > 0        ? "#5C7580" : undefined },
+                  { val: mintedCount,   lbl: "NFTs",       color: mintedCount > 0   ? "#5C7580" : undefined },
                 ].map(({ val, lbl, color }) => (
                   <div key={lbl}>
                     <div className="text-[20px] font-semibold leading-none mb-1" style={{ ...SG, color: color ?? "#fff" }}>{val}</div>
@@ -438,20 +439,26 @@ export default function ProfilePage() {
             </div>
 
             {/* Right: Score */}
-            <div className={`${CARD} p-6 flex flex-col items-center justify-center text-center`}>
-              <div className="text-[54px] font-medium text-[#1D9E75] leading-none tracking-tight mb-2" style={SG}>
-                {loading ? "…" : strataScore.toLocaleString()}
+            <div className={`${CARD} p-6 flex flex-col justify-between`}>
+              <div>
+                <div className="text-[10px] text-white/30 uppercase tracking-widest mb-3" style={SG}>Strata Score</div>
+                <div className="text-[42px] font-bold text-[#5C7580] leading-none tracking-tight mb-1" style={SG}>
+                  {loading ? "…" : strataScore.toLocaleString()}
+                </div>
+                {tier && (
+                  <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full border border-[#5C7580]/30 bg-[#5C7580]/10">
+                    <span className="text-[#5C7580] text-[11px]">{SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"}</span>
+                    <span className="text-[#5C7580] text-[11px] font-semibold" style={SG}>{tier}</span>
+                  </div>
+                )}
               </div>
-              <div className="text-[11px] text-white/30 uppercase tracking-[0.08em] mb-5">Strata Score</div>
               {progress && (
-                <>
-                  <div className="w-full max-w-[260px] mb-2">
-                    <div className="h-[3px] bg-white/[0.06] rounded-full overflow-hidden">
-                      <div className="h-full bg-[#1D9E75] rounded-full transition-[width] duration-700" style={{ width:`${progress.pct}%` }} />
-                    </div>
+                <div className="mt-4">
+                  <div className="h-0.75 bg-white/6 rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-[#5C7580] rounded-full transition-[width] duration-700" style={{ width:`${progress.pct}%` }} />
                   </div>
                   <div className="text-[11px] text-white/30">{progress.label}</div>
-                </>
+                </div>
               )}
             </div>
 
@@ -461,10 +468,10 @@ export default function ProfilePage() {
         {/* ── Activity heatmap ── */}
         {member && (
           <div className="mb-6">
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-3">Activity</div>
+            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Activity</div>
             <div className={`${CARD} p-6 overflow-x-auto`}>
               {/* Month labels */}
-              <div className="flex mb-[3px]">
+              <div className="flex mb-0.75">
                 <div style={{ width:28, flexShrink:0 }} />
                 <div className="flex">
                   {heatmapData.map((week, wi) => (
@@ -481,7 +488,7 @@ export default function ProfilePage() {
                     <span key={i} style={{ height:11, fontSize:9, color:"#444", ...SM, display:"flex", alignItems:"center", lineHeight:1 }}>{lbl}</span>
                   ))}
                 </div>
-                <div className="flex gap-0.5 overflow-x-auto">
+                <div className="flex gap-0.5">
                   {heatmapData.map((week, wi) => (
                     <div key={wi} className="flex flex-col gap-0.5 shrink-0">
                       {week.days.map((day, di) => (
@@ -490,7 +497,7 @@ export default function ProfilePage() {
                           className={`hm-day${day.isFuture ? " hm-future" : ""}`}
                           data-count={Math.min(day.count, 4)}
                           title={day.isFuture ? "" : day.count > 0 ? `${day.dateStr}: ${day.count} event${day.count !== 1 ? "s" : ""}` : day.dateStr}
-                          style={{ width:11, height:11, borderRadius:2, flexShrink:0, background:"#161616", border:"0.5px solid #1f1f1f", cursor:"default" }}
+                          style={{ width:11, height:11, borderRadius:2, flexShrink:0, cursor:"default" }}
                         />
                       ))}
                     </div>
@@ -500,8 +507,8 @@ export default function ProfilePage() {
               {/* Legend */}
               <div className="flex items-center gap-1 mt-2 justify-end">
                 <span style={{ fontSize:9, color:"#444", ...SM }}>Less</span>
-                {(["#161616","#1D9E7530","#1D9E7555","#1D9E7580","#1D9E75"] as const).map((bg, n) => (
-                  <div key={n} style={{ width:10, height:10, borderRadius:2, background:bg, border:`0.5px solid ${n===0?"#1f1f1f":"#1D9E7560"}` }} />
+                {(["#253340","#D1D8B425","#D1D8B460","#D1D8B490","#D1D8B4"] as const).map((bg, n) => (
+                  <div key={n} style={{ width:10, height:10, borderRadius:2, background:bg, border:`0.5px solid ${n===0?"#2d3f4a":"#D1D8B460"}` }} />
                 ))}
                 <span style={{ fontSize:9, color:"#444", ...SM }}>More</span>
               </div>
@@ -512,10 +519,10 @@ export default function ProfilePage() {
         {/* ── Event history ── */}
         {member && (
           <div className="mb-6">
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-3">Event History</div>
+            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Event History</div>
             <div className={`${CARD} overflow-hidden`}>
               {/* Tabs */}
-              <div className="flex border-b border-white/[0.05] px-6">
+              <div className="flex border-b border-white/5 px-6">
                 {([
                   { key:"all",       label:"All Events",  badge: attended.length,        badgeColor:"text-white/30" },
                   { key:"hackathon", label:"Hackathons",  badge: hackathonCount,          badgeColor:"text-purple-400" },
@@ -524,7 +531,7 @@ export default function ProfilePage() {
                   <button
                     key={key}
                     className={`py-3.5 mr-5 text-[13px] font-medium border-b-[1.5px] -mb-px transition-colors cursor-pointer ${
-                      activeTab === key ? "text-white border-[#1D9E75]" : "text-white/30 border-transparent hover:text-white/60"
+                      activeTab === key ? "text-white border-[#5C7580]" : "text-white/30 border-transparent hover:text-white/60"
                     }`}
                     style={{ background:"none", fontFamily:"'Inter',sans-serif" }}
                     onClick={() => setActiveTab(key)}
@@ -541,7 +548,7 @@ export default function ProfilePage() {
                   organizedEvents.length === 0 ? (
                     <div className="py-6 text-center text-[13px] text-white/30">
                       No events created yet.{" "}
-                      <a href="/organizer" className="text-[#1D9E75] no-underline hover:underline">Create one →</a>
+                      <a href="/organizer" className="text-[#5C7580] no-underline hover:underline">Create one →</a>
                     </div>
                   ) : (
                     <>
@@ -549,7 +556,7 @@ export default function ProfilePage() {
                         const status   = parseEventStatus(ev.account.status);
                         const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
                         return (
-                          <div key={ev.pubkey} className="border-b border-white/[0.04] last:border-0">
+                          <div key={ev.pubkey} className="border-b border-white/4 last:border-0">
                             <div className="flex items-center gap-3 py-3.5 flex-wrap">
                               <div className="flex-1 min-w-0">
                                 <div className="text-[14px] text-white font-medium truncate mb-0.5" style={SG}>{ev.account.title}</div>
@@ -559,16 +566,16 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex gap-2 items-center shrink-0 flex-wrap">
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                                  status === "Live"     ? "text-[#1D9E75] bg-[#1D9E75]/10 border-[#1D9E75]/30" :
+                                  status === "Live"     ? "text-[#5C7580] bg-[#5C7580]/10 border-[#5C7580]/30" :
                                   status === "Upcoming" ? "text-amber-400 bg-amber-400/10 border-amber-400/30" :
-                                                          "text-white/30 bg-white/[0.03] border-white/[0.07]"
+                                                          "text-white/30 bg-white/3 border-white/[0.07]"
                                 }`}>{status}</span>
                                 {status === "Upcoming" && (
-                                  <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 hover:bg-[#1D9E75]/20 transition-colors disabled:opacity-40 cursor-pointer" style={SG} disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
+                                  <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors disabled:opacity-40 cursor-pointer" style={SG} disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
                                 )}
                                 {status === "Live" && (
                                   <>
-                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 hover:bg-[#1D9E75]/20 transition-colors cursor-pointer" style={SG}
+                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors cursor-pointer" style={SG}
                                       onClick={() => { const next = isQrOpen ? null : ev; setOrgQrEvent(next); if (next) generateOrgQr(ev.account.eventCode); }}>
                                       {isQrOpen ? "Hide QR" : "⬡ QR"}
                                     </button>
@@ -578,20 +585,20 @@ export default function ProfilePage() {
                               </div>
                             </div>
                             {isQrOpen && orgQrDataUrl && (
-                              <div className="mb-4 rounded-xl bg-[#0f0f0f] border border-[#1D9E75]/20 p-5 text-center">
+                              <div className="mb-4 rounded-xl bg-[#0f0f0f] border border-[#5C7580]/20 p-5 text-center">
                                 <div className="inline-block p-3 bg-white rounded-xl mb-3">
                                   <img src={orgQrDataUrl} alt="QR" width={200} height={200} className="block rounded" />
                                 </div>
                                 <div
-                                  className="font-mono text-[10px] text-white/30 break-all bg-[#0a0a0a] border border-white/[0.07] rounded-md px-3 py-2 mb-3 cursor-pointer hover:text-[#1D9E75] transition-colors block"
+                                  className="font-mono text-[10px] text-white/30 break-all bg-[#0a0a0a] border border-white/[0.07] rounded-md px-3 py-2 mb-3 cursor-pointer hover:text-[#5C7580] transition-colors block"
                                   style={SM}
                                   onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`); setOrgCopied(true); setTimeout(() => setOrgCopied(false), 2000); }}
                                 >
                                   {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
                                 </div>
                                 <div className="flex gap-2 justify-center flex-wrap">
-                                  <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 hover:bg-[#1D9E75]/20 no-underline transition-colors" style={SG}>Open Check-In ↗</a>
-                                  <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 hover:bg-[#1D9E75]/20 transition-colors cursor-pointer" style={SG}
+                                  <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 no-underline transition-colors" style={SG}>Open Check-In ↗</a>
+                                  <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors cursor-pointer" style={SG}
                                     onClick={() => { const a = document.createElement("a"); a.href = orgQrDataUrl; a.download = `strata-${ev.account.eventCode}.png`; a.click(); }}>↓ Download QR</button>
                                 </div>
                               </div>
@@ -616,7 +623,7 @@ export default function ProfilePage() {
                       const hasMint  = !!(rec.attendance.nftMint || minted[rec.eventPubkey]);
                       const isHack   = (rec.event as any)?.isHackathon === true;
                       return (
-                        <div key={rec.eventPubkey} className="flex items-center gap-3 py-3.5 border-b border-white/[0.04] last:border-0 flex-wrap">
+                        <div key={rec.eventPubkey} className="flex items-center gap-3 py-3.5 border-b border-white/4 last:border-0 flex-wrap">
                           <div className="flex-1 min-w-0">
                             <div className="text-[14px] text-white font-medium truncate mb-0.5" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
                             <div className="text-[12px] text-white/30">
@@ -625,12 +632,12 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex gap-1.5 items-center shrink-0 flex-wrap">
-                            {tier && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/25" style={SG}>{tier}</span>}
+                            {tier && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/25" style={SG}>{tier}</span>}
                             {isHack && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400"># Hackathon</span>}
                           </div>
                           {hasMint ? (
                             <a href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-1 text-[#1D9E75] no-underline hover:text-white transition-colors shrink-0">
+                              className="flex items-center gap-1 text-[#5C7580] no-underline hover:text-white transition-colors shrink-0">
                               <div className="w-9 h-9 rounded-lg bg-[#1a1a1a] overflow-hidden shrink-0">
                                 <img src="/nft-badge.svg" alt="NFT" className="w-full h-full object-cover" />
                               </div>
@@ -638,7 +645,7 @@ export default function ProfilePage() {
                             </a>
                           ) : (
                             <button
-                              className="claim-glow inline-flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#1D9E75]/10 text-[#1D9E75] border border-[#1D9E75]/30 hover:bg-[#1D9E75]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                              className="claim-glow inline-flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
                               style={SG}
                               onClick={() => handleClaimNft(rec)}
                               disabled={claiming === rec.eventPubkey}
@@ -661,20 +668,20 @@ export default function ProfilePage() {
         {/* ── NFT gallery ── */}
         {mintedCount > 0 && (
           <div>
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-[0.1em] mb-3">My Strata NFTs</div>
+            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">My Strata NFTs</div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).map(rec => {
                 const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
                 return (
                   <a key={rec.eventPubkey} href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                    className={`${CARD} overflow-hidden no-underline hover:border-[#1D9E75]/30 transition-colors block`}>
+                    className={`${CARD} overflow-hidden no-underline hover:border-[#5C7580]/30 transition-colors block`}>
                     <div className="w-full aspect-square bg-[#1a1a1a] overflow-hidden">
                       <img src="/nft-badge.svg" alt={rec.event?.title ?? "NFT"} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-4">
                       <div className="text-[13px] text-white font-medium mb-1 truncate" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
                       <div className="text-[11px] text-white/30 mb-1">{new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}</div>
-                      <div className="text-[11px] text-[#1D9E75] font-semibold">Edition #{rec.attendance.edition.toNumber()}</div>
+                      <div className="text-[11px] text-[#5C7580] font-semibold">Edition #{rec.attendance.edition.toNumber()}</div>
                     </div>
                   </a>
                 );

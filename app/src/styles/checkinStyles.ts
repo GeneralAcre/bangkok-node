@@ -1,12 +1,12 @@
 export const checkinCSS = `
   @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
-  html, body { background:#000; color:#fff; font-family:'Inter',sans-serif; min-height:100vh; }
+  html, body { background:#1F2C35; color:#D1D8B4; font-family:'Inter',sans-serif; min-height:100vh; }
   :root {
-    --green:#8CE9A4; --purple:#7A57E9;
-    --green-dim:#8CE9A415; --purple-dim:#7A57E915;
-    --green-border:#8CE9A440; --purple-border:#7A57E940;
-    --surface:#0a0a0f; --border:#1e1e2e; --muted:#6b7280;
+    --green:#D1D8B4; --purple:#5C7580;
+    --green-dim:#D1D8B415; --purple-dim:#5C758015;
+    --green-border:#D1D8B440; --purple-border:#5C758040;
+    --surface:#253340; --border:rgba(64,81,91,.55); --muted:#879989;
   }
   @keyframes fadeUp  { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
   @keyframes pulse   { 0%,100%{opacity:.7} 50%{opacity:1} }
