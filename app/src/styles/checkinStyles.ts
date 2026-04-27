@@ -17,25 +17,7 @@ export const checkinCSS = `
     100%{ transform:translateY(120vh) rotate(720deg); opacity:0; }
   }
 
-  .nav {
-    position:sticky; top:0; z-index:100;
-    background:transparent; backdrop-filter:blur(0px);
-    padding:0 2.5rem;
-  }
-  .nav-inner { max-width:1400px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; height:80px; }
-  .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:56px; display:block; }
-  .wallet-adapter-button {
-    background:rgba(122,87,233,.25) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
-    font-weight:600 !important; border-radius:20px !important;
-    padding:.3rem .85rem !important; height:auto !important;
-    border:1px solid rgba(122,87,233,.4) !important; min-width:0 !important;
-  }
-  .wallet-adapter-button:hover { background:rgba(122,87,233,.45) !important; }
-  .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
-
-  .page { max-width:600px; margin:0 auto; padding:3rem 1.5rem; }
+  .page { max-width:600px; margin:0 auto; padding:6rem 1.5rem 3rem; }
 
   .checkin-card {
     background:var(--surface); border:1px solid var(--border); border-radius:20px;

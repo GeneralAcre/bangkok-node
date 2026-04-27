@@ -33,17 +33,6 @@ export const walletProfileCSS = `
     opacity:.3; animation:scanLine 15s linear infinite;
   }
 
-  .nav { position:fixed; top:0; left:0; right:0; z-index:100; background:transparent; }
-  .nav-inner { max-width:1400px; margin:0 auto; padding:0 2.5rem; display:flex; align-items:center; justify-content:space-between; height:80px; }
-  .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:56px; display:block; }
-  .nav-links { display:flex; gap:.3rem; align-items:center; }
-  .nav-link { font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:500; color:rgba(255,255,255,.5); text-decoration:none; padding:.3rem .7rem; border-radius:6px; transition:all .2s; }
-  .nav-link:hover, .nav-link.active { color:#fff; }
-  .wallet-adapter-button { background:rgba(122,87,233,.25) !important; color:#fff !important; font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important; font-weight:600 !important; border-radius:20px !important; padding:.3rem .85rem !important; height:auto !important; border:1px solid rgba(122,87,233,.4) !important; min-width:0 !important; }
-  .wallet-adapter-button:hover { background:rgba(122,87,233,.45) !important; }
-  .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
-
   .page { position:relative; z-index:1; max-width:860px; margin:0 auto; padding:100px 1.5rem 5rem; }
 
   .search-bar {

@@ -44,27 +44,6 @@ export const organizerCSS = `
     animation:scanline 10s linear infinite;
   }
 
-  .nav {
-    position:sticky; top:0; z-index:100;
-    background:transparent; backdrop-filter:blur(0px);
-    padding:0 2.5rem;
-  }
-  .nav-inner {
-    max-width:1400px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; height:80px;
-  }
-  .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:56px; display:block; }
-  .nav-links { display:flex; gap:.3rem; align-items:center; }
-  .nav-link {
-    font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:500;
-    color:rgba(255,255,255,.5); text-decoration:none; padding:.3rem .7rem;
-    border-radius:6px; transition:all .2s;
-  }
-  .nav-link:hover { color:#fff; }
-  .nav-link.active { color:#fff; }
-  @media(max-width:600px){.nav-link:not(.active){display:none}}
-
   .page { max-width:1400px; margin:0 auto; padding:6rem 2.5rem 2rem; position:relative; z-index:1; }
   @media(max-width:768px){ .page{ padding:5rem 1.25rem 2rem; } }
 
@@ -174,13 +153,4 @@ export const organizerCSS = `
   .connect-card { text-align:center; padding:4rem 1.5rem; }
   .connect-card p { font-size:.9rem; color:var(--text-muted); margin-bottom:1.5rem; }
 
-  .wallet-adapter-button {
-    background:rgba(122,87,233,.25) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
-    font-weight:600 !important; border-radius:20px !important;
-    padding:.3rem .85rem !important; height:auto !important;
-    border:1px solid rgba(122,87,233,.4) !important; min-width:0 !important;
-  }
-  .wallet-adapter-button:hover { background:rgba(122,87,233,.45) !important; }
-  .wallet-adapter-button-start-icon { width:16px !important; height:16px !important; margin-right:6px !important; }
 `;

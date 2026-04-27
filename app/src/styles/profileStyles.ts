@@ -9,39 +9,10 @@ export const profileCSS = `
   @keyframes glow     { 0%,100%{box-shadow:0 0 0 0 #1D9E7500} 50%{box-shadow:0 0 16px 2px #1D9E7530} }
   @keyframes shimmer  { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
 
-  /* ── Nav ── */
-  .nav {
-    position:sticky; top:0; z-index:100; background:#0a0a0a;
-    border-bottom:0.5px solid #1a1a1a; padding:0 24px;
-  }
-  .nav-inner {
-    max-width:860px; margin:0 auto;
-    display:flex; align-items:center; justify-content:space-between; height:60px;
-  }
-  .nav-brand { text-decoration:none; display:flex; align-items:center; }
-  .nav-brand img { height:44px; display:block; }
-  .nav-links { display:flex; gap:.25rem; align-items:center; }
-  .nav-link {
-    font-family:'Space Grotesk',sans-serif; font-size:.75rem; font-weight:500;
-    color:#555; text-decoration:none; padding:.3rem .65rem; border-radius:6px; transition:color .15s;
-  }
-  .nav-link:hover { color:#fff; }
-  .nav-link.active { color:#fff; }
-  @media(max-width:600px){ .nav-link:not(.active){ display:none; } }
-  .wallet-adapter-button {
-    background:rgba(29,158,117,.15) !important; color:#fff !important;
-    font-family:'Space Grotesk',sans-serif !important; font-size:.72rem !important;
-    font-weight:600 !important; border-radius:20px !important;
-    padding:.28rem .8rem !important; height:auto !important;
-    border:0.5px solid rgba(29,158,117,.35) !important; min-width:0 !important;
-  }
-  .wallet-adapter-button:hover { background:rgba(29,158,117,.28) !important; }
-  .wallet-adapter-button-start-icon { width:14px !important; height:14px !important; margin-right:5px !important; }
-
   /* ── Page shell ── */
   .page {
     max-width:860px; margin:0 auto;
-    padding:48px 24px 80px;
+    padding:96px 24px 80px;
     animation:fadeIn .35s ease both;
   }
   .section { margin-bottom:32px; }
