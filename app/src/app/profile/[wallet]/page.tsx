@@ -345,10 +345,10 @@ export default function WalletProfilePage() {
                               target="_blank" rel="noreferrer"
                               className="badge-nft"
                             >
-                              ✓ NFT
+                              NFT
                             </a>
                           ) : (
-                            <span className="badge-nft">✓ Claimed</span>
+                            <span className="badge-nft">Claimed</span>
                           )
                         ) : isOwnProfile ? (
                           <button

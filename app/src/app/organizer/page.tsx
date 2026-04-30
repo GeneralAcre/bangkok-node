@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
@@ -31,10 +31,27 @@ export default function OrganizerPage() {
   const [description,  setDescription]  = useState("");
   const [location,     setLocation]     = useState("");
   const [country,      setCountry]      = useState("Thailand");
-  const [eventDate,    setEventDate]    = useState("");
+  const [eventDatePart, setEventDatePart] = useState("");
+  const [eventTimePart, setEventTimePart] = useState("09:00");
+  const [timeOpen,     setTimeOpen]      = useState(false);
+  const timeRef = useRef<HTMLDivElement>(null);
   const [capacity,     setCapacity]     = useState("100");
   const [eventCode,    setEventCode]    = useState("");
   const [isHackathon,  setIsHackathon]  = useState(false);
+
+  const TIME_OPTIONS = Array.from({ length: 24 * 2 }, (_, i) => {
+    const h = Math.floor(i / 2);
+    const m = (i % 2) * 30;
+    return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}`;
+  });
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (timeRef.current && !timeRef.current.contains(e.target as Node)) setTimeOpen(false);
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => { setEventCode(randomCode()); }, []);
 
@@ -56,6 +73,8 @@ export default function OrganizerPage() {
     e.preventDefault();
     if (!client || !COMMUNITY_PDA_STR) return;
     setLoading(true); setMsg(null);
+    const eventDate = eventDatePart && eventTimePart ? `${eventDatePart}T${eventTimePart}` : "";
+    if (!eventDate) { setMsg({ type:"err", text:"Please select a date and time." }); setLoading(false); return; }
     try {
       const bal = await connection.getBalance(publicKey!);
       if (bal < 10_000_000) {
@@ -73,7 +92,7 @@ export default function OrganizerPage() {
         isHackathon,
       });
       setMsg({ type:"ok", text:`✓ "${title}" deployed on-chain!\n\nGo to your Profile → Organized tab to go live and share the QR.` });
-      setTitle(""); setDescription(""); setLocation(""); setEventCode(randomCode()); setIsHackathon(false);
+      setTitle(""); setDescription(""); setLocation(""); setEventDatePart(""); setEventTimePart("09:00"); setEventCode(randomCode()); setIsHackathon(false);
     } catch (err: any) {
       const m = err?.message ?? "";
       if (m.includes("already been processed") || m.includes("already in use")) {
@@ -152,7 +171,7 @@ export default function OrganizerPage() {
         {/* Create Event */}
         {connected && idlLoaded && (
           <div className="card">
-            <div className="card-title">+ Deploy Event On-Chain</div>
+            <div className="card-title">Deploy Event On-Chain</div>
             <form onSubmit={handleCreate}>
               <label>Event Title *</label>
               <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Bangkok Web3 Meetup #1" required />
@@ -161,16 +180,41 @@ export default function OrganizerPage() {
               <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="What is this event about?" />
 
               <div className="row">
-                <div><label>Venue / Location *</label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Hubba-TO, Bangkok" required /></div>
-                <div><label>Country *</label><input value={country} onChange={e => setCountry(e.target.value)} placeholder="Thailand" required /></div>
+                <div><label>Venue / Location </label><input value={location} onChange={e => setLocation(e.target.value)} placeholder="Bangkok" required /></div>
+                <div><label>Country</label><input value={country} onChange={e => setCountry(e.target.value)} placeholder="Thailand" required /></div>
               </div>
               <div className="row">
-                <div><label>Date & Time *</label><input type="datetime-local" value={eventDate} onChange={e => setEventDate(e.target.value)} required /></div>
-                <div><label>Capacity *</label><input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} min="1" required /></div>
+                <div>
+                  <label>Date</label>
+                  <input type="date" value={eventDatePart} onChange={e => setEventDatePart(e.target.value)} required />
+                </div>
+                <div>
+                  <label>Time</label>
+                  <div ref={timeRef} className="time-dropdown">
+                    <button type="button" className="time-trigger" onClick={() => setTimeOpen(o => !o)}>
+                      {eventTimePart}
+                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition:"transform .2s", transform: timeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                        <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </button>
+                    {timeOpen && (
+                      <div className="time-options">
+                        {TIME_OPTIONS.map(t => (
+                          <div key={t} className={`time-option${t === eventTimePart ? " active" : ""}`}
+                            onClick={() => { setEventTimePart(t); setTimeOpen(false); }}>
+                            {t}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
+              <label>Capacity</label>
+              <input type="number" value={capacity} onChange={e => setCapacity(e.target.value)} min="1" required />
 
               <label>Event Code (8 chars)</label>
-              <div style={{ display:"flex", gap:".5rem", marginBottom:".25rem" }}>
+              <div className="code-row">
                 <input value={eventCode} onChange={e => setEventCode(e.target.value.toUpperCase().slice(0,8))} maxLength={8} style={{ flex:1, marginBottom:0 }} required />
                 <button type="button" className="btn btn-ghost" onClick={() => setEventCode(randomCode())}>Random</button>
               </div>
@@ -191,7 +235,7 @@ export default function OrganizerPage() {
                 </span>
               </label>
 
-              <button className="btn btn-primary" type="submit" disabled={loading} style={{ marginTop:".75rem" }}>
+              <button className="btn btn-primary btn-block" type="submit" disabled={loading} style={{ marginTop:".75rem" }}>
                 {loading ? "Deploying…" : "⬡ Deploy Event"}
               </button>
             </form>

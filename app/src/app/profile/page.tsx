@@ -15,19 +15,18 @@ import { Nav } from "../../components/Nav";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
-// Minimal CSS: only what Tailwind can't do (data-attr selectors + shimmer animation)
 const PROFILE_CSS = `
   @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 #5C758000} 50%{box-shadow:0 0 14px 2px #5C758030} }
-  .shimmer { background:linear-gradient(90deg,#1F2C35 25%,#285B73 50%,#1F2C35 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
+  @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 rgba(66,113,189,0)} 50%{box-shadow:0 0 14px 2px rgba(66,113,189,.2)} }
+  .shimmer { background:linear-gradient(90deg,#e8eef8 25%,#cdd9ef 50%,#e8eef8 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
   .claim-glow { animation:glow 3s ease-in-out infinite; }
   .claim-glow:hover,.claim-glow:disabled { animation:none; }
-  .hm-day{ background:#253340; border:0.5px solid #2d3f4a; }
-  .hm-day[data-count="1"]{ background:#D1D8B425; border-color:#D1D8B440; }
-  .hm-day[data-count="2"]{ background:#D1D8B460; border-color:#D1D8B475; }
-  .hm-day[data-count="3"]{ background:#D1D8B490; border-color:#D1D8B4aa; }
-  .hm-day[data-count="4"]{ background:#D1D8B4;   border-color:#D1D8B4;   }
-  .hm-day:not(.hm-future):hover{ border-color:#555; }
+  .hm-day{ background:#e8eef8; border:0.5px solid rgba(66,113,189,.15); }
+  .hm-day[data-count="1"]{ background:rgba(66,113,189,.2); border-color:rgba(66,113,189,.3); }
+  .hm-day[data-count="2"]{ background:rgba(66,113,189,.42); border-color:rgba(66,113,189,.55); }
+  .hm-day[data-count="3"]{ background:rgba(66,113,189,.68); border-color:#4271bd; }
+  .hm-day[data-count="4"]{ background:#4271bd; border-color:#355b97; }
+  .hm-day:not(.hm-future):hover{ border-color:rgba(66,113,189,.6); }
   .hm-day.hm-future{ opacity:0; pointer-events:none; }
 `;
 
@@ -60,8 +59,7 @@ const TIER_NUM: Record<MemberTier, number> = {
   Initiate:1, Seeker:2, Resident:3, Builder:4, Core:5, Legend:6,
 };
 
-// Reusable Tailwind card class
-const CARD = "rounded-xl border border-white/[0.10] bg-white/[0.04]";
+const CARD = "rounded-xl border border-[rgba(66,113,189,0.18)] bg-white/[0.78] backdrop-blur-xl shadow-sm";
 const SG   = { fontFamily: "'Space Grotesk', sans-serif" };
 const SM   = { fontFamily: "'Space Mono', monospace" };
 
@@ -297,7 +295,7 @@ export default function ProfilePage() {
         <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
         <Nav active="profile" />
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-6">
-          <p className="text-[14px] text-white/40">Connect your wallet to view your Strata profile.</p>
+          <p className="text-[14px] text-[#5d8ba2]">Connect your wallet to view your Strata profile.</p>
           <WalletMultiButton />
         </div>
       </>
@@ -312,23 +310,23 @@ export default function ProfilePage() {
         <Nav active="profile" />
         <div className="max-w-225 mx-auto px-6 pt-25 pb-16">
           {error && (
-            <div className="mb-6 rounded-xl bg-red-950/50 border border-red-900/60 text-red-400 px-4 py-3 text-sm">{error}</div>
+            <div className="mb-6 rounded-xl bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm">{error}</div>
           )}
           <div className={`${CARD} p-6`}>
-            <div className="text-[16px] font-semibold text-white mb-1.5" style={SG}>New to Strata</div>
-            <div className="font-mono text-[11px] text-white/40 mb-4" style={SM}>{shortAddr}</div>
-            <p className="text-[13px] text-white/40 leading-relaxed mb-5">
+            <div className="text-[16px] font-semibold text-[#1b2d4b] mb-1.5" style={SG}>New to Strata</div>
+            <div className="font-mono text-[11px] text-[#5d8ba2] mb-4" style={SM}>{shortAddr}</div>
+            <p className="text-[13px] text-[#5d8ba2] leading-relaxed mb-5">
               Register to start building your on-chain reputation. Each event you attend earns you a higher tier.
             </p>
             {balance !== null && balance < 0.01 ? (
               <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-amber-500 border border-amber-500/30 px-4 py-2 rounded-lg text-[13px] font-semibold no-underline hover:bg-amber-500/10 transition-colors"
+                className="inline-flex items-center gap-1.5 text-amber-600 border border-amber-300 px-4 py-2 rounded-lg text-[13px] font-semibold no-underline hover:bg-amber-50 transition-colors"
                 style={SG}>
                 Get Devnet SOL ↗
               </a>
             ) : (
               <button
-                className="inline-flex items-center gap-1.5 bg-[#5C7580] text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-[#18876a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 bg-[#4271bd] text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-[#355b97] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 style={SG} disabled={loading} onClick={handleRegister}>
                 {loading ? "Registering…" : "Register as Member"}
               </button>
@@ -349,17 +347,17 @@ export default function ProfilePage() {
 
         {/* Notices */}
         {error && (
-          <div className="mb-6 rounded-xl bg-red-950/50 border border-red-900/60 text-red-400 px-4 py-3 text-sm">
+          <div className="mb-6 rounded-xl bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm">
             {error}
             {error.includes("SOL") && (
               <div className="mt-1.5">
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-amber-500">→ faucet.solana.com ↗</a>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-amber-600">→ faucet.solana.com ↗</a>
               </div>
             )}
           </div>
         )}
         {success && (
-          <div className="mb-6 rounded-xl bg-[#5C7580]/10 border border-[#5C7580]/30 text-[#5C7580] px-4 py-3 text-sm">{success}</div>
+          <div className="mb-6 rounded-xl bg-[rgba(66,113,189,0.08)] border border-[rgba(66,113,189,0.25)] text-[#4271bd] px-4 py-3 text-sm">{success}</div>
         )}
 
         {/* ── Profile header: 2-column grid ── */}
@@ -370,20 +368,20 @@ export default function ProfilePage() {
             <div className={`${CARD} p-6`}>
               {/* Avatar + name row */}
               <div className="flex items-start gap-3.5 mb-5">
-                <div className="w-11 h-11 rounded-full bg-[#5C7580]/10 border border-[#5C7580]/25 flex items-center justify-center text-[#5C7580] font-bold text-base shrink-0" style={SG}>
+                <div className="w-11 h-11 rounded-full bg-[rgba(66,113,189,0.1)] border border-[rgba(66,113,189,0.28)] flex items-center justify-center text-[#4271bd] font-bold text-base shrink-0" style={SG}>
                   {member.username.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-white text-[15px]" style={SG}>@{member.username}</span>
-                    <span className="inline-flex items-center gap-1 bg-[#5C7580]/10 text-[#5C7580] rounded-full text-[11px] font-semibold px-2.5 py-0.5 border border-[#5C7580]/25" style={SG}>
+                    <span className="font-semibold text-[#1b2d4b] text-[15px]" style={SG}>@{member.username}</span>
+                    <span className="inline-flex items-center gap-1 bg-[rgba(66,113,189,0.1)] text-[#4271bd] rounded-full text-[11px] font-semibold px-2.5 py-0.5 border border-[rgba(66,113,189,0.28)]" style={SG}>
                       {SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"} {tier} · {TIER_NUM[tier]}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-white/40" style={SM}>{shortAddr}</span>
+                    <span className="text-[11px] text-[#5d8ba2]" style={SM}>{shortAddr}</span>
                     <button
-                      className={`text-[12px] leading-none transition-colors ${copiedAddr ? "text-[#5C7580]" : "text-white/30 hover:text-white"}`}
+                      className={`text-[12px] leading-none transition-colors ${copiedAddr ? "text-[#4271bd]" : "text-[#5d8ba2]/60 hover:text-[#1b2d4b]"}`}
                       style={{ background:"none", border:"none", cursor:"pointer", padding:0 }}
                       onClick={copyAddr} title="Copy address"
                     >
@@ -394,8 +392,8 @@ export default function ProfilePage() {
                 {balance !== null && (
                   <span className={`shrink-0 inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full border ${
                     balance < 0.01
-                      ? "text-red-400 bg-red-950/30 border-red-900/50"
-                      : "text-[#5C7580] bg-[#5C7580]/10 border-[#5C7580]/25"
+                      ? "text-red-600 bg-red-50 border-red-200"
+                      : "text-[#4271bd] bg-[rgba(66,113,189,0.08)] border-[rgba(66,113,189,0.25)]"
                   }`}>
                     {balance.toFixed(3)} SOL{balance < 0.01 ? " ⚠" : ""}
                   </span>
@@ -406,7 +404,7 @@ export default function ProfilePage() {
               <div className="flex gap-2 flex-wrap mb-5">
                 <button
                   className={`text-[12px] font-medium px-3.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                    copiedLink ? "border-[#5C7580]/40 text-[#5C7580]" : "border-white/10 text-white/50 hover:border-white/20 hover:text-white"
+                    copiedLink ? "border-[rgba(66,113,189,0.4)] text-[#4271bd]" : "border-[rgba(66,113,189,0.2)] text-[#5d8ba2] hover:border-[rgba(66,113,189,0.4)] hover:text-[#1b2d4b]"
                   }`}
                   style={{ ...SG, background:"transparent" }}
                   onClick={copyLink}
@@ -415,7 +413,7 @@ export default function ProfilePage() {
                 </button>
                 <a
                   href={`/profile/${publicKey.toBase58()}`}
-                  className="text-[12px] font-medium px-3.5 py-1.5 rounded-lg border border-white/10 text-white/50 hover:border-white/20 hover:text-white transition-all no-underline"
+                  className="text-[12px] font-medium px-3.5 py-1.5 rounded-lg border border-[rgba(66,113,189,0.2)] text-[#5d8ba2] hover:border-[rgba(66,113,189,0.4)] hover:text-[#1b2d4b] transition-all no-underline"
                   style={SG}
                 >
                   Public view ↗
@@ -423,16 +421,16 @@ export default function ProfilePage() {
               </div>
 
               {/* Stats row */}
-              <div className="grid grid-cols-4 gap-3 pt-5 border-t border-white/6">
+              <div className="grid grid-cols-4 gap-3 pt-5 border-t border-[rgba(66,113,189,0.12)]">
                 {[
                   { val: events,        lbl: "Events",     color: undefined },
-                  { val: hackathonCount,lbl: "Hackathons", color: hackathonCount > 0 ? "#c084fc" : undefined },
-                  { val: streak,        lbl: "Streak",     color: streak > 0        ? "#5C7580" : undefined },
-                  { val: mintedCount,   lbl: "NFTs",       color: mintedCount > 0   ? "#5C7580" : undefined },
+                  { val: hackathonCount,lbl: "Hackathons", color: hackathonCount > 0 ? "#7c3aed" : undefined },
+                  { val: streak,        lbl: "Streak",     color: streak > 0        ? "#4271bd" : undefined },
+                  { val: mintedCount,   lbl: "NFTs",       color: mintedCount > 0   ? "#4271bd" : undefined },
                 ].map(({ val, lbl, color }) => (
                   <div key={lbl}>
-                    <div className="text-[20px] font-semibold leading-none mb-1" style={{ ...SG, color: color ?? "#fff" }}>{val}</div>
-                    <div className="text-[10px] text-white/30 uppercase tracking-[0.08em]">{lbl}</div>
+                    <div className="text-[20px] font-semibold leading-none mb-1" style={{ ...SG, color: color ?? "#1b2d4b" }}>{val}</div>
+                    <div className="text-[10px] text-[#5d8ba2] uppercase tracking-[0.08em]">{lbl}</div>
                   </div>
                 ))}
               </div>
@@ -441,23 +439,23 @@ export default function ProfilePage() {
             {/* Right: Score */}
             <div className={`${CARD} p-6 flex flex-col justify-between`}>
               <div>
-                <div className="text-[10px] text-white/30 uppercase tracking-widest mb-3" style={SG}>Strata Score</div>
-                <div className="text-[42px] font-bold text-[#5C7580] leading-none tracking-tight mb-1" style={SG}>
+                <div className="text-[10px] text-[#5d8ba2] uppercase tracking-widest mb-3" style={SG}>Strata Score</div>
+                <div className="text-[42px] font-bold text-[#4271bd] leading-none tracking-tight mb-1" style={SG}>
                   {loading ? "…" : strataScore.toLocaleString()}
                 </div>
                 {tier && (
-                  <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full border border-[#5C7580]/30 bg-[#5C7580]/10">
-                    <span className="text-[#5C7580] text-[11px]">{SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"}</span>
-                    <span className="text-[#5C7580] text-[11px] font-semibold" style={SG}>{tier}</span>
+                  <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full border border-[rgba(66,113,189,0.3)] bg-[rgba(66,113,189,0.08)]">
+                    <span className="text-[#4271bd] text-[11px]">{SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"}</span>
+                    <span className="text-[#4271bd] text-[11px] font-semibold" style={SG}>{tier}</span>
                   </div>
                 )}
               </div>
               {progress && (
                 <div className="mt-4">
-                  <div className="h-0.75 bg-white/6 rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-[#5C7580] rounded-full transition-[width] duration-700" style={{ width:`${progress.pct}%` }} />
+                  <div className="h-1 bg-[rgba(66,113,189,0.12)] rounded-full overflow-hidden mb-2">
+                    <div className="h-full bg-[#4271bd] rounded-full transition-[width] duration-700" style={{ width:`${progress.pct}%` }} />
                   </div>
-                  <div className="text-[11px] text-white/30">{progress.label}</div>
+                  <div className="text-[11px] text-[#5d8ba2]">{progress.label}</div>
                 </div>
               )}
             </div>
@@ -468,14 +466,14 @@ export default function ProfilePage() {
         {/* ── Activity heatmap ── */}
         {member && (
           <div className="mb-6">
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Activity</div>
+            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">Activity</div>
             <div className={`${CARD} p-6 overflow-x-auto`}>
               {/* Month labels */}
               <div className="flex mb-0.75">
                 <div style={{ width:28, flexShrink:0 }} />
                 <div className="flex">
                   {heatmapData.map((week, wi) => (
-                    <div key={wi} style={{ width:13, fontSize:9, color:"#555", ...SM, flexShrink:0, overflow:"visible", whiteSpace:"nowrap" }}>
+                    <div key={wi} style={{ width:13, fontSize:9, color:"#5d8ba2", ...SM, flexShrink:0, overflow:"visible", whiteSpace:"nowrap" }}>
                       {week.monthLabel ?? ""}
                     </div>
                   ))}
@@ -485,7 +483,7 @@ export default function ProfilePage() {
               <div className="flex gap-1.5 items-start">
                 <div className="flex flex-col gap-0.5 shrink-0 pt-px" style={{ width:22 }}>
                   {["","Mon","","Wed","","Fri",""].map((lbl, i) => (
-                    <span key={i} style={{ height:11, fontSize:9, color:"#444", ...SM, display:"flex", alignItems:"center", lineHeight:1 }}>{lbl}</span>
+                    <span key={i} style={{ height:11, fontSize:9, color:"#5d8ba2", ...SM, display:"flex", alignItems:"center", lineHeight:1 }}>{lbl}</span>
                   ))}
                 </div>
                 <div className="flex gap-0.5">
@@ -506,11 +504,11 @@ export default function ProfilePage() {
               </div>
               {/* Legend */}
               <div className="flex items-center gap-1 mt-2 justify-end">
-                <span style={{ fontSize:9, color:"#444", ...SM }}>Less</span>
-                {(["#253340","#D1D8B425","#D1D8B460","#D1D8B490","#D1D8B4"] as const).map((bg, n) => (
-                  <div key={n} style={{ width:10, height:10, borderRadius:2, background:bg, border:`0.5px solid ${n===0?"#2d3f4a":"#D1D8B460"}` }} />
+                <span style={{ fontSize:9, color:"#5d8ba2", ...SM }}>Less</span>
+                {(["#e8eef8","rgba(66,113,189,.2)","rgba(66,113,189,.42)","rgba(66,113,189,.68)","#4271bd"] as const).map((bg, n) => (
+                  <div key={n} style={{ width:10, height:10, borderRadius:2, background:bg, border:`0.5px solid ${n===0?"rgba(66,113,189,.2)":"rgba(66,113,189,.5)"}` }} />
                 ))}
-                <span style={{ fontSize:9, color:"#444", ...SM }}>More</span>
+                <span style={{ fontSize:9, color:"#5d8ba2", ...SM }}>More</span>
               </div>
             </div>
           </div>
@@ -519,19 +517,19 @@ export default function ProfilePage() {
         {/* ── Event history ── */}
         {member && (
           <div className="mb-6">
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">Event History</div>
+            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">Event History</div>
             <div className={`${CARD} overflow-hidden`}>
               {/* Tabs */}
-              <div className="flex border-b border-white/5 px-6">
+              <div className="flex border-b border-[rgba(66,113,189,0.12)] px-6">
                 {([
-                  { key:"all",       label:"All Events",  badge: attended.length,        badgeColor:"text-white/30" },
-                  { key:"hackathon", label:"Hackathons",  badge: hackathonCount,          badgeColor:"text-purple-400" },
-                  { key:"organized", label:"Organized",   badge: organizedEvents.length,  badgeColor:"text-white/30" },
+                  { key:"all",       label:"All Events",  badge: attended.length,        badgeColor:"text-[#5d8ba2]" },
+                  { key:"hackathon", label:"Hackathons",  badge: hackathonCount,          badgeColor:"text-purple-500" },
+                  { key:"organized", label:"Organized",   badge: organizedEvents.length,  badgeColor:"text-[#5d8ba2]" },
                 ] as const).map(({ key, label, badge, badgeColor }) => (
                   <button
                     key={key}
                     className={`py-3.5 mr-5 text-[13px] font-medium border-b-[1.5px] -mb-px transition-colors cursor-pointer ${
-                      activeTab === key ? "text-white border-[#5C7580]" : "text-white/30 border-transparent hover:text-white/60"
+                      activeTab === key ? "text-[#4271bd] border-[#4271bd]" : "text-[#5d8ba2] border-transparent hover:text-[#1b2d4b]"
                     }`}
                     style={{ background:"none", fontFamily:"'Inter',sans-serif" }}
                     onClick={() => setActiveTab(key)}
@@ -546,9 +544,9 @@ export default function ProfilePage() {
               <div className="px-6 pb-2">
                 {activeTab === "organized" ? (
                   organizedEvents.length === 0 ? (
-                    <div className="py-6 text-center text-[13px] text-white/30">
+                    <div className="py-6 text-center text-[13px] text-[#5d8ba2]">
                       No events created yet.{" "}
-                      <a href="/organizer" className="text-[#5C7580] no-underline hover:underline">Create one →</a>
+                      <a href="/organizer" className="text-[#4271bd] no-underline hover:underline">Create one →</a>
                     </div>
                   ) : (
                     <>
@@ -556,49 +554,49 @@ export default function ProfilePage() {
                         const status   = parseEventStatus(ev.account.status);
                         const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
                         return (
-                          <div key={ev.pubkey} className="border-b border-white/4 last:border-0">
+                          <div key={ev.pubkey} className="border-b border-[rgba(66,113,189,0.1)] last:border-0">
                             <div className="flex items-center gap-3 py-3.5 flex-wrap">
                               <div className="flex-1 min-w-0">
-                                <div className="text-[14px] text-white font-medium truncate mb-0.5" style={SG}>{ev.account.title}</div>
-                                <div className="text-[12px] text-white/30">
+                                <div className="text-[14px] text-[#1b2d4b] font-medium truncate mb-0.5" style={SG}>{ev.account.title}</div>
+                                <div className="text-[12px] text-[#5d8ba2]">
                                   {ev.account.location}, {ev.account.country} · {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} · {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
                                 </div>
                               </div>
                               <div className="flex gap-2 items-center shrink-0 flex-wrap">
                                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                                  status === "Live"     ? "text-[#5C7580] bg-[#5C7580]/10 border-[#5C7580]/30" :
-                                  status === "Upcoming" ? "text-amber-400 bg-amber-400/10 border-amber-400/30" :
-                                                          "text-white/30 bg-white/3 border-white/[0.07]"
+                                  status === "Live"     ? "text-[#4271bd] bg-[rgba(66,113,189,0.1)] border-[rgba(66,113,189,0.3)]" :
+                                  status === "Upcoming" ? "text-amber-600 bg-amber-50 border-amber-200" :
+                                                          "text-[#5d8ba2] bg-[rgba(66,113,189,0.05)] border-[rgba(66,113,189,0.14)]"
                                 }`}>{status}</span>
                                 {status === "Upcoming" && (
-                                  <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors disabled:opacity-40 cursor-pointer" style={SG} disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
+                                  <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors disabled:opacity-40 cursor-pointer" style={SG} disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
                                 )}
                                 {status === "Live" && (
                                   <>
-                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors cursor-pointer" style={SG}
+                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors cursor-pointer" style={SG}
                                       onClick={() => { const next = isQrOpen ? null : ev; setOrgQrEvent(next); if (next) generateOrgQr(ev.account.eventCode); }}>
                                       {isQrOpen ? "Hide QR" : "⬡ QR"}
                                     </button>
-                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md text-red-400 border border-red-900/50 hover:bg-red-950/30 transition-colors disabled:opacity-40 cursor-pointer" style={{ ...SG, background:"transparent" }} disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
+                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md text-red-600 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-40 cursor-pointer" style={{ ...SG, background:"transparent" }} disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
                                   </>
                                 )}
                               </div>
                             </div>
                             {isQrOpen && orgQrDataUrl && (
-                              <div className="mb-4 rounded-xl bg-[#0f0f0f] border border-[#5C7580]/20 p-5 text-center">
-                                <div className="inline-block p-3 bg-white rounded-xl mb-3">
+                              <div className="mb-4 rounded-xl bg-[rgba(66,113,189,0.05)] border border-[rgba(66,113,189,0.18)] p-5 text-center">
+                                <div className="inline-block p-3 bg-white rounded-xl mb-3 shadow-sm">
                                   <img src={orgQrDataUrl} alt="QR" width={200} height={200} className="block rounded" />
                                 </div>
                                 <div
-                                  className="font-mono text-[10px] text-white/30 break-all bg-[#0a0a0a] border border-white/[0.07] rounded-md px-3 py-2 mb-3 cursor-pointer hover:text-[#5C7580] transition-colors block"
+                                  className="font-mono text-[10px] text-[#5d8ba2] break-all bg-white/80 border border-[rgba(66,113,189,0.2)] rounded-md px-3 py-2 mb-3 cursor-pointer hover:text-[#4271bd] transition-colors block"
                                   style={SM}
                                   onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`); setOrgCopied(true); setTimeout(() => setOrgCopied(false), 2000); }}
                                 >
                                   {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
                                 </div>
                                 <div className="flex gap-2 justify-center flex-wrap">
-                                  <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 no-underline transition-colors" style={SG}>Open Check-In ↗</a>
-                                  <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors cursor-pointer" style={SG}
+                                  <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] no-underline transition-colors" style={SG}>Open Check-In ↗</a>
+                                  <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors cursor-pointer" style={SG}
                                     onClick={() => { const a = document.createElement("a"); a.href = orgQrDataUrl; a.download = `strata-${ev.account.eventCode}.png`; a.click(); }}>↓ Download QR</button>
                                 </div>
                               </div>
@@ -613,7 +611,7 @@ export default function ProfilePage() {
                     {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height:52 }} />)}
                   </div>
                 ) : filteredAttended.length === 0 ? (
-                  <div className="py-6 text-center text-[13px] text-white/30">
+                  <div className="py-6 text-center text-[13px] text-[#5d8ba2]">
                     {activeTab === "hackathon" ? "No hackathon events yet." : "No check-ins yet. Scan a QR at any Strata event to get started."}
                   </div>
                 ) : (
@@ -623,29 +621,29 @@ export default function ProfilePage() {
                       const hasMint  = !!(rec.attendance.nftMint || minted[rec.eventPubkey]);
                       const isHack   = (rec.event as any)?.isHackathon === true;
                       return (
-                        <div key={rec.eventPubkey} className="flex items-center gap-3 py-3.5 border-b border-white/4 last:border-0 flex-wrap">
+                        <div key={rec.eventPubkey} className="flex items-center gap-3 py-3.5 border-b border-[rgba(66,113,189,0.1)] last:border-0 flex-wrap">
                           <div className="flex-1 min-w-0">
-                            <div className="text-[14px] text-white font-medium truncate mb-0.5" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
-                            <div className="text-[12px] text-white/30">
+                            <div className="text-[14px] text-[#1b2d4b] font-medium truncate mb-0.5" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
+                            <div className="text-[12px] text-[#5d8ba2]">
                               {new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}
                               {rec.event && ` · ${rec.event.location}, ${rec.event.country}`}
                             </div>
                           </div>
                           <div className="flex gap-1.5 items-center shrink-0 flex-wrap">
-                            {tier && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/25" style={SG}>{tier}</span>}
-                            {isHack && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-400"># Hackathon</span>}
+                            {tier && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.25)]" style={SG}>{tier}</span>}
+                            {isHack && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200"># Hackathon</span>}
                           </div>
                           {hasMint ? (
                             <a href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-1 text-[#5C7580] no-underline hover:text-white transition-colors shrink-0">
-                              <div className="w-9 h-9 rounded-lg bg-[#1a1a1a] overflow-hidden shrink-0">
+                              className="flex items-center gap-1 text-[#4271bd] no-underline hover:text-[#1b2d4b] transition-colors shrink-0">
+                              <div className="w-9 h-9 rounded-lg bg-[rgba(66,113,189,0.1)] overflow-hidden shrink-0">
                                 <img src="/nft-badge.svg" alt="NFT" className="w-full h-full object-cover" />
                               </div>
                               <span className="text-[11px] font-semibold">↗</span>
                             </a>
                           ) : (
                             <button
-                              className="claim-glow inline-flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[#5C7580]/10 text-[#5C7580] border border-[#5C7580]/30 hover:bg-[#5C7580]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
+                              className="claim-glow inline-flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
                               style={SG}
                               onClick={() => handleClaimNft(rec)}
                               disabled={claiming === rec.eventPubkey}
@@ -668,20 +666,20 @@ export default function ProfilePage() {
         {/* ── NFT gallery ── */}
         {mintedCount > 0 && (
           <div>
-            <div className="text-[11px] font-semibold text-white/30 uppercase tracking-widest mb-3">My Strata NFTs</div>
+            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">My Strata NFTs</div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).map(rec => {
                 const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
                 return (
                   <a key={rec.eventPubkey} href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                    className={`${CARD} overflow-hidden no-underline hover:border-[#5C7580]/30 transition-colors block`}>
-                    <div className="w-full aspect-square bg-[#1a1a1a] overflow-hidden">
+                    className={`${CARD} overflow-hidden no-underline hover:border-[rgba(66,113,189,0.38)] transition-colors block`}>
+                    <div className="w-full aspect-square bg-[rgba(66,113,189,0.06)] overflow-hidden">
                       <img src="/nft-badge.svg" alt={rec.event?.title ?? "NFT"} className="w-full h-full object-cover" />
                     </div>
                     <div className="p-4">
-                      <div className="text-[13px] text-white font-medium mb-1 truncate" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
-                      <div className="text-[11px] text-white/30 mb-1">{new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}</div>
-                      <div className="text-[11px] text-[#5C7580] font-semibold">Edition #{rec.attendance.edition.toNumber()}</div>
+                      <div className="text-[13px] text-[#1b2d4b] font-medium mb-1 truncate" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
+                      <div className="text-[11px] text-[#5d8ba2] mb-1">{new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}</div>
+                      <div className="text-[11px] text-[#4271bd] font-semibold">Edition #{rec.attendance.edition.toNumber()}</div>
                     </div>
                   </a>
                 );
