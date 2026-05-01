@@ -300,7 +300,7 @@ export default function MarketplacePage() {
   }
 
   function onApplied(id: string) {
-    setApplied(prev => new Set([...prev, id]));
+    setApplied(prev => { const s = new Set(Array.from(prev)); s.add(id); return s; });
     setModal(null);
   }
 
