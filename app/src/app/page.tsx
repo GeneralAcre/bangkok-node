@@ -6,7 +6,6 @@ import { PublicKey } from "@solana/web3.js";
 import { Nav } from "../components/Nav";
 import { PageBackground } from "../components/PageBackground";
 import { StatBox } from "../components/StatBox";
-import { SCORE_TIER_COLOR, SCORE_TIER_BG, SCORE_TIER_ICON, StrataScoreTier } from "../utils/scoring";
 import { homeCSS } from "../styles/homeStyles";
 
 const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
@@ -15,10 +14,6 @@ const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 interface OnChainEvent {
   title: string; location: string; country: string;
   status: string; attendeeCount: number; capacity: number; eventCode: string;
-}
-
-interface LbEntry {
-  wallet: string; score: number; tier: StrataScoreTier; eventCount: number;
 }
 
 const STEPS = [
@@ -46,7 +41,6 @@ export default function HomePage() {
   const [events,      setEvents]      = useState<OnChainEvent[]>([]);
   const [stats,       setStats]       = useState({ events: 0, members: 0, checkins: 0 });
   const [statsLoaded, setStatsLoaded] = useState(false);
-  const [hallOfFame,  setHallOfFame]  = useState<LbEntry[]>([]);
   const [walletSearch, setWalletSearch] = useState("");
 
   useEffect(() => {
@@ -92,12 +86,6 @@ export default function HomePage() {
     load();
   }, [connection]);
 
-  useEffect(() => {
-    fetch("/api/leaderboard")
-      .then(r => r.json())
-      .then(d => setHallOfFame((d.entries ?? []).slice(0, 3)))
-      .catch(() => {});
-  }, []);
 
   function handleWalletSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -183,37 +171,6 @@ export default function HomePage() {
             <StatBox target={stats.checkins} label="Proof-of-Presence"   loaded={statsLoaded} />
           </div>
         </div>
-
-        {/* Hall of Fame */}
-        {hallOfFame.length > 0 && (
-          <div className="container hof-section">
-            <div className="section-eyebrow">Hall of Fame</div>
-            <h2 className="section-title">Top builders.</h2>
-            <div className="hof-grid">
-              {hallOfFame.map((entry, idx) => {
-                const tc = SCORE_TIER_COLOR[entry.tier];
-                const tb = SCORE_TIER_BG[entry.tier];
-                const ti = SCORE_TIER_ICON[entry.tier];
-                return (
-                  <a key={entry.wallet} href={`/profile/${entry.wallet}`} className="hof-card">
-                    <div className="hof-rank">#{idx + 1}</div>
-                    <div className="hof-wallet">{entry.wallet.slice(0,6)}…{entry.wallet.slice(-4)}</div>
-                    <div className="hof-score">{entry.score.toLocaleString()}</div>
-                    <div className="hof-score-lbl">Strata Score</div>
-                    <div className="hof-tier" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
-                      {ti} {entry.tier}
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-            <div style={{ textAlign: "right", marginTop: ".75rem" }}>
-              <a href="/leaderboard" style={{ fontSize: ".78rem", color: "var(--muted)", textDecoration: "none" }}>
-                Full leaderboard →
-              </a>
-            </div>
-          </div>
-        )}
 
         {/* Why we win */}
         <div className="container">

@@ -107,6 +107,33 @@ export const leaderboardCSS = `
 
   .updated-at { font-size:.65rem; color:#5d8ba2; text-align:right; margin-top:1rem; }
 
+  /* ── Hall of Fame grid ── */
+  .hof-grid {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
+    animation:fadeUp .4s ease both;
+  }
+  .hof-card {
+    background:rgba(255,255,255,.78); border:1px solid rgba(66,113,189,.16); border-radius:16px;
+    padding:1.5rem 1.5rem 1.25rem; text-decoration:none; color:#1b2d4b;
+    transition:all .2s; display:block; backdrop-filter:blur(10px);
+    box-shadow:0 2px 10px rgba(66,113,189,.06); animation:fadeUp .4s ease both;
+  }
+  .hof-card:hover { border-color:rgba(66,113,189,.38); background:rgba(66,113,189,.07); transform:translateY(-3px); box-shadow:0 8px 24px rgba(66,113,189,.12); }
+  .hof-card.is-me { border-color:rgba(66,113,189,.35); background:rgba(66,113,189,.08); }
+  .hof-position { font-family:'Space Mono',monospace; font-size:1rem; font-weight:700; color:#5d8ba2; margin-bottom:.6rem; }
+  .hof-wallet { font-family:'Space Mono',monospace; font-size:.72rem; color:#5d8ba2; margin-bottom:.75rem; }
+  .hof-score { font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:800; color:#1b2d4b; line-height:1; }
+  .hof-score-lbl { font-size:.6rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.12em; margin-top:.2rem; margin-bottom:.75rem; }
+  .hof-tier {
+    display:inline-flex; align-items:center; gap:.35rem;
+    font-family:'Space Grotesk',sans-serif; font-size:.7rem; font-weight:600;
+    padding:.25rem .75rem; border-radius:100px; border:1px solid currentColor;
+  }
+  .hof-events { font-size:.72rem; color:#5d8ba2; margin-top:.5rem; }
+
+  @media(max-width:760px){ .hof-grid { grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .hof-grid { grid-template-columns:1fr; } }
+
   @media(max-width:600px){
     .lb-header, .lb-row { grid-template-columns:36px 1fr auto auto; }
     .lb-header > :last-child, .lb-row > :last-child { display:none; }
