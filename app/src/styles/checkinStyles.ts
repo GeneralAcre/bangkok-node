@@ -1,5 +1,5 @@
 export const checkinCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Space+Mono&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
   :root {
@@ -30,13 +30,13 @@ export const checkinCSS = `
     background:var(--blue-dim); border:1px solid var(--blue-border);
     color:var(--blue2); font-size:.75rem; font-weight:600; letter-spacing:.08em;
     padding:.35rem 1rem; border-radius:100px; margin-bottom:1.5rem;
-    font-family:'Space Grotesk',sans-serif;
+    font-family:'Orbitron',sans-serif;
   }
   .event-badge-live { background:rgba(66,113,189,.1); border-color:rgba(66,113,189,.35); color:#4271bd; }
   .live-dot { width:6px; height:6px; border-radius:50%; background:#4271bd; animation:pulse 2s infinite; }
 
   .event-title {
-    font-family:'Space Grotesk',sans-serif; font-size:1.75rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:1.75rem; font-weight:700;
     color:#1b2d4b; margin-bottom:.6rem; line-height:1.2;
   }
   .event-meta { font-size:.85rem; color:#5d8ba2; line-height:1.8; margin-bottom:2rem; }
@@ -49,7 +49,7 @@ export const checkinCSS = `
 
   .btn-checkin {
     width:100%; padding:1rem; background:#4271bd; color:#fff; border:none;
-    font-family:'Space Grotesk',sans-serif; font-size:1.05rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:1.05rem; font-weight:700;
     border-radius:12px; cursor:pointer; transition:all .2s; letter-spacing:.03em;
     display:flex; align-items:center; justify-content:center; gap:.5rem;
   }
@@ -65,14 +65,14 @@ export const checkinCSS = `
   }
   .success-icon { font-size:3.5rem; margin-bottom:1rem; display:block; }
   .success-title {
-    font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:1.6rem; font-weight:700;
     color:#4271bd; margin-bottom:.6rem;
   }
   .success-sub { font-size:.9rem; color:#5d8ba2; line-height:1.7; margin-bottom:2rem; }
   .btn-profile {
     display:inline-flex; align-items:center; gap:.5rem;
     padding:.85rem 2rem; background:#4271bd; color:#fff; border:none;
-    font-family:'Space Grotesk',sans-serif; font-size:.95rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.95rem; font-weight:700;
     border-radius:10px; cursor:pointer; text-decoration:none; transition:all .2s;
   }
   .btn-profile:hover { background:#355b97; transform:translateY(-1px); }

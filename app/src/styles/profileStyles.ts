@@ -1,5 +1,5 @@
 export const profileCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
@@ -38,11 +38,11 @@ export const profileCSS = `
     width:48px; height:48px; border-radius:50%; flex-shrink:0;
     background:rgba(66,113,189,.1); border:0.5px solid rgba(66,113,189,.3);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:700; color:#4271bd;
+    font-family:'Orbitron',sans-serif; font-size:18px; font-weight:700; color:#4271bd;
   }
   .identity-body { flex:1; min-width:0; }
   .identity-name {
-    font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#1b2d4b;
+    font-family:'Orbitron',sans-serif; font-size:16px; font-weight:600; color:#1b2d4b;
     margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   }
   .tier-badge {
@@ -66,7 +66,7 @@ export const profileCSS = `
   .identity-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:12px; }
   .btn-secondary {
     background:transparent; border:0.5px solid rgba(66,113,189,.25); color:#5d8ba2; border-radius:8px;
-    font-family:'Space Grotesk',sans-serif; font-size:12px; font-weight:500;
+    font-family:'Orbitron',sans-serif; font-size:12px; font-weight:500;
     padding:6px 14px; cursor:pointer; transition:all .15s; display:inline-flex; align-items:center; gap:5px;
   }
   .btn-secondary:hover { border-color:rgba(66,113,189,.5); color:#1b2d4b; }
@@ -100,7 +100,7 @@ export const profileCSS = `
     margin-bottom:32px; backdrop-filter:blur(12px);
   }
   .score-num {
-    font-family:'Space Grotesk',sans-serif; font-size:56px; font-weight:500;
+    font-family:'Orbitron',sans-serif; font-size:56px; font-weight:500;
     color:#4271bd; line-height:1; margin-bottom:8px; letter-spacing:-1px;
   }
   .score-label {
@@ -124,7 +124,7 @@ export const profileCSS = `
     backdrop-filter:blur(10px);
   }
   .stat-val {
-    font-family:'Space Grotesk',sans-serif; font-size:24px; font-weight:500;
+    font-family:'Orbitron',sans-serif; font-size:24px; font-weight:500;
     color:#1b2d4b; line-height:1; margin-bottom:6px;
   }
   .stat-lbl { font-size:11px; color:#5d8ba2; font-weight:500; }
@@ -172,7 +172,7 @@ export const profileCSS = `
   .btn-claim {
     display:inline-flex; align-items:center; gap:5px; white-space:nowrap;
     padding:5px 12px; background:rgba(66,113,189,.1); color:#4271bd;
-    border:0.5px solid rgba(66,113,189,.3); font-family:'Space Grotesk',sans-serif;
+    border:0.5px solid rgba(66,113,189,.3); font-family:'Orbitron',sans-serif;
     font-size:12px; font-weight:600; border-radius:8px; cursor:pointer; transition:all .2s;
     animation:glow 3s ease-in-out infinite;
   }
@@ -220,12 +220,12 @@ export const profileCSS = `
 
   /* ── Not registered card ── */
   .register-card { padding:24px; }
-  .register-title { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; color:#1b2d4b; margin-bottom:6px; }
+  .register-title { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:600; color:#1b2d4b; margin-bottom:6px; }
   .register-sub   { font-size:13px; color:#5d8ba2; line-height:1.6; margin-bottom:20px; }
   .btn-primary {
     display:inline-flex; align-items:center; gap:5px;
     padding:9px 18px; background:#4271bd; color:#fff; border:none;
-    font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:13px; font-weight:600;
     border-radius:8px; cursor:pointer; transition:background .15s;
   }
   .btn-primary:hover { background:#355b97; }
@@ -233,7 +233,7 @@ export const profileCSS = `
   .btn-faucet {
     display:inline-flex; align-items:center; gap:5px;
     padding:9px 18px; background:transparent; color:#d97706; border:0.5px solid rgba(217,119,6,.35);
-    font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:13px; font-weight:600;
     border-radius:8px; cursor:pointer; text-decoration:none; transition:all .15s;
   }
   .btn-faucet:hover { background:rgba(217,119,6,.07); }
@@ -249,7 +249,7 @@ export const profileCSS = `
   .btn-org {
     padding:4px 10px; background:rgba(66,113,189,.1); color:#4271bd;
     border:0.5px solid rgba(66,113,189,.3); border-radius:6px;
-    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:11px; font-weight:600;
     cursor:pointer; transition:all .15s; white-space:nowrap;
   }
   .btn-org:hover { background:rgba(66,113,189,.2); border-color:#4271bd; }
@@ -257,7 +257,7 @@ export const profileCSS = `
   .btn-org-danger {
     padding:4px 10px; background:transparent; color:#dc2626;
     border:0.5px solid rgba(220,38,38,.25); border-radius:6px;
-    font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:11px; font-weight:600;
     cursor:pointer; transition:all .15s; white-space:nowrap;
   }
   .btn-org-danger:hover { background:rgba(220,38,38,.07); }
@@ -329,7 +329,7 @@ export const profileCSS = `
   }
   .inline-stat { display:flex; flex-direction:column; gap:3px; }
   .inline-stat-val {
-    font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:20px; font-weight:600;
     color:#1b2d4b; line-height:1;
   }
   .inline-stat-lbl {

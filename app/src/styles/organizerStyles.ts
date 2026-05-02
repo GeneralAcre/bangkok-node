@@ -1,5 +1,5 @@
 export const organizerCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #f4f7fb; color: #1b2d4b; font-family: 'Inter', sans-serif; min-height: 100vh; }
@@ -49,7 +49,7 @@ export const organizerCSS = `
   .page-header { margin-bottom:1.5rem; animation:fadeUp .5s ease both; align-items:flex-start; }
   @media(max-width:480px){ .page-header{ flex-direction:column !important; gap:.75rem !important; } }
   .page-title {
-    font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.3rem;
+    font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; margin-bottom:.3rem;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 50%,#4b88b4 80%);
     background-size:200% auto;
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
@@ -69,7 +69,7 @@ export const organizerCSS = `
   @media(max-width:480px){ .card{ padding:1.1rem; border-radius:12px; } }
   .card:hover { border-color:rgba(66,113,189,.35); }
   .card-title {
-    font-family:'Space Grotesk',sans-serif; font-size:.72rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.72rem; font-weight:700;
     color:#4271bd; letter-spacing:.12em; text-transform:uppercase; margin-bottom:1.25rem;
   }
 
@@ -131,8 +131,8 @@ export const organizerCSS = `
   .btn {
     display:inline-flex; align-items:center; gap:.4rem;
     padding:.65rem 1.4rem; border:none; cursor:pointer; border-radius:8px;
-    font-family:'Space Grotesk',sans-serif; font-size:.85rem; font-weight:600;
-    letter-spacing:.03em; transition:all .2s; white-space:nowrap;
+    font-family:'Orbitron',sans-serif; font-size:.65rem; font-weight:600;
+    letter-spacing:.05em; text-transform:uppercase; transition:all .2s; white-space:nowrap;
   }
   .btn-block { width:100%; justify-content:center; }
   .btn-primary  { background:#4271bd; color:#fff; }
@@ -161,7 +161,7 @@ export const organizerCSS = `
     background:rgba(255,255,255,.65);
   }
   .event-card:hover { border-color:rgba(66,113,189,.35); box-shadow:0 4px 20px rgba(66,113,189,.1); }
-  .event-name { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:600; color:#1b2d4b; margin-bottom:.2rem; }
+  .event-name { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:600; color:#1b2d4b; margin-bottom:.2rem; }
   .event-meta { font-size:.75rem; color:var(--text-muted); margin-bottom:.6rem; line-height:1.5; }
   .event-actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; margin-top:.75rem; }
 
@@ -198,7 +198,7 @@ export const organizerCSS = `
     transition:all .25s; animation:float 6s ease-in-out infinite;
   }
   .how-step:hover { border-color:rgba(66,113,189,.35); transform:translateY(-3px) !important; }
-  .how-num  { font-family:'Space Grotesk',sans-serif; font-size:.72rem; font-weight:700; color:#4271bd; margin-bottom:.25rem; }
+  .how-num  { font-family:'Orbitron',sans-serif; font-size:.72rem; font-weight:700; color:#4271bd; margin-bottom:.25rem; }
   .how-text { font-size:.72rem; color:var(--text-muted); line-height:1.6; }
 
   /* ── Connect ── */
@@ -213,7 +213,7 @@ export const organizerCSS = `
     display:flex; align-items:center; gap:.4rem;
     padding:.3rem .85rem; border-radius:100px;
     border:1px solid rgba(66,113,189,.18); background:rgba(255,255,255,.6);
-    color:rgba(27,45,75,.5); font-family:'Space Grotesk',sans-serif;
+    color:rgba(27,45,75,.5); font-family:'Orbitron',sans-serif;
     font-size:.72rem; font-weight:600; cursor:pointer; transition:all .2s;
   }
   .ev-filter-btn:hover { border-color:rgba(66,113,189,.35); color:#1b2d4b; }
@@ -227,7 +227,7 @@ export const organizerCSS = `
   .ev-list { display:flex; flex-direction:column; }
   .ev-month-group { margin-bottom:.75rem; }
   .ev-month-label {
-    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.65rem; font-weight:700;
     letter-spacing:.1em; text-transform:uppercase; color:#5d8ba2;
     padding:.3rem 0; margin-bottom:.3rem;
     border-bottom:1px solid rgba(66,113,189,.1);
@@ -249,7 +249,7 @@ export const organizerCSS = `
 
   .ev-main { min-width:0; }
   .ev-title {
-    font-family:'Space Grotesk',sans-serif; font-size:.9rem; font-weight:600; color:#1b2d4b;
+    font-family:'Orbitron',sans-serif; font-size:.9rem; font-weight:600; color:#1b2d4b;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .ev-sub {
@@ -261,7 +261,7 @@ export const organizerCSS = `
 
   .ev-date-col {
     font-size:.73rem; color:#5d8ba2; white-space:nowrap;
-    font-family:'Space Grotesk',sans-serif;
+    font-family:'Orbitron',sans-serif;
   }
   .ev-stat-col {
     font-size:.7rem; color:#5d8ba2; white-space:nowrap;
@@ -271,7 +271,7 @@ export const organizerCSS = `
   .btn-checkin {
     display:inline-flex; align-items:center; padding:.3rem .9rem;
     background:#4271bd; color:#fff;
-    font-family:'Space Grotesk',sans-serif; font-size:.74rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.74rem; font-weight:600;
     border-radius:100px; text-decoration:none; transition:all .2s; white-space:nowrap;
   }
   .btn-checkin:hover { background:#355b97; transform:translateY(-1px); box-shadow:0 4px 16px rgba(66,113,189,.25); }

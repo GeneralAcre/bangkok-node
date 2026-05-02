@@ -1,5 +1,5 @@
 export const credentialCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
@@ -48,11 +48,11 @@ export const credentialCSS = `
 
   /* ── Page header ── */
   .cred-eyebrow {
-    font-family:'Space Grotesk',sans-serif; font-size:.7rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:700;
     letter-spacing:.14em; text-transform:uppercase; color:#4271bd; margin-bottom:.5rem;
   }
   .cred-title {
-    font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.3rem;
+    font-family:'Orbitron',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.3rem;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 50%,#4b88b4 80%);
     background-size:200% auto;
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
@@ -67,7 +67,7 @@ export const credentialCSS = `
   .query-label {
     font-size:.65rem; letter-spacing:.12em; color:#5d8ba2;
     text-transform:uppercase; margin-bottom:.5rem;
-    font-family:'Space Grotesk',sans-serif; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-weight:700;
   }
   .query-bar {
     display:flex; gap:.5rem; align-items:stretch;
@@ -85,7 +85,7 @@ export const credentialCSS = `
   @media(max-width:768px){ .query-input{ font-size:1rem; } }
   .query-btn {
     padding:.5rem 1.2rem; background:#4271bd; border:none; border-radius:8px;
-    font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.78rem; font-weight:700;
     color:#fff; cursor:pointer; transition:all .15s; white-space:nowrap; letter-spacing:.04em;
   }
   .query-btn:hover { background:#355b97; transform:translateY(-1px); }
@@ -95,7 +95,7 @@ export const credentialCSS = `
   .demo-pill {
     font-size:.68rem; padding:.2rem .65rem; border:1px solid rgba(66,113,189,.2);
     border-radius:100px; background:rgba(255,255,255,.7); color:#5d8ba2;
-    cursor:pointer; font-family:'Space Grotesk',sans-serif; font-weight:500;
+    cursor:pointer; font-family:'Orbitron',sans-serif; font-weight:500;
     transition:all .15s; white-space:nowrap;
   }
   .demo-pill:hover { border-color:rgba(66,113,189,.4); color:#1b2d4b; background:rgba(66,113,189,.08); }
@@ -119,12 +119,12 @@ export const credentialCSS = `
   .term-dot-y { background:rgba(217,119,6,.4); }
   .term-dot-g { background:rgba(66,113,189,.35); }
   .term-title {
-    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.65rem; font-weight:700;
     letter-spacing:.1em; color:#4271bd; text-transform:uppercase;
   }
   .term-badge {
     font-size:.6rem; padding:.2rem .6rem; border-radius:100px;
-    font-weight:700; letter-spacing:.08em; font-family:'Space Grotesk',sans-serif;
+    font-weight:700; letter-spacing:.08em; font-family:'Orbitron',sans-serif;
     border:1px solid currentColor;
   }
   .term-badge-tier { color:var(--amber); border-color:rgba(217,119,6,.35); background:rgba(217,119,6,.08); }
@@ -149,7 +149,7 @@ export const credentialCSS = `
   .score-section { padding:.75rem 1.25rem; border-top:1px solid rgba(66,113,189,.12); }
   .score-nums {
     display:flex; justify-content:space-between; margin-bottom:.4rem;
-    font-family:'Space Grotesk',sans-serif; font-size:.68rem; color:#5d8ba2;
+    font-family:'Orbitron',sans-serif; font-size:.68rem; color:#5d8ba2;
   }
   .score-nums .score-current { color:#1b2d4b; font-weight:600; }
   .score-track { height:5px; background:rgba(66,113,189,.15); border-radius:100px; overflow:hidden; }
@@ -161,7 +161,7 @@ export const credentialCSS = `
     background:rgba(66,113,189,.05); display:flex; align-items:center; gap:.5rem;
   }
   .proof-ok {
-    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.65rem; font-weight:700;
     letter-spacing:.1em; color:#4271bd; text-transform:uppercase;
   }
   .proof-dot { width:6px; height:6px; border-radius:50%; background:#4271bd; animation:pulse 2s infinite; flex-shrink:0; }
@@ -185,7 +185,7 @@ export const credentialCSS = `
   .tier-step.current { border-color:var(--amber); background:rgba(217,119,6,.08); }
   .tier-step-icon { font-size:.9rem; margin-bottom:.2rem; }
   .tier-step-name {
-    font-family:'Space Grotesk',sans-serif; font-size:.56rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.56rem; font-weight:700;
     letter-spacing:.06em; color:#5d8ba2; text-transform:uppercase;
   }
   .tier-step.reached .tier-step-name { color:#4271bd; }
@@ -205,14 +205,14 @@ export const credentialCSS = `
   .tier-btns { display:flex; gap:.4rem; flex-wrap:wrap; margin-bottom:.85rem; }
   .tier-btn {
     padding:.4rem .85rem; border-radius:8px; border:1px solid rgba(66,113,189,.2);
-    background:rgba(255,255,255,.7); font-family:'Space Grotesk',sans-serif; font-size:.72rem; font-weight:600;
+    background:rgba(255,255,255,.7); font-family:'Orbitron',sans-serif; font-size:.72rem; font-weight:600;
     color:#5d8ba2; cursor:pointer; transition:all .15s; display:flex; align-items:center; gap:.3rem;
   }
   .tier-btn:hover { border-color:#4271bd; color:#1b2d4b; background:rgba(66,113,189,.08); }
   .tier-btn.selected { border-color:var(--amber); color:var(--amber); background:rgba(217,119,6,.07); }
   .verify-btn {
     width:100%; padding:.7rem; background:#4271bd; border:none; border-radius:8px;
-    font-family:'Space Grotesk',sans-serif; font-size:.85rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.85rem; font-weight:700;
     color:#fff; letter-spacing:.05em; cursor:pointer; transition:all .18s;
   }
   .verify-btn:hover { background:#355b97; box-shadow:0 4px 16px rgba(66,113,189,.3); }
@@ -227,7 +227,7 @@ export const credentialCSS = `
   .gate-result.pass { border:1px solid rgba(5,150,105,.25); background:rgba(5,150,105,.07); }
   .gate-result.fail { border:1px solid rgba(220,38,38,.2); background:rgba(220,38,38,.05); }
   .gate-result-title {
-    font-family:'Space Grotesk',sans-serif; font-weight:700; letter-spacing:.08em;
+    font-family:'Orbitron',sans-serif; font-weight:700; letter-spacing:.08em;
     margin-bottom:.6rem; font-size:.72rem;
   }
   .gate-result.pass .gate-result-title { color:#059669; }
@@ -247,7 +247,7 @@ export const credentialCSS = `
     animation:fadeUp .4s ease both; box-shadow:0 2px 8px rgba(66,113,189,.06);
   }
   .stat-num {
-    font-family:'Space Grotesk',sans-serif; font-size:1.3rem; font-weight:700; margin-bottom:.3rem;
+    font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:700; margin-bottom:.3rem;
   }
   .stat-num.green  { color:#059669; }
   .stat-num.amber  { color:var(--amber); }

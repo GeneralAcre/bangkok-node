@@ -1,5 +1,5 @@
 export const walletProfileCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
   :root {
@@ -47,7 +47,7 @@ export const walletProfileCSS = `
   .search-bar input::placeholder { color:#5d8ba2; }
   .search-bar button {
     background:#4271bd; color:#fff; border:none; border-radius:8px; padding:.4rem .9rem;
-    font-family:'Space Grotesk',sans-serif; font-size:.78rem; font-weight:600; cursor:pointer;
+    font-family:'Orbitron',sans-serif; font-size:.78rem; font-weight:600; cursor:pointer;
     white-space:nowrap; transition:background .15s;
   }
   .search-bar button:hover { background:#355b97; }
@@ -64,7 +64,7 @@ export const walletProfileCSS = `
     margin-bottom:.5rem; word-break:break-all;
   }
   .score-num {
-    font-family:'Space Grotesk',sans-serif; font-size:3.5rem; font-weight:800; line-height:1;
+    font-family:'Orbitron',sans-serif; font-size:3.5rem; font-weight:800; line-height:1;
     background:linear-gradient(135deg,#1b2d4b,#4b88b4);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   }
@@ -73,22 +73,22 @@ export const walletProfileCSS = `
   .tier-badge {
     display:inline-flex; align-items:center; gap:.5rem;
     padding:.45rem 1.1rem; border-radius:100px;
-    font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.82rem; font-weight:700;
     border:1px solid currentColor;
   }
   .score-stats { display:flex; gap:1.5rem; flex-wrap:wrap; }
   .score-stat { text-align:center; }
-  .score-stat-val { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:#1b2d4b; }
+  .score-stat-val { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; color:#1b2d4b; }
   .score-stat-lbl { font-size:.65rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.1em; }
   .copy-btn {
     background:rgba(66,113,189,.08); border:1px solid rgba(66,113,189,.2); color:rgba(27,45,75,.6);
-    font-family:'Space Grotesk',sans-serif; font-size:.72rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.72rem; font-weight:600;
     padding:.3rem .75rem; border-radius:8px; cursor:pointer; transition:all .15s; white-space:nowrap;
   }
   .copy-btn:hover { border-color:rgba(66,113,189,.4); color:#1b2d4b; }
   .copy-btn.copied { border-color:rgba(66,113,189,.5); color:#4271bd; }
 
-  .section-title { font-family:'Space Grotesk',sans-serif; font-size:1.05rem; font-weight:700; color:#1b2d4b; margin-bottom:1rem; }
+  .section-title { font-family:'Orbitron',sans-serif; font-size:1.05rem; font-weight:700; color:#1b2d4b; margin-bottom:1rem; }
 
   .event-list { display:flex; flex-direction:column; gap:.6rem; }
   .event-row {
@@ -97,7 +97,7 @@ export const walletProfileCSS = `
     gap:1rem; flex-wrap:wrap; transition:border-color .2s;
   }
   .event-row:hover { border-color:rgba(66,113,189,.32); }
-  .event-name { font-family:'Space Grotesk',sans-serif; font-size:.88rem; font-weight:600; color:#1b2d4b; }
+  .event-name { font-family:'Orbitron',sans-serif; font-size:.88rem; font-weight:600; color:#1b2d4b; }
   .event-meta { font-size:.73rem; color:#5d8ba2; margin-top:.15rem; }
   .event-right { display:flex; gap:.5rem; align-items:center; flex-shrink:0; }
   .badge-nft {

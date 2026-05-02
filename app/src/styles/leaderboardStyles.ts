@@ -1,5 +1,5 @@
 export const leaderboardCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
   :root {
@@ -37,15 +37,15 @@ export const leaderboardCSS = `
 
   .page-header { margin-bottom:2rem; animation:fadeUp .5s ease both; }
   .eyebrow {
-    font-family:'Space Grotesk',sans-serif; font-size:.72rem; font-weight:700;
-    letter-spacing:.2em; text-transform:uppercase; margin-bottom:.75rem;
+    font-family:'Orbitron',sans-serif; font-size:.55rem; font-weight:700;
+    letter-spacing:.22em; text-transform:uppercase; margin-bottom:.75rem;
     background:linear-gradient(135deg,#4271bd,#4b88b4);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     display:inline-block;
   }
   .page-title {
-    font-family:'Space Grotesk',sans-serif; font-size:clamp(1.8rem,4vw,2.8rem);
-    font-weight:800; letter-spacing:-.03em; margin-bottom:.5rem;
+    font-family:'Orbitron',sans-serif; font-size:clamp(1.2rem,2.8vw,2rem);
+    font-weight:800; letter-spacing:-.01em; margin-bottom:.5rem;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 60%,#4b88b4 100%);
     background-size:200% 200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     background-clip:text; animation:gradMove 5s ease infinite;
@@ -55,7 +55,8 @@ export const leaderboardCSS = `
   .filters { display:flex; gap:.5rem; margin-bottom:1.5rem; flex-wrap:wrap; }
   .filter-btn {
     background:rgba(255,255,255,.7); border:1px solid rgba(66,113,189,.2); color:rgba(27,45,75,.5);
-    font-family:'Space Grotesk',sans-serif; font-size:.75rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.56rem; font-weight:600;
+    letter-spacing:.05em; text-transform:uppercase;
     padding:.35rem .9rem; border-radius:100px; cursor:pointer; transition:all .2s;
   }
   .filter-btn:hover { border-color:rgba(66,113,189,.4); color:#1b2d4b; }
@@ -90,11 +91,11 @@ export const leaderboardCSS = `
   .tier-badge {
     display:inline-flex; align-items:center; gap:.4rem;
     padding:.3rem .8rem; border-radius:100px;
-    font-family:'Space Grotesk',sans-serif; font-size:.7rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:600;
     border:1px solid currentColor; white-space:nowrap;
   }
 
-  .score-col { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; text-align:right; white-space:nowrap; color:#1b2d4b; }
+  .score-col { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; text-align:right; white-space:nowrap; color:#1b2d4b; }
   .events-col { font-size:.75rem; color:#5d8ba2; text-align:right; white-space:nowrap; }
 
   .shimmer {
@@ -103,7 +104,7 @@ export const leaderboardCSS = `
   }
 
   .empty-state { text-align:center; padding:4rem 1rem; color:#5d8ba2; }
-  .empty-state h3 { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; color:#1b2d4b; margin-bottom:.5rem; }
+  .empty-state h3 { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:#1b2d4b; margin-bottom:.5rem; }
 
   .updated-at { font-size:.65rem; color:#5d8ba2; text-align:right; margin-top:1rem; }
 
@@ -151,11 +152,11 @@ export const leaderboardCSS = `
     background:linear-gradient(135deg,rgba(66,113,189,.15),rgba(75,136,180,.28));
     border:2px solid rgba(66,113,189,.22);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800; color:#4271bd;
+    font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:800; color:#4271bd;
   }
   .lb-card-identity { min-width:0; flex:1; }
   .lb-card-name {
-    font-family:'Space Grotesk',sans-serif; font-size:.95rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.72rem; font-weight:700;
     color:#1b2d4b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
     display:flex; align-items:center; gap:.4rem;
   }
@@ -164,8 +165,8 @@ export const leaderboardCSS = `
   /* big score */
   .lb-card-score { }
   .lb-score-num {
-    font-family:'Space Grotesk',sans-serif; font-size:2.2rem; font-weight:800;
-    line-height:1; letter-spacing:-.02em;
+    font-family:'Orbitron',sans-serif; font-size:1.65rem; font-weight:800;
+    line-height:1; letter-spacing:-.01em;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
   }
@@ -175,7 +176,7 @@ export const leaderboardCSS = `
   .lb-card-tags { display:flex; flex-wrap:wrap; gap:.35rem; }
   .lb-tag {
     display:inline-flex; align-items:center; gap:.3rem;
-    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.65rem; font-weight:600;
     padding:.22rem .65rem; border-radius:100px;
     background:rgba(66,113,189,.07); border:1px solid rgba(66,113,189,.16); color:#5d8ba2;
   }
@@ -187,7 +188,7 @@ export const leaderboardCSS = `
     padding-top:.85rem; border-top:1px solid rgba(66,113,189,.09); margin-top:auto;
   }
   .lb-stat { display:flex; flex-direction:column; gap:.1rem; }
-  .lb-stat-val { font-family:'Space Grotesk',sans-serif; font-size:.92rem; font-weight:700; color:#1b2d4b; line-height:1; }
+  .lb-stat-val { font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:700; color:#1b2d4b; line-height:1; }
   .lb-stat-lbl { font-size:.58rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.08em; }
   .lb-stat-divider { width:1px; height:22px; background:rgba(66,113,189,.12); flex-shrink:0; }
 
@@ -209,11 +210,11 @@ export const leaderboardCSS = `
   .hof-card.is-me { border-color:rgba(66,113,189,.35); background:rgba(66,113,189,.08); }
   .hof-position { font-family:'Space Mono',monospace; font-size:1rem; font-weight:700; color:#5d8ba2; margin-bottom:.6rem; }
   .hof-wallet { font-family:'Space Mono',monospace; font-size:.72rem; color:#5d8ba2; margin-bottom:.75rem; }
-  .hof-score { font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:800; color:#1b2d4b; line-height:1; }
+  .hof-score { font-family:'Orbitron',sans-serif; font-size:1.5rem; font-weight:800; color:#1b2d4b; line-height:1; }
   .hof-score-lbl { font-size:.6rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.12em; margin-top:.2rem; margin-bottom:.75rem; }
   .hof-tier {
     display:inline-flex; align-items:center; gap:.35rem;
-    font-family:'Space Grotesk',sans-serif; font-size:.7rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.7rem; font-weight:600;
     padding:.25rem .75rem; border-radius:100px; border:1px solid currentColor;
   }
   .hof-events { font-size:.72rem; color:#5d8ba2; margin-top:.5rem; }

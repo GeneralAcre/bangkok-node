@@ -1,5 +1,5 @@
 export const marketplaceCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Space+Mono&family=Inter:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#f4f7fb; color:#1b2d4b; font-family:'Inter',sans-serif; min-height:100vh; }
@@ -46,7 +46,7 @@ export const marketplaceCSS = `
   .page-header { margin-bottom:2rem; animation:fadeUp .5s ease both; }
   .eyebrow { font-size:.7rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:#4271bd; margin-bottom:.4rem; }
   .page-title {
-    font-family:'Space Grotesk',sans-serif; font-size:2.2rem; font-weight:800; line-height:1.1;
+    font-family:'Orbitron',sans-serif; font-size:2.2rem; font-weight:800; line-height:1.1;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 55%,#4b88b4 100%);
     background-size:200% auto; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     background-clip:text; animation:gradMove 6s ease infinite; margin-bottom:.4rem;
@@ -62,7 +62,7 @@ export const marketplaceCSS = `
     animation:fadeUp .5s .1s ease both; backdrop-filter:blur(10px);
   }
   .stat-item { display:flex; flex-direction:column; }
-  .stat-val  { font-family:'Space Grotesk',sans-serif; font-size:1.4rem; font-weight:700; color:#1b2d4b; line-height:1; }
+  .stat-val  { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; color:#1b2d4b; line-height:1; }
   .stat-lbl  { font-size:.65rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.1em; margin-top:.2rem; }
 
   /* ── Fee chip ── */
@@ -81,7 +81,7 @@ export const marketplaceCSS = `
   .filter-group { display:flex; gap:.35rem; flex-wrap:wrap; flex:1; }
   .filter-pill {
     padding:.4rem .9rem; border-radius:100px; font-size:.75rem; font-weight:600;
-    font-family:'Space Grotesk',sans-serif; cursor:pointer; border:1px solid rgba(66,113,189,.2);
+    font-family:'Orbitron',sans-serif; cursor:pointer; border:1px solid rgba(66,113,189,.2);
     background:rgba(255,255,255,.7); color:#5d8ba2; transition:all .18s; white-space:nowrap;
   }
   .filter-pill:hover { border-color:rgba(66,113,189,.4); color:#1b2d4b; }
@@ -94,7 +94,7 @@ export const marketplaceCSS = `
   .btn-post {
     display:inline-flex; align-items:center; gap:.4rem;
     padding:.55rem 1.2rem; border-radius:8px; border:none; cursor:pointer;
-    font-family:'Space Grotesk',sans-serif; font-size:.82rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.82rem; font-weight:700;
     background:#4271bd; color:#fff; transition:all .18s; white-space:nowrap;
     letter-spacing:.02em;
   }
@@ -139,7 +139,7 @@ export const marketplaceCSS = `
   .tier-core     { color:#dc2626;  border-color:rgba(220,38,38,.3);  background:rgba(220,38,38,.08); }
   .tier-legend   { color:#7c3aed;  border-color:rgba(124,58,237,.3); background:rgba(124,58,237,.08); }
 
-  .card-title { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#1b2d4b; line-height:1.25; }
+  .card-title { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:700; color:#1b2d4b; line-height:1.25; }
   .card-org   { font-size:.78rem; font-weight:600; color:#4b88b4; }
   .card-desc  { font-size:.78rem; color:#5d8ba2; line-height:1.6;
     display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
@@ -157,7 +157,7 @@ export const marketplaceCSS = `
 
   .btn-apply {
     padding:.45rem 1.1rem; border-radius:8px; border:1px solid rgba(66,113,189,.35);
-    background:rgba(66,113,189,.08); color:#4271bd; font-family:'Space Grotesk',sans-serif;
+    background:rgba(66,113,189,.08); color:#4271bd; font-family:'Orbitron',sans-serif;
     font-size:.78rem; font-weight:700; cursor:pointer; transition:all .18s; white-space:nowrap;
   }
   .btn-apply:hover  { background:#4271bd; color:#fff; box-shadow:0 4px 14px rgba(66,113,189,.3); }
@@ -171,13 +171,13 @@ export const marketplaceCSS = `
     gap:.5rem; z-index:10;
   }
   .lock-icon { font-size:1.6rem; animation:lockPulse 3s ease-in-out infinite; }
-  .lock-title { font-family:'Space Grotesk',sans-serif; font-size:.85rem; font-weight:700; color:#1b2d4b; }
+  .lock-title { font-family:'Orbitron',sans-serif; font-size:.85rem; font-weight:700; color:#1b2d4b; }
   .lock-sub   { font-size:.7rem; color:#5d8ba2; text-align:center; padding:0 1rem; }
   .lock-tier  { padding:.25rem .75rem; border-radius:100px; font-size:.65rem; font-weight:700; border:1px solid currentColor; }
 
   /* ── Empty state ── */
   .empty-state { text-align:center; padding:4rem 1rem; color:#5d8ba2; }
-  .empty-state h3 { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; color:#1b2d4b; margin-bottom:.5rem; }
+  .empty-state h3 { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:#1b2d4b; margin-bottom:.5rem; }
 
   /* ── Shimmer ── */
   .shimmer { background:linear-gradient(90deg,#e8eef8 25%,#cdd9ef 50%,#e8eef8 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:10px; }
@@ -192,7 +192,7 @@ export const marketplaceCSS = `
     padding:2rem; width:100%; max-width:520px; animation:popIn .25s ease both;
     max-height:90vh; overflow-y:auto; box-shadow:0 12px 40px rgba(66,113,189,.2);
   }
-  .modal-title { font-family:'Space Grotesk',sans-serif; font-size:1.2rem; font-weight:700; color:#1b2d4b; margin-bottom:.25rem; }
+  .modal-title { font-family:'Orbitron',sans-serif; font-size:1.2rem; font-weight:700; color:#1b2d4b; margin-bottom:.25rem; }
   .modal-sub   { font-size:.8rem; color:#5d8ba2; margin-bottom:1.25rem; }
   .modal label { display:block; font-size:.75rem; font-weight:600; color:#5d8ba2; margin-bottom:.35rem; letter-spacing:.03em; }
   .modal textarea {
@@ -205,14 +205,14 @@ export const marketplaceCSS = `
   .modal-actions { display:flex; gap:.6rem; margin-top:1.25rem; }
   .btn-submit {
     flex:1; padding:.7rem; border:none; border-radius:10px; cursor:pointer;
-    font-family:'Space Grotesk',sans-serif; font-size:.9rem; font-weight:700;
+    font-family:'Orbitron',sans-serif; font-size:.9rem; font-weight:700;
     background:#4271bd; color:#fff; transition:all .18s;
   }
   .btn-submit:hover { background:#355b97; }
   .btn-submit:disabled { background:rgba(66,113,189,.2); color:rgba(27,45,75,.4); cursor:not-allowed; }
   .btn-cancel {
     padding:.7rem 1.2rem; border:1px solid rgba(66,113,189,.22); border-radius:10px; cursor:pointer;
-    font-family:'Space Grotesk',sans-serif; font-size:.88rem; font-weight:600;
+    font-family:'Orbitron',sans-serif; font-size:.88rem; font-weight:600;
     background:transparent; color:#5d8ba2; transition:all .18s;
   }
   .btn-cancel:hover { border-color:#4271bd; color:#1b2d4b; }
@@ -225,6 +225,6 @@ export const marketplaceCSS = `
     text-align:center; padding:1rem 0;
   }
   .modal-success .icon { font-size:2.5rem; margin-bottom:.5rem; }
-  .modal-success h3 { font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:700; color:#4271bd; margin-bottom:.3rem; }
+  .modal-success h3 { font-family:'Orbitron',sans-serif; font-size:1.1rem; font-weight:700; color:#4271bd; margin-bottom:.3rem; }
   .modal-success p  { font-size:.82rem; color:#5d8ba2; }
 `;
