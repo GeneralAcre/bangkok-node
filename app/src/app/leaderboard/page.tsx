@@ -10,17 +10,27 @@ import { leaderboardCSS } from "../../styles/leaderboardStyles";
 
 interface LbEntry {
   wallet:         string;
+  username:       string;
   score:          number;
   tier:           StrataScoreTier;
   eventCount:     number;
   hackathonCount: number;
 }
 
+interface CommunityInfo { name: string; country: string; }
+
 type ViewTab = "active" | "hall_of_fame" | "geographic";
+
+const RANK_COLORS: Record<number, string> = {
+  1: "linear-gradient(135deg,#f59e0b,#d97706)",
+  2: "linear-gradient(135deg,#9ca3af,#6b7280)",
+  3: "linear-gradient(135deg,#b45309,#92400e)",
+};
 
 export default function LeaderboardPage() {
   const { publicKey } = useWallet();
   const [entries,   setEntries]   = useState<LbEntry[]>([]);
+  const [community, setCommunity] = useState<CommunityInfo | null>(null);
   const [loading,   setLoading]   = useState(true);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [view,      setView]      = useState<ViewTab>("active");
@@ -32,6 +42,7 @@ export default function LeaderboardPage() {
       .then(r => r.json())
       .then(d => {
         setEntries(d.entries ?? []);
+        setCommunity(d.community ?? null);
         setUpdatedAt(d.updatedAt ?? null);
         if (d.error) setError(d.error);
       })
@@ -42,10 +53,104 @@ export default function LeaderboardPage() {
   const myWallet = publicKey?.toBase58();
 
   const TABS: { key: ViewTab; label: string }[] = [
-    { key: "active",      label: "Active" },
+    { key: "active",       label: "Active" },
     { key: "hall_of_fame", label: "Hall of Fame" },
-    { key: "geographic",  label: "Geographic" },
+    { key: "geographic",   label: "Geographic" },
   ];
+
+  function RankBadge({ rank }: { rank: number }) {
+    const bg = RANK_COLORS[rank] ?? "rgba(66,113,189,.12)";
+    const color = rank <= 3 ? "#fff" : "#4271bd";
+    return (
+      <div className="rank-hex" style={{ background: bg }}>
+        <span style={{ color, fontFamily: "'Space Mono',monospace", fontSize: ".75rem", fontWeight: 700 }}>
+          {rank}
+        </span>
+      </div>
+    );
+  }
+
+  function Avatar({ name, wallet }: { name: string; wallet: string }) {
+    const ch = (name || wallet).charAt(0).toUpperCase();
+    return (
+      <div className="lb-avatar">
+        <span>{ch}</span>
+      </div>
+    );
+  }
+
+  const sharedCardContent = (entry: LbEntry, idx: number) => {
+    const tc   = SCORE_TIER_COLOR[entry.tier];
+    const tb   = SCORE_TIER_BG[entry.tier];
+    const ti   = SCORE_TIER_ICON[entry.tier];
+    const isMe = entry.wallet === myWallet;
+    const rank = idx + 1;
+    const displayName = entry.username || `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`;
+    const shortAddr   = `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`;
+
+    return (
+      <a
+        key={entry.wallet}
+        href={`/profile/${entry.wallet}`}
+        className={`lb-card${isMe ? " is-me" : ""}`}
+        style={{ animationDelay: `${idx * 0.05}s` }}
+      >
+        {/* Rank badge top-right */}
+        <div className="lb-card-rank">
+          <RankBadge rank={rank} />
+        </div>
+
+        {/* Avatar + name */}
+        <div className="lb-card-header">
+          <Avatar name={entry.username} wallet={entry.wallet} />
+          <div className="lb-card-identity">
+            <div className="lb-card-name">
+              {displayName}
+              {isMe && <span className="you-badge" style={{ marginLeft: ".5rem" }}>you</span>}
+            </div>
+            {entry.username && (
+              <div className="lb-card-addr">{shortAddr}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Tags */}
+        <div className="lb-card-tags">
+          <span className="lb-tag tier-tag" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
+            {ti} {entry.tier}
+          </span>
+          {community?.country && (
+            <span className="lb-tag">{community.country}</span>
+          )}
+          {community?.name && (
+            <span className="lb-tag">{community.name}</span>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="lb-card-stats">
+          <div className="lb-stat">
+            <span className="lb-stat-val">{entry.score.toLocaleString()}</span>
+            <span className="lb-stat-lbl">Score</span>
+          </div>
+          <div className="lb-stat-divider" />
+          <div className="lb-stat">
+            <span className="lb-stat-val">{entry.eventCount}</span>
+            <span className="lb-stat-lbl">Event{entry.eventCount !== 1 ? "s" : ""}</span>
+          </div>
+          {entry.hackathonCount > 0 && (
+            <>
+              <div className="lb-stat-divider" />
+              <div className="lb-stat">
+                <span className="lb-stat-val" style={{ color: "#c084fc" }}>#{entry.hackathonCount}</span>
+                <span className="lb-stat-lbl">Hackathon</span>
+              </div>
+            </>
+          )}
+        </div>
+      </a>
+    );
+  };
 
   return (
     <>
@@ -61,7 +166,7 @@ export default function LeaderboardPage() {
           <p className="page-sub">Top builders ranked by Strata Score · Updated every 2 minutes</p>
         </div>
 
-        {/* Tab toggle */}
+        {/* Tabs */}
         <div className="filters">
           {TABS.map(({ key, label }) => (
             <button
@@ -75,9 +180,9 @@ export default function LeaderboardPage() {
         </div>
 
         {loading ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
-            {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="shimmer" style={{ height: 56, borderRadius: 14, animationDelay: `${i * 0.08}s` }} />
+          <div className="lb-cards-grid">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="shimmer" style={{ height: 200, borderRadius: 16, animationDelay: `${i * 0.08}s` }} />
             ))}
           </div>
         ) : error ? (
@@ -85,108 +190,60 @@ export default function LeaderboardPage() {
             <h3>Failed to load leaderboard</h3>
             <p style={{ fontSize: ".82rem", marginTop: ".5rem", color: "#f87171" }}>{error}</p>
           </div>
+        ) : entries.length === 0 ? (
+          <div className="empty-state">
+            <h3>No entries yet</h3>
+            <p>Be the first to check in and claim a spot on the leaderboard.</p>
+          </div>
         ) : (
           <>
-            {/* ── Active: ranked table ── */}
+            {/* ── Active: 3-col card grid ── */}
             {view === "active" && (
-              entries.length === 0 ? (
-                <div className="empty-state">
-                  <h3>No entries yet</h3>
-                  <p>Be the first to check in and claim a spot on the leaderboard.</p>
+              <>
+                <div className="lb-cards-grid">
+                  {entries.map((entry, idx) => sharedCardContent(entry, idx))}
                 </div>
-              ) : (
-                <>
-                  <div className="lb-table">
-                    <div className="lb-header">
-                      <div style={{ textAlign: "center" }}>#</div>
-                      <div>Builder</div>
-                      <div>Tier</div>
-                      <div style={{ textAlign: "right" }}>Score</div>
-                      <div style={{ textAlign: "right" }}>Events</div>
-                    </div>
-                    {entries.map((entry, idx) => {
-                      const tierColor = SCORE_TIER_COLOR[entry.tier];
-                      const tierBg    = SCORE_TIER_BG[entry.tier];
-                      const tierIcon  = SCORE_TIER_ICON[entry.tier];
-                      const isMe      = entry.wallet === myWallet;
-                      const rank      = idx + 1;
-                      return (
-                        <a
-                          key={entry.wallet}
-                          href={`/profile/${entry.wallet}`}
-                          className={`lb-row${isMe ? " is-me" : ""}`}
-                          style={{ animationDelay: `${idx * 0.04}s` }}
-                        >
-                          <div className={`rank-num${rank <= 3 ? ` rank-${rank}` : ""}`}>{rank}</div>
-                          <div className="wallet-col">
-                            <span className="wallet-str">{entry.wallet.slice(0, 6)}…{entry.wallet.slice(-4)}</span>
-                            {isMe && <span className="you-badge">you</span>}
-                          </div>
-                          <div>
-                            <span className="tier-badge" style={{ color: tierColor, background: tierBg, borderColor: tierColor + "50" }}>
-                              {tierIcon} {entry.tier}
-                            </span>
-                          </div>
-                          <div className="score-col">{entry.score.toLocaleString()}</div>
-                          <div className="events-col">
-                            {entry.eventCount} event{entry.eventCount !== 1 ? "s" : ""}
-                            {entry.hackathonCount > 0 && (
-                              <span style={{ color: "#c084fc", marginLeft: ".35rem" }}>#{entry.hackathonCount}</span>
-                            )}
-                          </div>
-                        </a>
-                      );
-                    })}
+                {updatedAt && (
+                  <div className="updated-at">
+                    Last updated {new Date(updatedAt).toLocaleTimeString()} · {entries.length} builder{entries.length !== 1 ? "s" : ""}
                   </div>
-                  {updatedAt && (
-                    <div className="updated-at">
-                      Last updated {new Date(updatedAt).toLocaleTimeString()} · {entries.length} builder{entries.length !== 1 ? "s" : ""}
-                    </div>
-                  )}
-                </>
-              )
+                )}
+              </>
             )}
 
-            {/* ── Hall of Fame: top builder cards ── */}
+            {/* ── Hall of Fame: top 9 cards ── */}
             {view === "hall_of_fame" && (
-              entries.length === 0 ? (
-                <div className="empty-state">
-                  <h3>No entries yet</h3>
-                  <p>Be the first to check in and earn a spot in the Hall of Fame.</p>
-                </div>
-              ) : (
-                <div className="hof-grid">
-                  {entries.slice(0, 9).map((entry, idx) => {
-                    const tc = SCORE_TIER_COLOR[entry.tier];
-                    const tb = SCORE_TIER_BG[entry.tier];
-                    const ti = SCORE_TIER_ICON[entry.tier];
-                    const isMe = entry.wallet === myWallet;
-                    return (
-                      <a
-                        key={entry.wallet}
-                        href={`/profile/${entry.wallet}`}
-                        className={`hof-card${isMe ? " is-me" : ""}`}
-                        style={{ animationDelay: `${idx * 0.06}s` }}
-                      >
-                        <div className="hof-position">#{idx + 1}</div>
-                        <div className="hof-wallet">
-                          {entry.wallet.slice(0, 6)}…{entry.wallet.slice(-4)}
-                          {isMe && <span className="you-badge" style={{ marginLeft: ".5rem" }}>you</span>}
-                        </div>
-                        <div className="hof-score">{entry.score.toLocaleString()}</div>
-                        <div className="hof-score-lbl">Strata Score</div>
-                        <div className="hof-tier" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
-                          {ti} {entry.tier}
-                        </div>
-                        <div className="hof-events">{entry.eventCount} event{entry.eventCount !== 1 ? "s" : ""}</div>
-                      </a>
-                    );
-                  })}
-                </div>
-              )
+              <div className="hof-grid">
+                {entries.slice(0, 9).map((entry, idx) => {
+                  const tc   = SCORE_TIER_COLOR[entry.tier];
+                  const tb   = SCORE_TIER_BG[entry.tier];
+                  const ti   = SCORE_TIER_ICON[entry.tier];
+                  const isMe = entry.wallet === myWallet;
+                  return (
+                    <a
+                      key={entry.wallet}
+                      href={`/profile/${entry.wallet}`}
+                      className={`hof-card${isMe ? " is-me" : ""}`}
+                      style={{ animationDelay: `${idx * 0.06}s` }}
+                    >
+                      <div className="hof-position">#{idx + 1}</div>
+                      <div className="hof-wallet">
+                        {entry.username || `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`}
+                        {isMe && <span className="you-badge" style={{ marginLeft: ".5rem" }}>you</span>}
+                      </div>
+                      <div className="hof-score">{entry.score.toLocaleString()}</div>
+                      <div className="hof-score-lbl">Strata Score</div>
+                      <div className="hof-tier" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
+                        {ti} {entry.tier}
+                      </div>
+                      <div className="hof-events">{entry.eventCount} event{entry.eventCount !== 1 ? "s" : ""}</div>
+                    </a>
+                  );
+                })}
+              </div>
             )}
 
-            {/* ── Geographic: coming soon ── */}
+            {/* ── Geographic ── */}
             {view === "geographic" && (
               <div className="empty-state">
                 <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>🌏</div>

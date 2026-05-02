@@ -16,19 +16,19 @@ function readStr(data: Buffer, off: number): { value: string; next: number } {
   return { value: data.slice(off + 4, off + 4 + len).toString("utf-8"), next: off + 4 + len };
 }
 
-function communityEventCount(data: Buffer): number {
+function parseCommunityInfo(data: Buffer): { name: string; country: string; eventCount: number } {
   let off = 8 + 32;
-  off = readStr(data, off).next;
-  off = readStr(data, off).next;
-  off = readStr(data, off).next;
-  off += 8;
-  return Number(data.readBigUInt64LE(off));
+  const { value: name, next: o1 } = readStr(data, off);
+  const { next: o2 }              = readStr(data, o1);   // skip description
+  const { value: country, next: o3 } = readStr(data, o2);
+  off = o3 + 8; // skip member_count
+  return { name, country, eventCount: Number(data.readBigUInt64LE(off)) };
 }
 
-function ePDA(community: PublicKey, i: number, prog: PublicKey): PublicKey {
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(BigInt(i));
-  return PublicKey.findProgramAddressSync([Buffer.from("event"), community.toBuffer(), buf], prog)[0];
+function parseMemberUsername(data: Buffer): string {
+  try {
+    return readStr(data, 8 + 32 + 32).value; // discriminator + wallet + community
+  } catch { return ""; }
 }
 
 function isHackathon(data: Buffer): boolean {
@@ -45,9 +45,15 @@ function isHackathon(data: Buffer): boolean {
   } catch { return false; }
 }
 
+function ePDA(community: PublicKey, i: number, prog: PublicKey): PublicKey {
+  const buf = Buffer.alloc(8);
+  buf.writeBigUInt64LE(BigInt(i));
+  return PublicKey.findProgramAddressSync([Buffer.from("event"), community.toBuffer(), buf], prog)[0];
+}
+
 export async function GET() {
   if (cache && Date.now() - cache.ts < CACHE_TTL) return NextResponse.json(cache.data);
-  if (!COMMUNITY_PDA || !PROGRAM_ID_STR) return NextResponse.json({ entries: [] });
+  if (!COMMUNITY_PDA || !PROGRAM_ID_STR) return NextResponse.json({ entries: [], community: null });
 
   try {
     const conn      = new Connection(RPC_URL, { commitment: "confirmed", disableRetryOnRateLimit: true });
@@ -55,18 +61,18 @@ export async function GET() {
     const prog      = new PublicKey(PROGRAM_ID_STR);
 
     const commInfo = await conn.getAccountInfo(community);
-    if (!commInfo) return NextResponse.json({ entries: [] });
+    if (!commInfo) return NextResponse.json({ entries: [], community: null });
 
-    const count  = communityEventCount(commInfo.data);
-    const ePDAs  = Array.from({ length: count }, (_, i) => ePDA(community, i, prog));
+    const { name: communityName, country: communityCountry, eventCount: count } =
+      parseCommunityInfo(commInfo.data);
+
+    const ePDAs   = Array.from({ length: count }, (_, i) => ePDA(community, i, prog));
     const evInfos = await conn.getMultipleAccountsInfo(ePDAs);
 
     const hackathonSet = new Set<string>(
       ePDAs.filter((_, i) => evInfos[i] && isHackathon(evInfos[i]!.data)).map(p => p.toBase58())
     );
 
-    // Fetch all accounts owned by the program, slice just the first 72 bytes:
-    // discriminator(8) + event_pubkey(32) + attendee_pubkey(32)
     const raw = await conn.getProgramAccounts(prog, {
       dataSlice: { offset: 0, length: 72 },
     });
@@ -81,7 +87,7 @@ export async function GET() {
       map.get(attendee)!.add(ev);
     }
 
-    const entries = Array.from(map.entries())
+    const sorted = Array.from(map.entries())
       .map(([wallet, evs]) => {
         const ec = evs.size;
         const hc = Array.from(evs).filter(e => hackathonSet.has(e)).length;
@@ -91,11 +97,36 @@ export async function GET() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 100);
 
-    const result = { entries, updatedAt: Date.now() };
+    // Batch-fetch member accounts to get usernames
+    const memberPDAs = sorted.map(e =>
+      PublicKey.findProgramAddressSync(
+        [Buffer.from("member"), community.toBuffer(), new PublicKey(e.wallet).toBuffer()],
+        prog
+      )[0]
+    );
+    const memberInfos = await conn.getMultipleAccountsInfo(memberPDAs);
+    const usernameMap: Record<string, string> = {};
+    sorted.forEach((e, i) => {
+      if (memberInfos[i]?.data) {
+        const u = parseMemberUsername(Buffer.from(memberInfos[i]!.data));
+        if (u) usernameMap[e.wallet] = u;
+      }
+    });
+
+    const entries = sorted.map(e => ({
+      ...e,
+      username: usernameMap[e.wallet] ?? "",
+    }));
+
+    const result = {
+      entries,
+      updatedAt: Date.now(),
+      community: { name: communityName, country: communityCountry },
+    };
     cache = { data: result, ts: Date.now() };
     return NextResponse.json(result);
   } catch (e: any) {
     console.error("[leaderboard]", e);
-    return NextResponse.json({ entries: [], error: e?.message }, { status: 500 });
+    return NextResponse.json({ entries: [], community: null, error: e?.message }, { status: 500 });
   }
 }

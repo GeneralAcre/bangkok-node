@@ -107,6 +107,66 @@ export const leaderboardCSS = `
 
   .updated-at { font-size:.65rem; color:#5d8ba2; text-align:right; margin-top:1rem; }
 
+  /* ── Rank hexagon badge ── */
+  .rank-hex {
+    width:40px; height:46px;
+    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+
+  /* ── Leaderboard card grid ── */
+  .lb-cards-grid {
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
+    animation:fadeUp .4s ease both;
+  }
+  .lb-card {
+    position:relative; background:rgba(255,255,255,.78); border:1px solid rgba(66,113,189,.16);
+    border-radius:18px; padding:1.25rem; text-decoration:none; color:#1b2d4b;
+    transition:all .25s; display:flex; flex-direction:column; gap:1rem;
+    backdrop-filter:blur(10px); box-shadow:0 2px 10px rgba(66,113,189,.06);
+    animation:fadeUp .4s ease both; overflow:hidden;
+  }
+  .lb-card:hover { border-color:rgba(66,113,189,.38); background:rgba(66,113,189,.07); transform:translateY(-4px); box-shadow:0 10px 28px rgba(66,113,189,.13); }
+  .lb-card.is-me { border-color:rgba(66,113,189,.38); background:rgba(66,113,189,.08); }
+
+  .lb-card-rank { position:absolute; top:1rem; right:1rem; }
+
+  .lb-card-header { display:flex; align-items:center; gap:.75rem; padding-right:3rem; }
+  .lb-avatar {
+    width:44px; height:44px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,rgba(66,113,189,.18),rgba(75,136,180,.25));
+    border:2px solid rgba(66,113,189,.25);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#4271bd;
+  }
+  .lb-card-identity { min-width:0; }
+  .lb-card-name {
+    font-family:'Space Grotesk',sans-serif; font-size:.88rem; font-weight:700;
+    color:#1b2d4b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .lb-card-addr { font-family:'Space Mono',monospace; font-size:.65rem; color:#5d8ba2; margin-top:.15rem; }
+
+  .lb-card-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+  .lb-tag {
+    display:inline-flex; align-items:center; gap:.3rem;
+    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:600;
+    padding:.2rem .6rem; border-radius:100px;
+    background:rgba(66,113,189,.08); border:1px solid rgba(66,113,189,.18); color:#5d8ba2;
+  }
+  .lb-tag.tier-tag { border:1px solid currentColor; }
+
+  .lb-card-stats {
+    display:flex; align-items:center; gap:.75rem;
+    padding-top:.75rem; border-top:1px solid rgba(66,113,189,.1);
+  }
+  .lb-stat { display:flex; flex-direction:column; gap:.1rem; }
+  .lb-stat-val { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:800; color:#1b2d4b; line-height:1; }
+  .lb-stat-lbl { font-size:.6rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.08em; }
+  .lb-stat-divider { width:1px; height:24px; background:rgba(66,113,189,.15); flex-shrink:0; }
+
+  @media(max-width:900px){ .lb-cards-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:540px){ .lb-cards-grid{ grid-template-columns:1fr; } }
+
   /* ── Hall of Fame grid ── */
   .hof-grid {
     display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
