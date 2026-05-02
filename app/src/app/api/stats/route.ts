@@ -46,7 +46,10 @@ export async function GET() {
     const pdas   = Array.from({ length: eventCount }, (_, i) => eventPDA(community, BigInt(i), programId));
     const infos  = await conn.getMultipleAccountsInfo(pdas);
 
-    const recentEvents: unknown[] = [];
+    const eventsData: Array<{
+      title: string; location: string; country: string; status: string;
+      attendeeCount: number; capacity: number; eventCode: string; eventDate: number;
+    }> = [];
     let totalCheckins = 0;
 
     for (const info of infos) {
@@ -61,7 +64,7 @@ export async function GET() {
         o = readStr(d, o).next;             // description (skip)
         const location    = readStr(d, o); o = location.next;
         const country     = readStr(d, o); o = country.next;
-        o += 8;                             // event_date
+        const eventDate   = Number(d.readBigUInt64LE(o)); o += 8;
         const capacity      = Number(d.readBigUInt64LE(o)); o += 8;
         const attendeeCount = Number(d.readBigUInt64LE(o)); o += 8;
         o += 8;                             // fee
@@ -70,15 +73,17 @@ export async function GET() {
         const status      = statusByte === 1 ? "Live" : statusByte === 2 ? "Ended" : "Upcoming";
 
         totalCheckins += attendeeCount;
-        recentEvents.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value });
+        eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate });
       } catch {}
     }
 
+    eventsData.reverse(); // newest first
     const result = {
       events:       eventCount,
       members:      memberCount,
       checkins:     totalCheckins,
-      recentEvents: recentEvents.reverse().slice(0, 4),
+      allEvents:    eventsData,
+      recentEvents: eventsData.slice(0, 4),
     };
 
     cache = { data: result, ts: Date.now() };

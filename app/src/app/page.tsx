@@ -11,37 +11,49 @@ import { homeCSS } from "../styles/homeStyles";
 const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
-interface OnChainEvent {
-  title: string; location: string; country: string;
-  status: string; attendeeCount: number; capacity: number; eventCode: string;
-}
-
 const STEPS = [
   { n: "01", t: "Host an Event",   d: "Deploy your event on Solana with a unique code. One transaction — permanent on-chain record." },
   { n: "02", t: "Scan & Check In", d: "Attendees scan your QR or visit /checkin. One tap builds, signs, and confirms on Solana." },
   { n: "03", t: "Claim Your NFT",  d: "Every check-in unlocks a Metaplex NFT. Permanent proof of presence, forever in your wallet." },
 ];
 
-const FEATURES = [
-  { icon: "⛓", t: "100% On-Chain",    d: "Every attendance record is a Solana transaction. No server, no database, no trust." },
-  { icon: "◎", t: "Metaplex NFTs",    d: "Real NFTs with event metadata, edition numbers, and on-chain provenance." },
-  { icon: "✦", t: "Reputation Layer", d: "6-tier on-chain reputation. Every check-in compounds your standing." },
-  { icon: "⬡", t: "Solana Blinks",    d: "QR codes are Solana Actions — Phantom opens them natively as transactions." },
-];
-
-const WIN_CARDS = [
-  { icon: "⛓", t: "Fully On-Chain",    d: "Every check-in is a real Solana transaction. Zero off-chain trust. Tamper-proof forever." },
-  { icon: "⬡", t: "Solana Blinks",     d: "QR codes are native Solana Actions. Phantom opens them as one-tap transactions." },
-  { icon: "◎", t: "Metaplex NFTs",     d: "Real NFTs minted server-side with edition numbers and on-chain metadata." },
-  { icon: "✦", t: "6-Tier Reputation", d: "Initiate → Legend. Your on-chain attendance history builds your identity." },
+const FAQ_ITEMS = [
+  {
+    q: "What is Strata?",
+    a: "Strata is an on-chain Proof of Presence protocol built on Solana. Every event check-in is a permanent Solana transaction — no servers, no centralized database, just cryptographic proof that you were there.",
+  },
+  {
+    q: "How does checking in to an event work?",
+    a: "Organizers deploy an event on-chain and share a QR code. Attendees scan it with Phantom Wallet — it opens as a native Solana Action (Blink) and submits the check-in transaction in one tap. No app download required.",
+  },
+  {
+    q: "What is a Strata Score and what are the tiers?",
+    a: "Your Strata Score is an on-chain reputation built from your attendance history. Every event adds to your score across 6 tiers: Initiate → Builder → Contributor → Veteran → Expert → Legend. Hackathon events count 3× toward your score.",
+  },
+  {
+    q: "What NFT do I receive when I check in?",
+    a: "Each check-in mints a unique Metaplex NFT to your wallet — a tamper-proof attendance badge with the event name, edition number, and on-chain provenance. It lives permanently in your Solana wallet.",
+  },
+  {
+    q: "How do I host an event on Strata?",
+    a: "Go to the Organizer page, connect your Phantom wallet, fill in the event title, location, date, and capacity, then click Deploy Event. You receive a unique QR code to share with attendees. When the event starts, go to your Profile and click Go Live.",
+  },
+  {
+    q: "Do I need SOL to check in or host an event?",
+    a: "A small amount of Solana devnet SOL covers the transaction fee. You can get free devnet SOL at faucet.solana.com. Strata currently runs on Solana Devnet — all SOL is test SOL with no real-world monetary value.",
+  },
+  {
+    q: "Is my attendance data stored on a server?",
+    a: "No. Every check-in, event record, and reputation score is stored directly on the Solana blockchain. Strata has no centralized backend — your on-chain history is immutable and belongs to you forever.",
+  },
 ];
 
 export default function HomePage() {
   const { connection } = useConnection();
-  const [events,      setEvents]      = useState<OnChainEvent[]>([]);
   const [stats,       setStats]       = useState({ events: 0, members: 0, checkins: 0 });
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [walletSearch, setWalletSearch] = useState("");
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -50,14 +62,13 @@ export default function HomePage() {
         if (r.ok) {
           const d = await r.json();
           setStats({ events: d.events ?? 0, members: d.members ?? 0, checkins: d.checkins ?? 0 });
-          setEvents((d.recentEvents ?? []).slice(0, 4));
           setStatsLoaded(true);
           return;
         }
       } catch {}
       if (!COMMUNITY_PDA_STR) { setStatsLoaded(true); return; }
       try {
-        const [{ default: idl }, { AnchorProvider }, { StrataClient, findEventPDA, parseEventStatus }] = await Promise.all([
+        const [{ default: idl }, { AnchorProvider }, { StrataClient, findEventPDA }] = await Promise.all([
           import("../idl/strata.json"),
           import("@coral-xyz/anchor"),
           import("../utils/strata-client"),
@@ -68,17 +79,14 @@ export default function HomePage() {
         const community = new PublicKey(COMMUNITY_PDA_STR);
         const commAcc = await client.getCommunity(community);
         const count = commAcc.eventCount.toNumber();
-        const loaded: OnChainEvent[] = [];
         let checkins = 0;
         for (let i = 0; i < count; i++) {
           const [ePDA] = findEventPDA(community, i);
           try {
             const acc = await client.getEvent(ePDA);
             checkins += acc.attendeeCount.toNumber();
-            loaded.push({ title: acc.title, location: acc.location, country: acc.country, status: parseEventStatus(acc.status), attendeeCount: acc.attendeeCount.toNumber(), capacity: acc.capacity.toNumber(), eventCode: acc.eventCode });
           } catch {}
         }
-        setEvents(loaded.reverse().slice(0, 4));
         setStats({ events: count, members: commAcc.memberCount.toNumber(), checkins });
       } catch {}
       setStatsLoaded(true);
@@ -106,7 +114,7 @@ export default function HomePage() {
             <div className="hero-badge">
               <span className="badge-dot" /> Built for Colosseum Hackathon · Solana Devnet
             </div>
-            <div style={{ margin: "0 auto 1.5rem", maxWidth: 900 }}>
+            <div style={{ margin: "0 auto 1.5rem", maxWidth: 680 }}>
               <svg width="100%" viewBox="0 0 900 130" xmlns="http://www.w3.org/2000/svg" style={{ display: "block", overflow: "visible" }}>
                 <defs>
                   <linearGradient id="hChrome" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -172,23 +180,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Why we win */}
-        <div className="container">
-          <div className="win-section">
-            <div className="win-inner" style={{ textAlign: "center" }}>
-              <div className="win-grid">
-                {WIN_CARDS.map(p => (
-                  <div className="win-card" key={p.t}>
-                    <div className="win-icon">{p.icon}</div>
-                    <div className="win-card-title">{p.t}</div>
-                    <div className="win-card-desc">{p.d}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* How it works */}
         <div className="container section">
           <div className="section-eyebrow">How it works</div>
@@ -205,41 +196,32 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Features */}
-        <div className="container" style={{ paddingBottom: "5rem" }}>
-          <div className="section-eyebrow">Protocol Stack</div>
-          <h2 className="section-title">Built on Solana.</h2>
-          <div className="features">
-            {FEATURES.map(f => (
-              <div className="feature-card" key={f.t}>
-                <div className="feature-icon">{f.icon}</div>
-                <div className="feature-title">{f.t}</div>
-                <div className="feature-desc">{f.d}</div>
+        {/* FAQ */}
+        <div className="container faq-section">
+          <div className="section-eyebrow">FAQ</div>
+          <h2 className="faq-heading">Frequently Asked Questions</h2>
+          <div className="faq-list">
+            {FAQ_ITEMS.map((item, i) => (
+              <div key={i} className="faq-item">
+                <button
+                  className="faq-question"
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                >
+                  <span>{item.q}</span>
+                  <span className={`faq-chevron${openFaq === i ? " open" : ""}`}>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                      <path d="M1 1.5l5 5 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </span>
+                </button>
+                <div className={`faq-answer${openFaq === i ? " open" : ""}`}>
+                  <p>{item.a}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Live events */}
-        {events.length > 0 && (
-          <div className="container" style={{ paddingBottom: "5rem" }}>
-            <div className="section-eyebrow">On-Chain Now</div>
-            <h2 className="section-title">Recent events.</h2>
-            <div className="events-list">
-              {events.map((ev, i) => (
-                <div className="event-row" key={i}>
-                  <div>
-                    <div className="event-name">{ev.title}</div>
-                    <div className="event-detail">{ev.location}, {ev.country} · {ev.attendeeCount}/{ev.capacity} · #{ev.eventCode}</div>
-                  </div>
-                  {ev.status === "Live"     && <span className="badge-live">LIVE</span>}
-                  {ev.status === "Upcoming" && <span className="badge-upcoming">UPCOMING</span>}
-                  {ev.status === "Ended"    && <span className="badge-ended">ENDED</span>}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Footer */}

@@ -46,7 +46,8 @@ export const organizerCSS = `
   @media(max-width:768px){ .page{ padding:5rem 1rem 2rem; } }
   @media(max-width:480px){ .page{ padding:4.5rem .75rem 2rem; } }
 
-  .page-header { margin-bottom:1.5rem; animation:fadeUp .5s ease both; }
+  .page-header { margin-bottom:1.5rem; animation:fadeUp .5s ease both; align-items:flex-start; }
+  @media(max-width:480px){ .page-header{ flex-direction:column !important; gap:.75rem !important; } }
   .page-title {
     font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.3rem;
     background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 50%,#4b88b4 80%);
@@ -205,4 +206,84 @@ export const organizerCSS = `
   @media(max-width:480px){ .connect-card{ padding:2rem 1rem; } }
   .connect-card p { font-size:.9rem; color:var(--text-muted); margin-bottom:1.25rem; }
   .connect-card .wallet-adapter-button { width:100%; justify-content:center; max-width:280px; }
+
+  /* ── Events listing (Luma-style) ── */
+  .ev-filters { display:flex; gap:.4rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+  .ev-filter-btn {
+    display:flex; align-items:center; gap:.4rem;
+    padding:.3rem .85rem; border-radius:100px;
+    border:1px solid rgba(66,113,189,.18); background:rgba(255,255,255,.6);
+    color:rgba(27,45,75,.5); font-family:'Space Grotesk',sans-serif;
+    font-size:.72rem; font-weight:600; cursor:pointer; transition:all .2s;
+  }
+  .ev-filter-btn:hover { border-color:rgba(66,113,189,.35); color:#1b2d4b; }
+  .ev-filter-btn.active { background:rgba(66,113,189,.1); border-color:rgba(66,113,189,.4); color:#4271bd; }
+  .ev-filter-count {
+    background:rgba(66,113,189,.12); color:#4271bd; border-radius:100px;
+    padding:0 .45rem; font-size:.65rem; font-weight:700; min-width:18px; text-align:center;
+  }
+  .ev-filter-btn.active .ev-filter-count { background:rgba(66,113,189,.2); }
+
+  .ev-list { display:flex; flex-direction:column; }
+  .ev-month-group { margin-bottom:.75rem; }
+  .ev-month-label {
+    font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:700;
+    letter-spacing:.1em; text-transform:uppercase; color:#5d8ba2;
+    padding:.3rem 0; margin-bottom:.3rem;
+    border-bottom:1px solid rgba(66,113,189,.1);
+  }
+
+  .ev-row {
+    display:grid; grid-template-columns:12px 1fr auto auto auto;
+    gap:.75rem; align-items:center; padding:.8rem .6rem;
+    border-radius:10px; border:1px solid transparent; transition:all .2s; margin-bottom:.15rem;
+  }
+  .ev-row:hover { border-color:rgba(66,113,189,.18); background:rgba(255,255,255,.7); }
+
+  .ev-dot {
+    width:10px; height:10px; border-radius:50%; flex-shrink:0;
+  }
+  .ev-dot-live     { background:#4271bd; box-shadow:0 0 8px rgba(66,113,189,.5); animation:pulse 2s infinite; }
+  .ev-dot-upcoming { background:#b45309; }
+  .ev-dot-ended    { background:#d1dbe8; }
+
+  .ev-main { min-width:0; }
+  .ev-title {
+    font-family:'Space Grotesk',sans-serif; font-size:.9rem; font-weight:600; color:#1b2d4b;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ev-sub {
+    font-size:.7rem; color:#5d8ba2; margin-top:.12rem;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .ev-code { font-family:'Space Mono',monospace; }
+  .ev-sep  { margin:0 .3rem; }
+
+  .ev-date-col {
+    font-size:.73rem; color:#5d8ba2; white-space:nowrap;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .ev-stat-col {
+    font-size:.7rem; color:#5d8ba2; white-space:nowrap;
+    font-family:'Space Mono',monospace;
+  }
+
+  .btn-checkin {
+    display:inline-flex; align-items:center; padding:.3rem .9rem;
+    background:#4271bd; color:#fff;
+    font-family:'Space Grotesk',sans-serif; font-size:.74rem; font-weight:600;
+    border-radius:100px; text-decoration:none; transition:all .2s; white-space:nowrap;
+  }
+  .btn-checkin:hover { background:#355b97; transform:translateY(-1px); box-shadow:0 4px 16px rgba(66,113,189,.25); }
+
+  .ev-empty { padding:2rem; text-align:center; color:#5d8ba2; font-size:.82rem; }
+
+  @media(max-width:640px){
+    .ev-row { grid-template-columns:10px 1fr auto; }
+    .ev-date-col, .ev-stat-col { display:none; }
+  }
+  @media(max-width:480px){
+    .ev-row { grid-template-columns:10px 1fr; gap:.5rem; }
+    .ev-cta-col { display:none; }
+  }
 `;
