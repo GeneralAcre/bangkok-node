@@ -109,62 +109,89 @@ export const leaderboardCSS = `
 
   /* ── Rank hexagon badge ── */
   .rank-hex {
-    width:40px; height:46px;
-    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    width:38px; height:44px;
+    clip-path:polygon(50% 0%,96% 25%,96% 75%,50% 100%,4% 75%,4% 25%);
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    font-family:'Space Mono',monospace; font-size:.78rem; font-weight:700;
   }
 
   /* ── Leaderboard card grid ── */
   .lb-cards-grid {
-    display:grid; grid-template-columns:repeat(3,1fr); gap:1rem;
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem;
     animation:fadeUp .4s ease both;
   }
   .lb-card {
-    position:relative; background:rgba(255,255,255,.78); border:1px solid rgba(66,113,189,.16);
-    border-radius:18px; padding:1.25rem; text-decoration:none; color:#1b2d4b;
-    transition:all .25s; display:flex; flex-direction:column; gap:1rem;
-    backdrop-filter:blur(10px); box-shadow:0 2px 10px rgba(66,113,189,.06);
+    position:relative; background:rgba(255,255,255,.85); border:1px solid rgba(66,113,189,.14);
+    border-radius:20px; padding:1.5rem; text-decoration:none; color:#1b2d4b;
+    transition:all .28s; display:flex; flex-direction:column; gap:.85rem;
+    backdrop-filter:blur(14px); box-shadow:0 2px 14px rgba(66,113,189,.07);
     animation:fadeUp .4s ease both; overflow:hidden;
   }
-  .lb-card:hover { border-color:rgba(66,113,189,.38); background:rgba(66,113,189,.07); transform:translateY(-4px); box-shadow:0 10px 28px rgba(66,113,189,.13); }
-  .lb-card.is-me { border-color:rgba(66,113,189,.38); background:rgba(66,113,189,.08); }
+  /* top accent strip */
+  .lb-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:rgba(66,113,189,.2); border-radius:20px 20px 0 0;
+  }
+  .lb-card[data-rank="1"]::before { background:linear-gradient(90deg,#f59e0b,#d97706); }
+  .lb-card[data-rank="2"]::before { background:linear-gradient(90deg,#94a3b8,#64748b); }
+  .lb-card[data-rank="3"]::before { background:linear-gradient(90deg,#cd7f32,#a0522d); }
+  .lb-card:hover {
+    border-color:rgba(66,113,189,.32); background:rgba(255,255,255,.95);
+    transform:translateY(-5px); box-shadow:0 16px 36px rgba(66,113,189,.14);
+  }
+  .lb-card.is-me { border-color:rgba(66,113,189,.4); background:rgba(66,113,189,.06); }
 
-  .lb-card-rank { position:absolute; top:1rem; right:1rem; }
+  /* rank badge top-right */
+  .lb-card-rank { position:absolute; top:1.1rem; right:1.1rem; }
 
-  .lb-card-header { display:flex; align-items:center; gap:.75rem; padding-right:3rem; }
+  /* identity row */
+  .lb-card-header { display:flex; align-items:center; gap:.8rem; padding-right:3.25rem; }
   .lb-avatar {
-    width:44px; height:44px; border-radius:50%; flex-shrink:0;
-    background:linear-gradient(135deg,rgba(66,113,189,.18),rgba(75,136,180,.25));
-    border:2px solid rgba(66,113,189,.25);
+    width:48px; height:48px; border-radius:50%; flex-shrink:0;
+    background:linear-gradient(135deg,rgba(66,113,189,.15),rgba(75,136,180,.28));
+    border:2px solid rgba(66,113,189,.22);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#4271bd;
+    font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800; color:#4271bd;
   }
-  .lb-card-identity { min-width:0; }
+  .lb-card-identity { min-width:0; flex:1; }
   .lb-card-name {
-    font-family:'Space Grotesk',sans-serif; font-size:.88rem; font-weight:700;
+    font-family:'Space Grotesk',sans-serif; font-size:.95rem; font-weight:700;
     color:#1b2d4b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:flex; align-items:center; gap:.4rem;
   }
-  .lb-card-addr { font-family:'Space Mono',monospace; font-size:.65rem; color:#5d8ba2; margin-top:.15rem; }
+  .lb-card-addr { font-family:'Space Mono',monospace; font-size:.63rem; color:#5d8ba2; margin-top:.2rem; }
 
-  .lb-card-tags { display:flex; flex-wrap:wrap; gap:.4rem; }
+  /* big score */
+  .lb-card-score { }
+  .lb-score-num {
+    font-family:'Space Grotesk',sans-serif; font-size:2.2rem; font-weight:800;
+    line-height:1; letter-spacing:-.02em;
+    background:linear-gradient(135deg,#1b2d4b 0%,#4271bd 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+  }
+  .lb-score-lbl { font-size:.6rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.14em; margin-top:.2rem; }
+
+  /* tags */
+  .lb-card-tags { display:flex; flex-wrap:wrap; gap:.35rem; }
   .lb-tag {
     display:inline-flex; align-items:center; gap:.3rem;
     font-family:'Space Grotesk',sans-serif; font-size:.65rem; font-weight:600;
-    padding:.2rem .6rem; border-radius:100px;
-    background:rgba(66,113,189,.08); border:1px solid rgba(66,113,189,.18); color:#5d8ba2;
+    padding:.22rem .65rem; border-radius:100px;
+    background:rgba(66,113,189,.07); border:1px solid rgba(66,113,189,.16); color:#5d8ba2;
   }
   .lb-tag.tier-tag { border:1px solid currentColor; }
 
+  /* bottom stats bar */
   .lb-card-stats {
-    display:flex; align-items:center; gap:.75rem;
-    padding-top:.75rem; border-top:1px solid rgba(66,113,189,.1);
+    display:flex; align-items:center; gap:.65rem;
+    padding-top:.85rem; border-top:1px solid rgba(66,113,189,.09); margin-top:auto;
   }
   .lb-stat { display:flex; flex-direction:column; gap:.1rem; }
-  .lb-stat-val { font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:800; color:#1b2d4b; line-height:1; }
-  .lb-stat-lbl { font-size:.6rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.08em; }
-  .lb-stat-divider { width:1px; height:24px; background:rgba(66,113,189,.15); flex-shrink:0; }
+  .lb-stat-val { font-family:'Space Grotesk',sans-serif; font-size:.92rem; font-weight:700; color:#1b2d4b; line-height:1; }
+  .lb-stat-lbl { font-size:.58rem; color:#5d8ba2; text-transform:uppercase; letter-spacing:.08em; }
+  .lb-stat-divider { width:1px; height:22px; background:rgba(66,113,189,.12); flex-shrink:0; }
 
-  @media(max-width:900px){ .lb-cards-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:960px){ .lb-cards-grid{ grid-template-columns:1fr 1fr; } }
   @media(max-width:540px){ .lb-cards-grid{ grid-template-columns:1fr; } }
 
   /* ── Hall of Fame grid ── */

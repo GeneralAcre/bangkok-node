@@ -93,6 +93,7 @@ export default function LeaderboardPage() {
         key={entry.wallet}
         href={`/profile/${entry.wallet}`}
         className={`lb-card${isMe ? " is-me" : ""}`}
+        data-rank={rank <= 3 ? rank : undefined}
         style={{ animationDelay: `${idx * 0.05}s` }}
       >
         {/* Rank badge top-right */}
@@ -100,18 +101,24 @@ export default function LeaderboardPage() {
           <RankBadge rank={rank} />
         </div>
 
-        {/* Avatar + name */}
+        {/* Avatar + identity */}
         <div className="lb-card-header">
           <Avatar name={entry.username} wallet={entry.wallet} />
           <div className="lb-card-identity">
             <div className="lb-card-name">
               {displayName}
-              {isMe && <span className="you-badge" style={{ marginLeft: ".5rem" }}>you</span>}
+              {isMe && <span className="you-badge">you</span>}
             </div>
             {entry.username && (
               <div className="lb-card-addr">{shortAddr}</div>
             )}
           </div>
+        </div>
+
+        {/* Big score */}
+        <div className="lb-card-score">
+          <div className="lb-score-num">{entry.score.toLocaleString()}</div>
+          <div className="lb-score-lbl">Strata Score</div>
         </div>
 
         {/* Tags */}
@@ -127,13 +134,8 @@ export default function LeaderboardPage() {
           )}
         </div>
 
-        {/* Stats */}
+        {/* Bottom stats bar */}
         <div className="lb-card-stats">
-          <div className="lb-stat">
-            <span className="lb-stat-val">{entry.score.toLocaleString()}</span>
-            <span className="lb-stat-lbl">Score</span>
-          </div>
-          <div className="lb-stat-divider" />
           <div className="lb-stat">
             <span className="lb-stat-val">{entry.eventCount}</span>
             <span className="lb-stat-lbl">Event{entry.eventCount !== 1 ? "s" : ""}</span>
@@ -142,8 +144,8 @@ export default function LeaderboardPage() {
             <>
               <div className="lb-stat-divider" />
               <div className="lb-stat">
-                <span className="lb-stat-val" style={{ color: "#c084fc" }}>#{entry.hackathonCount}</span>
-                <span className="lb-stat-lbl">Hackathon</span>
+                <span className="lb-stat-val" style={{ color: "#c084fc" }}>{entry.hackathonCount}</span>
+                <span className="lb-stat-lbl">Hackathon{entry.hackathonCount !== 1 ? "s" : ""}</span>
               </div>
             </>
           )}
