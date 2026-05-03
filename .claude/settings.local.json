@@ -13,7 +13,8 @@
       "Bash(solana-keygen --version)",
       "PowerShell(Get-Command npm, npx, node -ErrorAction SilentlyContinue)",
       "Read(//c/Users/ACRESANPAPHAT/AppData/Roaming/**)",
-      "Read(//c//**)"
+      "Read(//c//**)",
+      "WebFetch(domain:claude.ai)"
     ]
   }
 }

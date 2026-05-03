@@ -12,39 +12,39 @@ const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
 const STEPS = [
-  { n: "01", t: "Host an Event",   d: "Deploy your event on Solana with a unique code. One transaction — permanent on-chain record." },
-  { n: "02", t: "Scan & Check In", d: "Attendees scan your QR or visit /checkin. One tap builds, signs, and confirms on Solana." },
-  { n: "03", t: "Claim Your NFT",  d: "Every check-in unlocks a Metaplex NFT. Permanent proof of presence, forever in your wallet." },
+  { n: "1", t: "Host an Event",   d: "Deploy your event on Solana with a unique code. One transaction — permanent on-chain record.", cta: "Deploy Event", href: "/organizer" },
+  { n: "2", t: "Scan & Check In", d: "Attendees scan your QR or visit /checkin. One tap builds, signs, and confirms on Solana.",   cta: "Check In Now",  href: "/checkin" },
+  { n: "3", t: "Claim Your NFT",  d: "Every check-in unlocks a Metaplex NFT. Permanent proof of presence, forever in your wallet.", cta: "View Profile",  href: "/profile" },
 ];
 
 const FAQ_ITEMS = [
   {
-    q: "What is Strata?",
-    a: "Strata is an on-chain Proof of Presence protocol built on Solana. Every event check-in is a permanent Solana transaction — no servers, no centralized database, just cryptographic proof that you were there.",
+    q: "What is Signal?",
+    a: "Signal is an on-chain Proof of Presence protocol built on Solana. Every event check-in is a permanent Solana transaction — no servers, no centralized database, just cryptographic proof that you were there.",
   },
   {
     q: "How does checking in to an event work?",
     a: "Organizers deploy an event on-chain and share a QR code. Attendees scan it with Phantom Wallet — it opens as a native Solana Action (Blink) and submits the check-in transaction in one tap. No app download required.",
   },
   {
-    q: "What is a Strata Score and what are the tiers?",
-    a: "Your Strata Score is an on-chain reputation built from your attendance history. Every event adds to your score across 6 tiers: Initiate → Builder → Contributor → Veteran → Expert → Legend. Hackathon events count 3× toward your score.",
+    q: "What is a Signal Score and what are the tiers?",
+    a: "Your Signal Score is an on-chain reputation built from your attendance history. Every event adds to your score across 6 tiers: Initiate → Builder → Contributor → Veteran → Expert → Legend. Hackathon events count 3× toward your score.",
   },
   {
     q: "What NFT do I receive when I check in?",
     a: "Each check-in mints a unique Metaplex NFT to your wallet — a tamper-proof attendance badge with the event name, edition number, and on-chain provenance. It lives permanently in your Solana wallet.",
   },
   {
-    q: "How do I host an event on Strata?",
+    q: "How do I host an event on Signal?",
     a: "Go to the Organizer page, connect your Phantom wallet, fill in the event title, location, date, and capacity, then click Deploy Event. You receive a unique QR code to share with attendees. When the event starts, go to your Profile and click Go Live.",
   },
   {
     q: "Do I need SOL to check in or host an event?",
-    a: "A small amount of Solana devnet SOL covers the transaction fee. You can get free devnet SOL at faucet.solana.com. Strata currently runs on Solana Devnet — all SOL is test SOL with no real-world monetary value.",
+    a: "A small amount of Solana devnet SOL covers the transaction fee. You can get free devnet SOL at faucet.solana.com. Signal currently runs on Solana Devnet — all SOL is test SOL with no real-world monetary value.",
   },
   {
     q: "Is my attendance data stored on a server?",
-    a: "No. Every check-in, event record, and reputation score is stored directly on the Solana blockchain. Strata has no centralized backend — your on-chain history is immutable and belongs to you forever.",
+    a: "No. Every check-in, event record, and reputation score is stored directly on the Solana blockchain. Signal has no centralized backend — your on-chain history is immutable and belongs to you forever.",
   },
 ];
 
@@ -157,8 +157,8 @@ export default function HomePage() {
               Every check-in is permanent. Every event builds your score.
             </p>
             <div className="hero-ctas">
-              <a href="/organizer"   className="btn-primary">⬡ &nbsp;Host an Event</a>
-              <a href="/leaderboard" className="btn-glass">Leaderboard →</a>
+              <a href="/organizer"   className="btn-primary">Host an Event</a>
+              <a href="/leaderboard" className="btn-glass">Leaderboard</a>
             </div>
             <form className="wallet-search" onSubmit={handleWalletSearch}>
               <input
@@ -166,7 +166,7 @@ export default function HomePage() {
                 onChange={e => setWalletSearch(e.target.value)}
                 placeholder="Look up any wallet address…"
               />
-              <button type="submit">Search →</button>
+              <button type="submit">Search</button>
             </form>
           </div>
         </div>
@@ -182,15 +182,16 @@ export default function HomePage() {
 
         {/* How it works */}
         <div className="container section">
-          <div className="section-eyebrow">How it works</div>
-          <h2 className="section-title">Three steps. Fully on-chain.</h2>
-          <p className="section-sub">No app download. No centralized backend. No trust required.</p>
+          <h2 className="steps-heading">Simple Steps to Host,<br />Check In, and Earn</h2>
           <div className="steps">
             {STEPS.map(s => (
               <div className="step-card" key={s.n}>
-                <div className="step-num">{s.n}</div>
-                <div className="step-title">{s.t}</div>
+                <div className="step-header">
+                  <div className="step-num">{s.n}</div>
+                  <div className="step-title">{s.t}</div>
+                </div>
                 <div className="step-desc">{s.d}</div>
+                <a href={s.href} className="step-cta">{s.cta}</a>
               </div>
             ))}
           </div>
@@ -198,7 +199,6 @@ export default function HomePage() {
 
         {/* FAQ */}
         <div className="container faq-section">
-          <div className="section-eyebrow">FAQ</div>
           <h2 className="faq-heading">Frequently Asked Questions</h2>
           <div className="faq-list">
             {FAQ_ITEMS.map((item, i) => (
@@ -228,17 +228,19 @@ export default function HomePage() {
       <footer className="footer">
         <div className="footer-inner">
           <div>
-            <div className="footer-brand">STR<span>ATA</span></div>
-            <div style={{ fontSize: ".72rem", color: "#374151", marginTop: ".25rem" }}>Proof of Presence Protocol · Solana Devnet</div>
+            <a href="/" style={{ display: "inline-block" }}>
+              <img src="/Strata-logo.svg" alt="Signal" style={{ height: 28, display: "block" }} />
+            </a>
+            <div style={{ fontSize: ".72rem", color: "#888", marginTop: ".25rem" }}>Proof of Presence Protocol · Solana Devnet</div>
           </div>
           <div className="footer-links">
             <a href="/organizer"   className="footer-link">Organizer</a>
             <a href="/leaderboard" className="footer-link">Leaderboard</a>
             <a href="/profile"     className="footer-link">Profile</a>
             {PROGRAM_ID_STR && (
-              <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`} target="_blank" rel="noreferrer" className="footer-link">Program ↗</a>
+              <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`} target="_blank" rel="noreferrer" className="footer-link">Program</a>
             )}
-            <a href="https://github.com/GeneralAcre/bangkok-node" target="_blank" rel="noreferrer" className="footer-link">GitHub ↗</a>
+            <a href="https://github.com/GeneralAcre/bangkok-node" target="_blank" rel="noreferrer" className="footer-link">GitHub</a>
           </div>
         </div>
       </footer>

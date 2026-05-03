@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -60,7 +60,7 @@ export default function LeaderboardPage() {
 
   function RankBadge({ rank }: { rank: number }) {
     const bg = RANK_COLORS[rank] ?? "rgba(66,113,189,.12)";
-    const color = rank <= 3 ? "#fff" : "#4271bd";
+    const color = rank <= 3 ? "#fff" : "#ffffff";
     return (
       <div className="rank-hex" style={{ background: bg }}>
         <span style={{ color, fontFamily: "'Space Mono',monospace", fontSize: ".75rem", fontWeight: 700 }}>

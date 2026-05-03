@@ -26,7 +26,7 @@ export function Nav({ active }: { active: ActivePage }) {
     <nav className="nav">
       <div className="nav-inner">
         <a href="/" className="nav-brand">
-          <img src="/Strata-logo.svg" alt="STRATA" />
+          <img src="/Strata-logo.svg" alt="Signal" style={{ height: 28 }} />
         </a>
 
         {/* Desktop links */}

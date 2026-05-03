@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
@@ -346,7 +346,7 @@ export default function OrganizerPage() {
                       type="checkbox"
                       checked={isHackathon}
                       onChange={e => setIsHackathon(e.target.checked)}
-                      style={{ width:16, height:16, accentColor:"#4271bd", cursor:"pointer" }}
+                      style={{ width:16, height:16, accentColor:"#ffffff", cursor:"pointer" }}
                     />
                     <span style={{ fontSize:".85rem", color:"#1b2d4b", fontWeight:500 }}>
                       Hackathon event
@@ -368,4 +368,3 @@ export default function OrganizerPage() {
     </>
   );
 }
-

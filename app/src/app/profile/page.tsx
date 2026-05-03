@@ -12,23 +12,10 @@ import {
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
 import { Nav } from "../../components/Nav";
+import { PageBackground } from "../../components/PageBackground";
+import { profileCSS } from "../../styles/profileStyles";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
-
-const PROFILE_CSS = `
-  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
-  @keyframes glow    { 0%,100%{box-shadow:0 0 0 0 rgba(66,113,189,0)} 50%{box-shadow:0 0 14px 2px rgba(66,113,189,.2)} }
-  .shimmer { background:linear-gradient(90deg,#e8eef8 25%,#cdd9ef 50%,#e8eef8 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; }
-  .claim-glow { animation:glow 3s ease-in-out infinite; }
-  .claim-glow:hover,.claim-glow:disabled { animation:none; }
-  .hm-day{ background:#e8eef8; border:0.5px solid rgba(66,113,189,.15); }
-  .hm-day[data-count="1"]{ background:rgba(66,113,189,.2); border-color:rgba(66,113,189,.3); }
-  .hm-day[data-count="2"]{ background:rgba(66,113,189,.42); border-color:rgba(66,113,189,.55); }
-  .hm-day[data-count="3"]{ background:rgba(66,113,189,.68); border-color:#4271bd; }
-  .hm-day[data-count="4"]{ background:#4271bd; border-color:#355b97; }
-  .hm-day:not(.hm-future):hover{ border-color:rgba(66,113,189,.6); }
-  .hm-day.hm-future{ opacity:0; pointer-events:none; }
-`;
 
 interface AttendedEvent {
   eventPubkey: string;
@@ -58,10 +45,6 @@ function computeStreak(attended: AttendedEvent[]): number {
 const TIER_NUM: Record<MemberTier, number> = {
   Initiate:1, Seeker:2, Resident:3, Builder:4, Core:5, Legend:6,
 };
-
-const CARD = "rounded-xl border border-[rgba(66,113,189,0.18)] bg-white/[0.78] backdrop-blur-xl shadow-sm";
-const SG   = { fontFamily: "'Space Grotesk', sans-serif" };
-const SM   = { fontFamily: "'Space Mono', monospace" };
 
 export default function ProfilePage() {
   const { connection }           = useConnection();
@@ -205,7 +188,7 @@ export default function ProfilePage() {
         method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           userWallet:  publicKey.toBase58(),
-          eventTitle:  rec.event?.title ?? "Strata Event",
+          eventTitle:  rec.event?.title ?? "Signal Event",
           eventCode:   rec.event?.eventCode ?? "",
           checkedInAt: rec.attendance.checkedInAt.toNumber(),
         }),
@@ -213,7 +196,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Mint failed");
       setMinted(prev => ({ ...prev, [rec.eventPubkey]: data.mint }));
-      setSuccess(`✓ NFT minted for "${rec.event?.title ?? "Strata Event"}"! It's now in your wallet.`);
+      setSuccess(`✓ NFT minted for "${rec.event?.title ?? "Signal Event"}"! It's now in your wallet.`);
     } catch (e: any) {
       setError(e?.message ?? "NFT mint failed");
     } finally { setClaiming(null); }
@@ -231,13 +214,13 @@ export default function ProfilePage() {
     return { pct:Math.min(100, Math.round(((events-lo)/(hi-lo))*100)), label:`${hi-events} events to ${next[tier]}` };
   }
 
-  const tier          = member ? parseTier(member.tier) : null;
-  const events        = member ? member.eventsAttended.toNumber() : 0;
-  const progress      = tier ? tierProgress(tier, events) : null;
-  const mintedCount   = attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length;
+  const tier           = member ? parseTier(member.tier) : null;
+  const events         = member ? member.eventsAttended.toNumber() : 0;
+  const progress       = tier ? tierProgress(tier, events) : null;
+  const mintedCount    = attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).length;
   const hackathonCount = attended.filter(r => (r.event as any)?.isHackathon === true).length;
-  const streak        = computeStreak(attended);
-  const strataScore   = computeStrataScore(attended.length, hackathonCount).score;
+  const streak         = computeStreak(attended);
+  const strataScore    = computeStrataScore(attended.length, hackathonCount).score;
   const filteredAttended = activeTab === "hackathon"
     ? attended.filter(r => (r.event as any)?.isHackathon === true)
     : attended;
@@ -292,10 +275,11 @@ export default function ProfilePage() {
   if (!connected || !publicKey) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
+        <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+        <PageBackground />
         <Nav active="profile" />
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-6">
-          <p className="text-[14px] text-[#5d8ba2]">Connect your wallet to view your Strata profile.</p>
+        <div className="center-wrap">
+          <p>Connect your wallet to view your Signal profile.</p>
           <WalletMultiButton />
         </div>
       </>
@@ -306,28 +290,19 @@ export default function ProfilePage() {
   if (!loading && !member) {
     return (
       <>
-        <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
+        <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+        <PageBackground />
         <Nav active="profile" />
-        <div className="max-w-225 mx-auto px-6 pt-25 pb-16">
-          {error && (
-            <div className="mb-6 rounded-xl bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm">{error}</div>
-          )}
-          <div className={`${CARD} p-6`}>
-            <div className="text-[16px] font-semibold text-[#1b2d4b] mb-1.5" style={SG}>New to Strata</div>
-            <div className="font-mono text-[11px] text-[#5d8ba2] mb-4" style={SM}>{shortAddr}</div>
-            <p className="text-[13px] text-[#5d8ba2] leading-relaxed mb-5">
-              Register to start building your on-chain reputation. Each event you attend earns you a higher tier.
-            </p>
+        <div className="page">
+          {error && <div className="msg-err">{error}</div>}
+          <div className="card register-card">
+            <div className="register-title">New to Signal</div>
+            <div className="wallet-mono" style={{ marginBottom: "1rem" }}>{shortAddr}</div>
+            <p className="register-sub">Register to start building your on-chain reputation. Each event you attend earns you a higher tier.</p>
             {balance !== null && balance < 0.01 ? (
-              <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-amber-600 border border-amber-300 px-4 py-2 rounded-lg text-[13px] font-semibold no-underline hover:bg-amber-50 transition-colors"
-                style={SG}>
-                Get Devnet SOL ↗
-              </a>
+              <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="btn-faucet">Get Devnet SOL ↗</a>
             ) : (
-              <button
-                className="inline-flex items-center gap-1.5 bg-[#4271bd] text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-[#355b97] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                style={SG} disabled={loading} onClick={handleRegister}>
+              <button className="btn-primary" disabled={loading} onClick={handleRegister}>
                 {loading ? "Registering…" : "Register as Member"}
               </button>
             )}
@@ -340,49 +315,44 @@ export default function ProfilePage() {
   // ── Full profile ──
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: PROFILE_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: profileCSS }} />
+      <PageBackground />
       <Nav active="profile" />
 
-      <div className="max-w-225 mx-auto px-6 pt-25 pb-16">
+      <div className="page">
 
         {/* Notices */}
         {error && (
-          <div className="mb-6 rounded-xl bg-red-50 border border-red-200 text-red-600 px-4 py-3 text-sm">
+          <div className="msg-err section">
             {error}
             {error.includes("SOL") && (
-              <div className="mt-1.5">
-                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" className="text-amber-600">→ faucet.solana.com ↗</a>
+              <div style={{ marginTop: ".5rem" }}>
+                <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" style={{ color: "#f59e0b" }}>→ faucet.solana.com ↗</a>
               </div>
             )}
           </div>
         )}
-        {success && (
-          <div className="mb-6 rounded-xl bg-[rgba(66,113,189,0.08)] border border-[rgba(66,113,189,0.25)] text-[#4271bd] px-4 py-3 text-sm">{success}</div>
-        )}
+        {success && <div className="msg-ok section">{success}</div>}
 
-        {/* ── Profile header: 2-column grid ── */}
+        {/* ── Profile header ── */}
         {member && tier && (
-          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-6 mb-6">
+          <div className="profile-top">
 
             {/* Left: Identity */}
-            <div className={`${CARD} p-6`}>
-              {/* Avatar + name row */}
-              <div className="flex items-start gap-3.5 mb-5">
-                <div className="w-11 h-11 rounded-full bg-[rgba(66,113,189,0.1)] border border-[rgba(66,113,189,0.28)] flex items-center justify-center text-[#4271bd] font-bold text-base shrink-0" style={SG}>
-                  {member.username.charAt(0).toUpperCase()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-semibold text-[#1b2d4b] text-[15px]" style={SG}>@{member.username}</span>
-                    <span className="inline-flex items-center gap-1 bg-[rgba(66,113,189,0.1)] text-[#4271bd] rounded-full text-[11px] font-semibold px-2.5 py-0.5 border border-[rgba(66,113,189,0.28)]" style={SG}>
-                      {SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"} {tier} · {TIER_NUM[tier]}
+            <div className="card profile-left">
+              <div className="identity-row">
+                <div className="avatar">{member.username.charAt(0).toUpperCase()}</div>
+                <div className="identity-body">
+                  <div className="identity-name">
+                    @{member.username}
+                    <span className="tier-badge">
+                      {SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"} {tier}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-[#5d8ba2]" style={SM}>{shortAddr}</span>
+                  <div className="wallet-row">
+                    <span className="wallet-mono">{shortAddr}</span>
                     <button
-                      className={`text-[12px] leading-none transition-colors ${copiedAddr ? "text-[#4271bd]" : "text-[#5d8ba2]/60 hover:text-[#1b2d4b]"}`}
-                      style={{ background:"none", border:"none", cursor:"pointer", padding:0 }}
+                      className={`copy-icon${copiedAddr ? " did-copy" : ""}`}
                       onClick={copyAddr} title="Copy address"
                     >
                       {copiedAddr ? "✓" : "⎘"}
@@ -390,72 +360,52 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 {balance !== null && (
-                  <span className={`shrink-0 inline-flex items-center text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                    balance < 0.01
-                      ? "text-red-600 bg-red-50 border-red-200"
-                      : "text-[#4271bd] bg-[rgba(66,113,189,0.08)] border-[rgba(66,113,189,0.25)]"
-                  }`}>
+                  <span className={`sol-chip ${balance < 0.01 ? "sol-low" : "sol-ok"}`}>
                     {balance.toFixed(3)} SOL{balance < 0.01 ? " ⚠" : ""}
                   </span>
                 )}
               </div>
 
-              {/* Action buttons */}
-              <div className="flex gap-2 flex-wrap mb-5">
+              <div className="identity-actions">
                 <button
-                  className={`text-[12px] font-medium px-3.5 py-1.5 rounded-lg border transition-all cursor-pointer ${
-                    copiedLink ? "border-[rgba(66,113,189,0.4)] text-[#4271bd]" : "border-[rgba(66,113,189,0.2)] text-[#5d8ba2] hover:border-[rgba(66,113,189,0.4)] hover:text-[#1b2d4b]"
-                  }`}
-                  style={{ ...SG, background:"transparent" }}
+                  className={`btn-secondary${copiedLink ? " did-copy" : ""}`}
                   onClick={copyLink}
                 >
                   {copiedLink ? "✓ Copied!" : "⬡ Copy profile link"}
                 </button>
-                <a
-                  href={`/profile/${publicKey.toBase58()}`}
-                  className="text-[12px] font-medium px-3.5 py-1.5 rounded-lg border border-[rgba(66,113,189,0.2)] text-[#5d8ba2] hover:border-[rgba(66,113,189,0.4)] hover:text-[#1b2d4b] transition-all no-underline"
-                  style={SG}
-                >
+                <a href={`/profile/${publicKey.toBase58()}`} className="btn-secondary">
                   Public view ↗
                 </a>
               </div>
 
-              {/* Stats row */}
-              <div className="grid grid-cols-4 gap-3 pt-5 border-t border-[rgba(66,113,189,0.12)]">
+              <div className="inline-stats">
                 {[
-                  { val: events,        lbl: "Events",     color: undefined },
-                  { val: hackathonCount,lbl: "Hackathons", color: hackathonCount > 0 ? "#7c3aed" : undefined },
-                  { val: streak,        lbl: "Streak",     color: streak > 0        ? "#4271bd" : undefined },
-                  { val: mintedCount,   lbl: "NFTs",       color: mintedCount > 0   ? "#4271bd" : undefined },
-                ].map(({ val, lbl, color }) => (
-                  <div key={lbl}>
-                    <div className="text-[20px] font-semibold leading-none mb-1" style={{ ...SG, color: color ?? "#1b2d4b" }}>{val}</div>
-                    <div className="text-[10px] text-[#5d8ba2] uppercase tracking-[0.08em]">{lbl}</div>
+                  { val: events,        lbl: "Events" },
+                  { val: hackathonCount, lbl: "Hackathons" },
+                  { val: streak,        lbl: "Streak" },
+                  { val: mintedCount,   lbl: "NFTs" },
+                ].map(({ val, lbl }) => (
+                  <div key={lbl} className="inline-stat">
+                    <div className="inline-stat-val">{val}</div>
+                    <div className="inline-stat-lbl">{lbl}</div>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Right: Score */}
-            <div className={`${CARD} p-6 flex flex-col justify-between`}>
-              <div>
-                <div className="text-[10px] text-[#5d8ba2] uppercase tracking-widest mb-3" style={SG}>Strata Score</div>
-                <div className="text-[42px] font-bold text-[#4271bd] leading-none tracking-tight mb-1" style={SG}>
-                  {loading ? "…" : strataScore.toLocaleString()}
-                </div>
-                {tier && (
-                  <div className="inline-flex items-center gap-1.5 mt-3 px-2.5 py-1 rounded-full border border-[rgba(66,113,189,0.3)] bg-[rgba(66,113,189,0.08)]">
-                    <span className="text-[#4271bd] text-[11px]">{SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"}</span>
-                    <span className="text-[#4271bd] text-[11px] font-semibold" style={SG}>{tier}</span>
-                  </div>
-                )}
-              </div>
+            <div className="card profile-right" style={{ padding: "2rem", gap: ".75rem" }}>
+              <div className="eyebrow">Signal Score</div>
+              <div className="score-num">{loading ? "…" : strataScore.toLocaleString()}</div>
+              <span className="tier-badge">
+                {SCORE_TIER_ICON[tier as keyof typeof SCORE_TIER_ICON] ?? "◦"} {tier} · {TIER_NUM[tier]}
+              </span>
               {progress && (
-                <div className="mt-4">
-                  <div className="h-1 bg-[rgba(66,113,189,0.12)] rounded-full overflow-hidden mb-2">
-                    <div className="h-full bg-[#4271bd] rounded-full transition-[width] duration-700" style={{ width:`${progress.pct}%` }} />
+                <div className="prog-wrap" style={{ marginTop: ".5rem" }}>
+                  <div className="prog-track">
+                    <div className="prog-fill" style={{ width: `${progress.pct}%` }} />
                   </div>
-                  <div className="text-[11px] text-[#5d8ba2]">{progress.label}</div>
+                  <div className="prog-label">{progress.label}</div>
                 </div>
               )}
             </div>
@@ -465,50 +415,46 @@ export default function ProfilePage() {
 
         {/* ── Activity heatmap ── */}
         {member && (
-          <div className="mb-6">
-            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">Activity</div>
-            <div className={`${CARD} p-6 overflow-x-auto`}>
-              {/* Month labels */}
-              <div className="flex mb-0.75">
-                <div style={{ width:28, flexShrink:0 }} />
-                <div className="flex">
+          <div className="section heatmap">
+            <div className="eyebrow">Activity</div>
+            <div className="card" style={{ overflowX: "auto" }}>
+              <div className="heatmap-months-row">
+                <div style={{ width: 28, flexShrink: 0 }} />
+                <div className="heatmap-weeks-labels">
                   {heatmapData.map((week, wi) => (
-                    <div key={wi} style={{ width:13, fontSize:9, color:"#5d8ba2", ...SM, flexShrink:0, overflow:"visible", whiteSpace:"nowrap" }}>
-                      {week.monthLabel ?? ""}
-                    </div>
+                    <div key={wi} className="heatmap-month-cell">{week.monthLabel ?? ""}</div>
                   ))}
                 </div>
               </div>
-              {/* Grid */}
-              <div className="flex gap-1.5 items-start">
-                <div className="flex flex-col gap-0.5 shrink-0 pt-px" style={{ width:22 }}>
+              <div className="heatmap-body-row">
+                <div className="heatmap-day-labels">
                   {["","Mon","","Wed","","Fri",""].map((lbl, i) => (
-                    <span key={i} style={{ height:11, fontSize:9, color:"#5d8ba2", ...SM, display:"flex", alignItems:"center", lineHeight:1 }}>{lbl}</span>
+                    <span key={i}>{lbl}</span>
                   ))}
                 </div>
-                <div className="flex gap-0.5">
+                <div className="heatmap-weeks-grid">
                   {heatmapData.map((week, wi) => (
-                    <div key={wi} className="flex flex-col gap-0.5 shrink-0">
+                    <div key={wi} className="heatmap-week">
                       {week.days.map((day, di) => (
                         <div
                           key={di}
-                          className={`hm-day${day.isFuture ? " hm-future" : ""}`}
+                          className={`heatmap-day${day.isFuture ? " future" : ""}`}
                           data-count={Math.min(day.count, 4)}
-                          title={day.isFuture ? "" : day.count > 0 ? `${day.dateStr}: ${day.count} event${day.count !== 1 ? "s" : ""}` : day.dateStr}
-                          style={{ width:11, height:11, borderRadius:2, flexShrink:0, cursor:"default" }}
+                          title={day.isFuture ? "" : day.count > 0
+                            ? `${day.dateStr}: ${day.count} event${day.count !== 1 ? "s" : ""}`
+                            : day.dateStr}
                         />
                       ))}
                     </div>
                   ))}
                 </div>
               </div>
-              {/* Legend */}
-              <div className="flex items-center gap-1 mt-2 justify-end">
-                <span style={{ fontSize:9, color:"#5d8ba2", ...SM }}>Less</span>
-                {(["#e8eef8","rgba(66,113,189,.2)","rgba(66,113,189,.42)","rgba(66,113,189,.68)","#4271bd"] as const).map((bg, n) => (
-                  <div key={n} style={{ width:10, height:10, borderRadius:2, background:bg, border:`0.5px solid ${n===0?"rgba(66,113,189,.2)":"rgba(66,113,189,.5)"}` }} />
+              <div className="heatmap-legend">
+                <span className="heatmap-legend-label">Less</span>
+                {(["#1a1a1a","rgba(255,255,255,.2)","rgba(255,255,255,.4)","rgba(255,255,255,.65)","#ffffff"] as const).map((bg, n) => (
+                  <div key={n} className="heatmap-legend-cell" style={{ background: bg }} />
                 ))}
-                <span style={{ fontSize:9, color:"#5d8ba2", ...SM }}>More</span>
+                <span className="heatmap-legend-label">More</span>
               </div>
             </div>
           </div>
@@ -516,147 +462,149 @@ export default function ProfilePage() {
 
         {/* ── Event history ── */}
         {member && (
-          <div className="mb-6">
-            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">Event History</div>
-            <div className={`${CARD} overflow-hidden`}>
-              {/* Tabs */}
-              <div className="flex border-b border-[rgba(66,113,189,0.12)] px-6">
+          <div className="section">
+            <div className="eyebrow">Event History</div>
+            <div className="card" style={{ padding: 0 }}>
+              <div className="tabs" style={{ padding: "0 1.25rem" }}>
                 {([
-                  { key:"all",       label:"All Events",  badge: attended.length,        badgeColor:"text-[#5d8ba2]" },
-                  { key:"hackathon", label:"Hackathons",  badge: hackathonCount,          badgeColor:"text-purple-500" },
-                  { key:"organized", label:"Organized",   badge: organizedEvents.length,  badgeColor:"text-[#5d8ba2]" },
-                ] as const).map(({ key, label, badge, badgeColor }) => (
+                  { key:"all",       label:"All Events", badge: attended.length },
+                  { key:"hackathon", label:"Hackathons", badge: hackathonCount },
+                  { key:"organized", label:"Organized",  badge: organizedEvents.length },
+                ] as const).map(({ key, label, badge }) => (
                   <button
                     key={key}
-                    className={`py-3.5 mr-5 text-[13px] font-medium border-b-[1.5px] -mb-px transition-colors cursor-pointer ${
-                      activeTab === key ? "text-[#4271bd] border-[#4271bd]" : "text-[#5d8ba2] border-transparent hover:text-[#1b2d4b]"
-                    }`}
-                    style={{ background:"none", fontFamily:"'Inter',sans-serif" }}
+                    className={`tab-btn${activeTab === key ? " active" : ""}`}
                     onClick={() => setActiveTab(key)}
                   >
                     {label}
-                    {badge > 0 && <span className={`ml-1.5 text-[11px] ${badgeColor}`}>({badge})</span>}
+                    {badge > 0 && <span style={{ marginLeft: ".4rem", opacity: .65 }}>({badge})</span>}
                   </button>
                 ))}
               </div>
 
-              {/* Content */}
-              <div className="px-6 pb-2">
+              <div style={{ padding: "0 1.25rem .75rem" }}>
                 {activeTab === "organized" ? (
                   organizedEvents.length === 0 ? (
-                    <div className="py-6 text-center text-[13px] text-[#5d8ba2]">
+                    <div className="empty-text">
                       No events created yet.{" "}
-                      <a href="/organizer" className="text-[#4271bd] no-underline hover:underline">Create one →</a>
+                      <a href="/organizer" style={{ color: "#e8e8e8" }}>Create one →</a>
                     </div>
                   ) : (
-                    <>
-                      {organizedEvents.map(ev => {
-                        const status   = parseEventStatus(ev.account.status);
-                        const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
-                        return (
-                          <div key={ev.pubkey} className="border-b border-[rgba(66,113,189,0.1)] last:border-0">
-                            <div className="flex items-center gap-3 py-3.5 flex-wrap">
-                              <div className="flex-1 min-w-0">
-                                <div className="text-[14px] text-[#1b2d4b] font-medium truncate mb-0.5" style={SG}>{ev.account.title}</div>
-                                <div className="text-[12px] text-[#5d8ba2]">
-                                  {ev.account.location}, {ev.account.country} · {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} · {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
-                                </div>
-                              </div>
-                              <div className="flex gap-2 items-center shrink-0 flex-wrap">
-                                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
-                                  status === "Live"     ? "text-[#4271bd] bg-[rgba(66,113,189,0.1)] border-[rgba(66,113,189,0.3)]" :
-                                  status === "Upcoming" ? "text-amber-600 bg-amber-50 border-amber-200" :
-                                                          "text-[#5d8ba2] bg-[rgba(66,113,189,0.05)] border-[rgba(66,113,189,0.14)]"
-                                }`}>{status}</span>
-                                {status === "Upcoming" && (
-                                  <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors disabled:opacity-40 cursor-pointer" style={SG} disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
-                                )}
-                                {status === "Live" && (
-                                  <>
-                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors cursor-pointer" style={SG}
-                                      onClick={() => { const next = isQrOpen ? null : ev; setOrgQrEvent(next); if (next) generateOrgQr(ev.account.eventCode); }}>
-                                      {isQrOpen ? "Hide QR" : "⬡ QR"}
-                                    </button>
-                                    <button className="text-[11px] font-semibold px-2.5 py-1 rounded-md text-red-600 border border-red-200 hover:bg-red-50 transition-colors disabled:opacity-40 cursor-pointer" style={{ ...SG, background:"transparent" }} disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
-                                  </>
-                                )}
-                              </div>
+                    organizedEvents.map(ev => {
+                      const status   = parseEventStatus(ev.account.status);
+                      const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
+                      return (
+                        <div key={ev.pubkey} className="org-row" style={{ flexWrap: "wrap" }}>
+                          <div className="org-left">
+                            <div className="event-name">{ev.account.title}</div>
+                            <div className="event-date">
+                              {ev.account.location}, {ev.account.country} · {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} · {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
                             </div>
-                            {isQrOpen && orgQrDataUrl && (
-                              <div className="mb-4 rounded-xl bg-[rgba(66,113,189,0.05)] border border-[rgba(66,113,189,0.18)] p-5 text-center">
-                                <div className="inline-block p-3 bg-white rounded-xl mb-3 shadow-sm">
-                                  <img src={orgQrDataUrl} alt="QR" width={200} height={200} className="block rounded" />
-                                </div>
-                                <div
-                                  className="font-mono text-[10px] text-[#5d8ba2] break-all bg-white/80 border border-[rgba(66,113,189,0.2)] rounded-md px-3 py-2 mb-3 cursor-pointer hover:text-[#4271bd] transition-colors block"
-                                  style={SM}
-                                  onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`); setOrgCopied(true); setTimeout(() => setOrgCopied(false), 2000); }}
-                                >
-                                  {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
-                                </div>
-                                <div className="flex gap-2 justify-center flex-wrap">
-                                  <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] no-underline transition-colors" style={SG}>Open Check-In ↗</a>
-                                  <button className="text-[11px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors cursor-pointer" style={SG}
-                                    onClick={() => { const a = document.createElement("a"); a.href = orgQrDataUrl; a.download = `strata-${ev.account.eventCode}.png`; a.click(); }}>↓ Download QR</button>
-                                </div>
-                              </div>
+                          </div>
+                          <div className="org-actions">
+                            <span className={
+                              status === "Live"     ? "org-badge-live" :
+                              status === "Upcoming" ? "org-badge-upcoming" : "org-badge-ended"
+                            }>{status}</span>
+                            {status === "Upcoming" && (
+                              <button className="btn-org" disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
+                            )}
+                            {status === "Live" && (
+                              <>
+                                <button className="btn-org" onClick={() => {
+                                  const next = isQrOpen ? null : ev;
+                                  setOrgQrEvent(next);
+                                  if (next) generateOrgQr(ev.account.eventCode);
+                                }}>
+                                  {isQrOpen ? "Hide QR" : "⬡ QR"}
+                                </button>
+                                <button className="btn-org-danger" disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
+                              </>
                             )}
                           </div>
-                        );
-                      })}
-                    </>
+                          {isQrOpen && orgQrDataUrl && (
+                            <div className="org-qr-panel" style={{ width: "100%" }}>
+                              <div className="org-qr-wrap">
+                                <img src={orgQrDataUrl} alt="QR" width={200} height={200} />
+                              </div>
+                              <div
+                                className="org-qr-url"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`);
+                                  setOrgCopied(true);
+                                  setTimeout(() => setOrgCopied(false), 2000);
+                                }}
+                              >
+                                {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
+                              </div>
+                              <div style={{ display: "flex", gap: ".5rem", justifyContent: "center", flexWrap: "wrap" }}>
+                                <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="btn-org">Open Check-In ↗</a>
+                                <button className="btn-org" onClick={() => {
+                                  const a = document.createElement("a");
+                                  a.href = orgQrDataUrl;
+                                  a.download = `signal-${ev.account.eventCode}.png`;
+                                  a.click();
+                                }}>↓ Download QR</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   )
                 ) : loading ? (
-                  <div className="flex flex-col gap-3 py-3">
-                    {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height:52 }} />)}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 0" }}>
+                    {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height: 52 }} />)}
                   </div>
                 ) : filteredAttended.length === 0 ? (
-                  <div className="py-6 text-center text-[13px] text-[#5d8ba2]">
-                    {activeTab === "hackathon" ? "No hackathon events yet." : "No check-ins yet. Scan a QR at any Strata event to get started."}
+                  <div className="empty-text">
+                    {activeTab === "hackathon"
+                      ? "No hackathon events yet."
+                      : "No check-ins yet. Scan a QR at any Signal event to get started."}
                   </div>
                 ) : (
-                  <>
+                  <div className="event-list">
                     {filteredAttended.map(rec => {
                       const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
                       const hasMint  = !!(rec.attendance.nftMint || minted[rec.eventPubkey]);
                       const isHack   = (rec.event as any)?.isHackathon === true;
                       return (
-                        <div key={rec.eventPubkey} className="flex items-center gap-3 py-3.5 border-b border-[rgba(66,113,189,0.1)] last:border-0 flex-wrap">
-                          <div className="flex-1 min-w-0">
-                            <div className="text-[14px] text-[#1b2d4b] font-medium truncate mb-0.5" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
-                            <div className="text-[12px] text-[#5d8ba2]">
+                        <div key={rec.eventPubkey} className="event-row">
+                          <div className="event-left">
+                            <div className="event-name">{rec.event?.title ?? "Signal Event"}</div>
+                            <div className="event-date">
                               {new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}
                               {rec.event && ` · ${rec.event.location}, ${rec.event.country}`}
                             </div>
                           </div>
-                          <div className="flex gap-1.5 items-center shrink-0 flex-wrap">
-                            {tier && <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.25)]" style={SG}>{tier}</span>}
-                            {isHack && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 border border-purple-200"># Hackathon</span>}
+                          <div className="event-tags">
+                            {tier && <span className="tag">{tier}</span>}
+                            {isHack && <span className="tag-hackathon"># Hackathon</span>}
                           </div>
                           {hasMint ? (
-                            <a href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                              className="flex items-center gap-1 text-[#4271bd] no-underline hover:text-[#1b2d4b] transition-colors shrink-0">
-                              <div className="w-9 h-9 rounded-lg bg-[rgba(66,113,189,0.1)] overflow-hidden shrink-0">
-                                <img src="/nft-badge.svg" alt="NFT" className="w-full h-full object-cover" />
+                            <a
+                              href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
+                              target="_blank" rel="noreferrer"
+                              className="nft-minted-link"
+                            >
+                              <div className="nft-thumb">
+                                <img src="/nft-badge.svg" alt="NFT" />
                               </div>
-                              <span className="text-[11px] font-semibold">↗</span>
+                              <span>↗</span>
                             </a>
                           ) : (
                             <button
-                              className="claim-glow inline-flex items-center gap-1 text-[12px] font-semibold px-3 py-1.5 rounded-lg bg-[rgba(66,113,189,0.1)] text-[#4271bd] border border-[rgba(66,113,189,0.3)] hover:bg-[rgba(66,113,189,0.2)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed shrink-0 cursor-pointer"
-                              style={SG}
+                              className="btn-claim"
                               onClick={() => handleClaimNft(rec)}
                               disabled={claiming === rec.eventPubkey}
                             >
-                              {claiming === rec.eventPubkey
-                                ? <span className="animate-spin inline-block">◈</span>
-                                : "⬡ Claim NFT"}
+                              {claiming === rec.eventPubkey ? "…" : "⬡ Claim NFT"}
                             </button>
                           )}
                         </div>
                       );
                     })}
-                  </>
+                  </div>
                 )}
               </div>
             </div>
@@ -665,21 +613,25 @@ export default function ProfilePage() {
 
         {/* ── NFT gallery ── */}
         {mintedCount > 0 && (
-          <div>
-            <div className="text-[11px] font-semibold text-[#5d8ba2] uppercase tracking-widest mb-3">My Strata NFTs</div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="nft-gallery section">
+            <div className="eyebrow">My Signal NFTs</div>
+            <div className="nft-grid">
               {attended.filter(r => r.attendance.nftMint || minted[r.eventPubkey]).map(rec => {
                 const mintAddr = rec.attendance.nftMint?.toBase58() ?? minted[rec.eventPubkey];
                 return (
-                  <a key={rec.eventPubkey} href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`} target="_blank" rel="noreferrer"
-                    className={`${CARD} overflow-hidden no-underline hover:border-[rgba(66,113,189,0.38)] transition-colors block`}>
-                    <div className="w-full aspect-square bg-[rgba(66,113,189,0.06)] overflow-hidden">
-                      <img src="/nft-badge.svg" alt={rec.event?.title ?? "NFT"} className="w-full h-full object-cover" />
+                  <a
+                    key={rec.eventPubkey}
+                    href={`https://explorer.solana.com/address/${mintAddr}?cluster=devnet`}
+                    target="_blank" rel="noreferrer"
+                    className="nft-card"
+                  >
+                    <div className="nft-square">
+                      <img src="/nft-badge.svg" alt={rec.event?.title ?? "NFT"} />
                     </div>
-                    <div className="p-4">
-                      <div className="text-[13px] text-[#1b2d4b] font-medium mb-1 truncate" style={SG}>{rec.event?.title ?? "Strata Event"}</div>
-                      <div className="text-[11px] text-[#5d8ba2] mb-1">{new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}</div>
-                      <div className="text-[11px] text-[#4271bd] font-semibold">Edition #{rec.attendance.edition.toNumber()}</div>
+                    <div className="nft-body">
+                      <div className="nft-title">{rec.event?.title ?? "Signal Event"}</div>
+                      <div className="nft-date2">{new Date(rec.attendance.checkedInAt.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })}</div>
+                      <div className="nft-edition">Edition #{rec.attendance.edition.toNumber()}</div>
                     </div>
                   </a>
                 );
