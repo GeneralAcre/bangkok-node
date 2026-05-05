@@ -29,13 +29,17 @@ type DeployStep = "idle" | "creating" | "signing" | "done" | "error";
 type EventFilter = "all" | "live" | "upcoming" | "ended";
 
 function formatEventDate(ts: number): string {
-  if (!ts) return "—";
-  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  if (!ts || ts <= 0) return "—";
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function getMonthYear(ts: number): string {
-  if (!ts) return "Undated";
-  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  if (!ts || ts <= 0) return "Undated";
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) return "Undated";
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 function randomCode() {
@@ -186,6 +190,12 @@ export default function OrganizerPage() {
       return;
     }
 
+    const cap = Number(capacity);
+    if (!cap || cap <= 0 || !Number.isInteger(cap)) {
+      setMsg({ type: "err", text: "Please enter a valid capacity (minimum 1)." });
+      return;
+    }
+
     const code = eventCode.toUpperCase().slice(0, 8);
     setDeployStep("creating");
 
@@ -207,7 +217,7 @@ export default function OrganizerPage() {
         country:          country || "Global",
         startTime:        Math.floor(startTs),
         endTime:          Math.floor(endTs),
-        capacity:         parseInt(capacity, 10),
+        capacity:         cap,
         entryFeeLamports: 0,
         eventCode:        code,
         externalUrl:      externalUrl || "",
@@ -399,7 +409,7 @@ export default function OrganizerPage() {
                             </div>
                           </div>
                           <div className="ev-date-col">{formatEventDate(ev.eventDate)}</div>
-                          <div className="ev-stat-col">{ev.attendeeCount}/{ev.capacity}</div>
+                          <div className="ev-stat-col">{ev.attendeeCount}/{ev.capacity > 100000 ? "—" : ev.capacity}</div>
                           <div className="ev-cta-col">
                             {ev.status === "Live" ? (
                               <button
@@ -563,8 +573,9 @@ export default function OrganizerPage() {
                   <input
                     type="number"
                     value={capacity}
-                    onChange={e => setCapacity(e.target.value)}
+                    onChange={e => setCapacity(e.target.value || "50")}
                     min="1"
+                    placeholder="50"
                     required
                   />
 
