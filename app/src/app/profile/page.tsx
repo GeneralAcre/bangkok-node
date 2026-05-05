@@ -8,7 +8,6 @@ import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
   AttendanceAccount, MemberTier,
-  parseEventStatus,
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
 import { Nav } from "../../components/Nav";
@@ -68,6 +67,7 @@ export default function ProfilePage() {
   const [organizedEvents, setOrganizedEvents] = useState<{ pubkey: string; account: EventAccount }[]>([]);
   const [orgQrEvent,      setOrgQrEvent]      = useState<{ pubkey: string; account: EventAccount } | null>(null);
   const [orgQrDataUrl,    setOrgQrDataUrl]    = useState("");
+  const [orgQrUrl,        setOrgQrUrl]        = useState("");
   const [orgCopied,       setOrgCopied]       = useState(false);
 
   useEffect(() => {
@@ -126,39 +126,24 @@ export default function ProfilePage() {
 
   useEffect(() => { loadOrganizedEvents(); }, [loadOrganizedEvents]);
 
-  async function generateOrgQr(code: string) {
+  async function handleShowQr(ev: { pubkey: string; account: EventAccount }) {
+    if (!wallet.signMessage) return;
+    const code   = ev.account.eventCode;
+    const expiry = ev.account.endTime.toNumber();
     try {
-      const QRCode = (await import("qrcode")).default;
-      const url = `${window.location.origin}/checkin?code=${code}`;
-      const dataUrl = await QRCode.toDataURL(url, { width:220, margin:2, color:{ dark:"#000", light:"#fff" } });
+      const message  = new TextEncoder().encode(`signal_checkin:${code}:${expiry}`);
+      const sigBytes = await wallet.signMessage(message);
+      const sigHex   = Buffer.from(sigBytes).toString("hex");
+      const url      = `${window.location.origin}/checkin/${code}?sig=${sigHex}&exp=${expiry}`;
+      const QRCode   = (await import("qrcode")).default;
+      const dataUrl  = await QRCode.toDataURL(url, { width:220, margin:2, color:{ dark:"#000", light:"#fff" } });
       setOrgQrDataUrl(dataUrl);
-    } catch {}
-  }
-
-  async function handleOrgGoLive(ev: { pubkey: string; account: EventAccount }) {
-    if (!client) return;
-    setLoading(true); setError(null);
-    try {
-      await client.startEvent(new PublicKey(ev.pubkey));
-      const updated = { ...ev, account: { ...ev.account, status: { live: {} } as any } };
-      setOrgQrEvent(updated);
-      await generateOrgQr(ev.account.eventCode);
-      setSuccess("✓ Event is now LIVE — share the QR below!");
-      await loadOrganizedEvents();
-    } catch (e: any) { setError(e?.message); }
-    finally { setLoading(false); }
-  }
-
-  async function handleOrgEnd(ev: { pubkey: string; account: EventAccount }) {
-    if (!client) return;
-    setLoading(true); setError(null);
-    try {
-      await client.endEvent(new PublicKey(ev.pubkey));
-      setOrgQrEvent(null);
-      setSuccess("Event ended.");
-      await loadOrganizedEvents();
-    } catch (e: any) { setError(e?.message); }
-    finally { setLoading(false); }
+      setOrgQrUrl(url);
+      setOrgQrEvent(ev);
+    } catch (e: any) {
+      const m = e?.message ?? "";
+      if (!m.includes("rejected") && !m.includes("cancelled")) setError(m || "Failed to generate QR");
+    }
   }
 
   async function handleRegister() {
@@ -491,14 +476,17 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     organizedEvents.map(ev => {
-                      const status   = parseEventStatus(ev.account.status);
+                      const now    = Math.floor(Date.now() / 1000);
+                      const startT = ev.account.startTime.toNumber();
+                      const endT   = ev.account.endTime.toNumber();
+                      const status = now < startT ? "Upcoming" : now <= endT ? "Live" : "Ended";
                       const isQrOpen = orgQrEvent?.pubkey === ev.pubkey;
                       return (
                         <div key={ev.pubkey} className="org-row" style={{ flexWrap: "wrap" }}>
                           <div className="org-left">
                             <div className="event-name">{ev.account.title}</div>
                             <div className="event-date">
-                              {ev.account.location}, {ev.account.country} · {new Date(ev.account.eventDate.toNumber() * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} · {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
+                              {ev.account.location}, {ev.account.country} · {new Date(startT * 1000).toLocaleDateString("en-US", { dateStyle:"medium" })} · {ev.account.attendeeCount.toNumber()}/{ev.account.capacity.toNumber()} checked in
                             </div>
                           </div>
                           <div className="org-actions">
@@ -506,20 +494,10 @@ export default function ProfilePage() {
                               status === "Live"     ? "org-badge-live" :
                               status === "Upcoming" ? "org-badge-upcoming" : "org-badge-ended"
                             }>{status}</span>
-                            {status === "Upcoming" && (
-                              <button className="btn-org" disabled={loading} onClick={() => handleOrgGoLive(ev)}>▶ Go Live</button>
-                            )}
-                            {status === "Live" && (
-                              <>
-                                <button className="btn-org" onClick={() => {
-                                  const next = isQrOpen ? null : ev;
-                                  setOrgQrEvent(next);
-                                  if (next) generateOrgQr(ev.account.eventCode);
-                                }}>
-                                  {isQrOpen ? "Hide QR" : "⬡ QR"}
-                                </button>
-                                <button className="btn-org-danger" disabled={loading} onClick={() => handleOrgEnd(ev)}>End</button>
-                              </>
+                            {status !== "Ended" && (
+                              <button className="btn-org" onClick={() => isQrOpen ? setOrgQrEvent(null) : handleShowQr(ev)}>
+                                {isQrOpen ? "Hide QR" : "⬡ QR"}
+                              </button>
                             )}
                           </div>
                           {isQrOpen && orgQrDataUrl && (
@@ -530,15 +508,15 @@ export default function ProfilePage() {
                               <div
                                 className="org-qr-url"
                                 onClick={() => {
-                                  navigator.clipboard.writeText(`${window.location.origin}/checkin?code=${ev.account.eventCode}`);
+                                  navigator.clipboard.writeText(orgQrUrl);
                                   setOrgCopied(true);
                                   setTimeout(() => setOrgCopied(false), 2000);
                                 }}
                               >
-                                {orgCopied ? "✓ Copied!" : `${window.location.origin}/checkin?code=${ev.account.eventCode}`}
+                                {orgCopied ? "✓ Copied!" : orgQrUrl}
                               </div>
                               <div style={{ display: "flex", gap: ".5rem", justifyContent: "center", flexWrap: "wrap" }}>
-                                <a href={`/checkin?code=${ev.account.eventCode}`} target="_blank" rel="noreferrer" className="btn-org">Open Check-In ↗</a>
+                                <a href={orgQrUrl} target="_blank" rel="noreferrer" className="btn-org">Open Check-In ↗</a>
                                 <button className="btn-org" onClick={() => {
                                   const a = document.createElement("a");
                                   a.href = orgQrDataUrl;
