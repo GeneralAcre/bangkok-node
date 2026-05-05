@@ -98,19 +98,19 @@ export interface EventAccount {
   community:          PublicKey;
   organizer:          PublicKey;
   title:              string;
-  description:        string;
   location:           string;
   country:            string;
-  eventDate:          BN;
+  startTime:          BN;
+  endTime:            BN;
   capacity:           BN;
   attendeeCount:      BN;
   entryFeeLamports:   BN;
   eventCode:          string;
-  status:             Record<string, Record<string, never>>;
   eventIndex:         BN;
   escrowBump:         number;
   bump:               number;
   createdAt:          BN;
+  externalUrl:        string;
   isHackathon:        boolean;
 }
 
@@ -243,13 +243,14 @@ export class StrataClient {
   async createEvent(params: {
     community:          PublicKey;
     title:              string;
-    description:        string;
     location:           string;
     country:            string;
-    eventDate:          number;    // unix timestamp
+    startTime:          number;    // unix timestamp
+    endTime:            number;    // unix timestamp
     capacity:           number;
     entryFeeLamports:   number;
     eventCode:          string;    // exactly 8 chars
+    externalUrl?:       string;
     isHackathon?:       boolean;
   }) {
     const communityAcc = await this.getCommunity(params.community);
@@ -260,13 +261,14 @@ export class StrataClient {
     const tx = await (this.program.methods as any)
       .createEvent(
         params.title,
-        params.description,
         params.location,
         params.country,
-        new BN(params.eventDate),
+        new BN(params.startTime),
+        new BN(params.endTime),
         new BN(params.capacity),
         new BN(params.entryFeeLamports),
         params.eventCode,
+        params.externalUrl ?? "",
         params.isHackathon ?? false
       )
       .accounts({
@@ -279,22 +281,6 @@ export class StrataClient {
       .rpc();
 
     return { tx, eventPDA, eventIndex: idx };
-  }
-
-  async startEvent(eventPDA: PublicKey) {
-    const tx = await (this.program.methods as any)
-      .startEvent()
-      .accounts({ event: eventPDA, organizer: this.wallet })
-      .rpc();
-    return { tx };
-  }
-
-  async endEvent(eventPDA: PublicKey) {
-    const tx = await (this.program.methods as any)
-      .endEvent()
-      .accounts({ event: eventPDA, organizer: this.wallet })
-      .rpc();
-    return { tx };
   }
 
   async getEvent(eventPDA: PublicKey): Promise<EventAccount> {

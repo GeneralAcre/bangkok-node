@@ -112,15 +112,20 @@ function parseCommunityEventCount(data: Buffer): number {
 }
 
 // ── Event parser ─────────────────────────────────────────────────────────────
-// Layout: disc(8) + community(32) + organizer(32) + title(str) + description(str)
-//         + location(str) + country(str) + event_date(i64=8) + capacity(u64=8)
-//         + attendee_count(u64=8) + fee(u64=8) + event_code(str) + status(u8=1)
+// Layout: disc(8) + community(32) + organizer(32) + title(str)
+//         + location(str) + country(str)
+//         + start_time(i64=8) + end_time(i64=8)
+//         + capacity(u64=8) + attendee_count(u64=8) + fee(u64=8)
+//         + event_code(str)
+//         + event_index(u64=8) + escrow_bump(u8=1) + bump(u8=1) + created_at(i64=8)
+//         + external_url(str) + is_hackathon(bool=1)
 
 interface EventData {
   title:         string;
   location:      string;
   country:       string;
-  eventDate:     number;
+  startTime:     number;
+  endTime:       number;
   capacity:      bigint;
   attendeeCount: bigint;
   eventIndex:    bigint;
@@ -134,20 +139,21 @@ function parseEventFull(data: Buffer, index: number, community: PublicKey): Even
   let off = 8 + 32; // disc + community
   const organizer     = new PublicKey(data.slice(off, off + 32)); off += 32;
   const title         = readStr(data, off); off = title.next;
-  const _description  = readStr(data, off); off = _description.next;
   const location      = readStr(data, off); off = location.next;
   const country       = readStr(data, off); off = country.next;
-  const eventDate     = Number(data.readBigInt64LE(off));  off += 8;
-  const capacity      = data.readBigUInt64LE(off);         off += 8;
-  const attendeeCount = data.readBigUInt64LE(off);         off += 8;
-  /* fee */                                                 off += 8;
+  const startTime     = Number(data.readBigInt64LE(off)); off += 8;
+  const endTime       = Number(data.readBigInt64LE(off)); off += 8;
+  const capacity      = data.readBigUInt64LE(off);        off += 8;
+  const attendeeCount = data.readBigUInt64LE(off);        off += 8;
+  /* fee */                                               off += 8;
   const eventCode     = readStr(data, off);
 
   return {
     title:         title.value,
     location:      location.value,
     country:       country.value,
-    eventDate,
+    startTime,
+    endTime,
     capacity,
     attendeeCount,
     eventIndex:    BigInt(index),
@@ -222,7 +228,7 @@ export async function GET(req: NextRequest) {
 
     const { data } = found;
     const spotsLeft = Number(data.capacity) - Number(data.attendeeCount);
-    const dateStr   = new Date(data.eventDate * 1000).toLocaleDateString("en-US", { dateStyle: "full" });
+    const dateStr   = new Date(data.startTime * 1000).toLocaleDateString("en-US", { dateStyle: "full" });
     const expiry    = parseInt(exp, 10);
     const expired   = Date.now() / 1000 > expiry;
 

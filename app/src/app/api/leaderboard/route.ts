@@ -35,13 +35,13 @@ function parseMemberUsername(data: Buffer): string {
 function isHackathon(data: Buffer): boolean {
   try {
     let off = 8 + 32 + 32;
-    off = readStr(data, off).next;
-    off = readStr(data, off).next;
-    off = readStr(data, off).next;
-    off = readStr(data, off).next;
-    off += 8 + 8 + 8 + 8;
-    off = readStr(data, off).next;
-    off += 1 + 8 + 1 + 1 + 8;
+    off = readStr(data, off).next; // title
+    off = readStr(data, off).next; // location
+    off = readStr(data, off).next; // country
+    off += 8 + 8 + 8 + 8 + 8;    // start_time + end_time + capacity + attendee_count + fee
+    off = readStr(data, off).next; // event_code
+    off += 8 + 1 + 1 + 8;         // event_index + escrow_bump + bump + created_at
+    off = readStr(data, off).next; // external_url
     return data.length > off && data[off] !== 0;
   } catch { return false; }
 }

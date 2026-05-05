@@ -170,7 +170,7 @@
   .badge-upcoming { font-size:.72rem; font-weight:500; color:#f59e0b; background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.2); padding:.2rem .7rem; border-radius:100px; }
   .badge-ended    { font-size:.72rem; font-weight:500; color:#888; background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); padding:.2rem .7rem; border-radius:100px; }
 
-  /* ── QR panel ── */
+  /* ── QR panel (legacy) ── */
   .qr-panel { text-align:center; padding:.5rem 0; }
   .event-code-display {
     display:inline-block; font-family:'Space Mono',monospace; font-size:1.8rem; font-weight:700;
@@ -187,6 +187,78 @@
     border-radius:8px; margin-bottom:.75rem; cursor:pointer; transition:all .2s; text-align:left; display:block;
   }
   .blink-url:hover { border-color:#ffffff; color:#e8e8e8; }
+
+  /* ── QR overlay modal ── */
+  @keyframes overlayIn { from{opacity:0} to{opacity:1} }
+  @keyframes modalIn   { from{opacity:0;transform:translateY(20px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
+  .qr-overlay {
+    position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,.85); backdrop-filter:blur(10px);
+    display:flex; align-items:center; justify-content:center;
+    padding:1.5rem; animation:overlayIn .25s ease both;
+  }
+  .qr-modal {
+    background:#111; border:1px solid rgba(255,255,255,.15); border-radius:20px;
+    padding:2rem 1.75rem; max-width:400px; width:100%; text-align:center;
+    box-shadow:0 24px 80px rgba(0,0,0,.8); animation:modalIn .3s ease both;
+    position:relative;
+  }
+  .qr-close {
+    position:absolute; top:1rem; right:1rem;
+    background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12);
+    color:#888; border-radius:50%; width:28px; height:28px;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:.8rem; transition:all .2s;
+  }
+  .qr-close:hover { background:rgba(255,255,255,.16); color:#fff; }
+  .qr-success-badge {
+    display:inline-flex; align-items:center; gap:.4rem;
+    background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+    border-radius:100px; padding:.3rem .9rem;
+    font-size:.7rem; font-family:'Epilogue',sans-serif; font-weight:700;
+    text-transform:uppercase; letter-spacing:.08em; color:#ffffff; margin-bottom:1rem;
+  }
+  .qr-event-name {
+    font-family:'Epilogue',sans-serif; font-size:1rem; font-weight:800;
+    color:#ffffff; margin-bottom:1.25rem; line-height:1.3;
+  }
+  .qr-code-wrap {
+    display:inline-block; background:#fff; padding:.85rem; border-radius:12px;
+    margin-bottom:.85rem; box-shadow:0 4px 24px rgba(0,0,0,.5);
+  }
+  .qr-code-label {
+    font-family:'Space Mono',monospace; font-size:.72rem; font-weight:700;
+    color:#888; letter-spacing:.2em; margin-bottom:.85rem;
+  }
+  .qr-url-box {
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+    border-radius:8px; padding:.55rem .85rem; font-family:'Space Mono',monospace;
+    font-size:.62rem; color:#888; word-break:break-all; margin-bottom:1rem;
+    cursor:pointer; transition:all .2s; text-align:left; user-select:all;
+  }
+  .qr-url-box:hover { border-color:rgba(255,255,255,.3); color:#e8e8e8; }
+  .qr-actions { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin-bottom:.85rem; }
+  .btn-qr-primary { background:#ffffff; color:#0a0a0a; }
+  .btn-qr-primary:hover { background:#e8e8e8; }
+  .btn-qr-ghost { background:transparent; color:#888; border:1px solid rgba(255,255,255,.12); }
+  .btn-qr-ghost:hover { border-color:#ffffff; color:#e8e8e8; background:rgba(255,255,255,.07); }
+  .qr-note { font-size:.72rem; color:#888; line-height:1.6; }
+
+  /* ── Deploy steps ── */
+  .deploy-steps {
+    display:flex; flex-direction:column; gap:.5rem; margin:1rem 0;
+    background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.08);
+    border-radius:12px; padding:1rem 1.25rem;
+  }
+  .deploy-step {
+    display:flex; align-items:center; gap:.75rem;
+    font-size:.82rem; color:#888; transition:color .2s;
+  }
+  .deploy-step.active { color:#e8e8e8; }
+  .deploy-step.done   { color:#888; }
+  .step-icon { width:20px; text-align:center; flex-shrink:0; font-size:.85rem; }
+  @keyframes stepSpin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  .step-spin { display:inline-block; animation:stepSpin 1s linear infinite; }
 
   /* ── How it works ── */
   .how-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:.6rem; }

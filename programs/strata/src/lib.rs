@@ -8,7 +8,6 @@ pub mod strata {
 
     // ─── DAO / Community ────────────────────────────────────────────────
 
-    /// Initialize a new Strata DAO community
     pub fn initialize_community(
         ctx: Context<InitializeCommunity>,
         name: String,
@@ -20,15 +19,15 @@ pub mod strata {
         require!(country.len() <= 64, StrataError::NameTooLong);
 
         let community = &mut ctx.accounts.community;
-        community.authority    = ctx.accounts.authority.key();
-        community.name         = name;
-        community.description  = description;
-        community.country      = country;
-        community.member_count = 0;
-        community.event_count  = 0;
+        community.authority      = ctx.accounts.authority.key();
+        community.name           = name;
+        community.description    = description;
+        community.country        = country;
+        community.member_count   = 0;
+        community.event_count    = 0;
         community.total_checkins = 0;
-        community.bump         = ctx.bumps.community;
-        community.created_at   = Clock::get()?.unix_timestamp;
+        community.bump           = ctx.bumps.community;
+        community.created_at     = Clock::get()?.unix_timestamp;
 
         emit!(CommunityCreated {
             community: community.key(),
@@ -42,7 +41,6 @@ pub mod strata {
 
     // ─── Member / Identity ──────────────────────────────────────────────
 
-    /// Register as a DAO resident — creates on-chain identity
     pub fn register_member(
         ctx: Context<RegisterMember>,
         username: String,
@@ -73,7 +71,6 @@ pub mod strata {
         Ok(())
     }
 
-    /// Update reputation (called by authority or Copilot agent)
     pub fn update_reputation(
         ctx: Context<UpdateReputation>,
         new_score: u64,
@@ -87,98 +84,83 @@ pub mod strata {
         member.tier = MemberTier::from_score(new_score, member.events_attended);
         member.last_active = Clock::get()?.unix_timestamp;
 
-        emit!(ReputationUpdated {
-            member: member.key(),
-            old_score,
-            new_score,
-            reason,
-        });
+        emit!(ReputationUpdated { member: member.key(), old_score, new_score, reason });
 
         Ok(())
     }
 
     // ─── Event Lifecycle ────────────────────────────────────────────────
 
-    /// Create an on-chain event — SOL entry fee escrowed if set
+    /// Create an on-chain event. The organizer signs once:
+    ///   1. This transaction (creates the PDA)
+    ///   2. Off-chain: signMessage("signal_checkin:{code}:{end_time}") → embedded in QR
+    ///
+    /// Check-ins are automatically valid between start_time and end_time.
+    /// No separate start_event / end_event needed.
     pub fn create_event(
         ctx: Context<CreateEvent>,
         title: String,
-        description: String,
         location: String,
         country: String,
-        event_date: i64,
+        start_time: i64,
+        end_time: i64,
         capacity: u64,
         entry_fee_lamports: u64,
-        event_code: String,   // 8-char code embedded in QR
+        event_code: String,
+        external_url: String,
         is_hackathon: bool,
     ) -> Result<()> {
         require!(title.len() <= 64, StrataError::NameTooLong);
-        require!(description.len() <= 512, StrataError::DescriptionTooLong);
         require!(location.len() <= 128, StrataError::DescriptionTooLong);
         require!(country.len() <= 64, StrataError::NameTooLong);
+        require!(external_url.len() <= 256, StrataError::DescriptionTooLong);
         require!(event_code.len() == 8, StrataError::InvalidEventCode);
         require!(capacity > 0, StrataError::InvalidAmount);
-        require!(
-            event_date > Clock::get()?.unix_timestamp,
-            StrataError::InvalidDeadline
-        );
 
-        let event = &mut ctx.accounts.event;
+        let clock = Clock::get()?;
+        require!(start_time > clock.unix_timestamp, StrataError::InvalidDeadline);
+        require!(end_time > start_time, StrataError::InvalidEndTime);
+
+        let event     = &mut ctx.accounts.event;
         let community = &mut ctx.accounts.community;
 
         event.community          = community.key();
         event.organizer          = ctx.accounts.organizer.key();
         event.title              = title;
-        event.description        = description;
         event.location           = location;
         event.country            = country;
-        event.event_date         = event_date;
+        event.start_time         = start_time;
+        event.end_time           = end_time;
         event.capacity           = capacity;
         event.attendee_count     = 0;
         event.entry_fee_lamports = entry_fee_lamports;
         event.event_code         = event_code;
-        event.status             = EventStatus::Upcoming;
         event.event_index        = community.event_count;
         event.escrow_bump        = ctx.bumps.escrow_vault;
         event.bump               = ctx.bumps.event;
-        event.created_at         = Clock::get()?.unix_timestamp;
+        event.created_at         = clock.unix_timestamp;
+        event.external_url       = external_url;
         event.is_hackathon       = is_hackathon;
 
         community.event_count = community.event_count.checked_add(1).unwrap();
 
         emit!(EventCreated {
-            event: event.key(),
-            community: community.key(),
-            organizer: event.organizer,
-            title: event.title.clone(),
-            location: event.location.clone(),
-            country: event.country.clone(),
-            event_date,
+            event:      event.key(),
+            community:  community.key(),
+            organizer:  event.organizer,
+            title:      event.title.clone(),
+            location:   event.location.clone(),
+            country:    event.country.clone(),
+            start_time,
+            end_time,
             capacity,
         });
 
         Ok(())
     }
 
-    /// Go live — organizer opens check-ins
-    pub fn start_event(ctx: Context<ManageEvent>) -> Result<()> {
-        let event = &mut ctx.accounts.event;
-        require!(
-            event.status == EventStatus::Upcoming,
-            StrataError::InvalidEventStatus
-        );
-        event.status = EventStatus::Live;
-
-        emit!(EventStatusChanged {
-            event: event.key(),
-            status: EventStatus::Live,
-        });
-
-        Ok(())
-    }
-
-    /// Check in — verify event_code + organizer Ed25519 co-signature → create Attendance record
-    /// Transaction must have [Ed25519VerifyIx, CheckInIx] — the Ed25519 ix is verified here.
+    /// Check in — time-window enforced on-chain + organizer Ed25519 co-signature.
+    /// Transaction must have [Ed25519VerifyIx, CheckInIx].
     pub fn check_in(
         ctx: Context<CheckIn>,
         event_code: String,
@@ -187,19 +169,26 @@ pub mod strata {
         let event = &ctx.accounts.event;
         let clock  = Clock::get()?;
 
-        // Only accept Live events — organizer must explicitly call start_event
-        require!(event.status == EventStatus::Live, StrataError::EventNotLive);
+        // Time-window enforcement — start_time and end_time are on-chain
+        require!(
+            clock.unix_timestamp >= event.start_time,
+            StrataError::EventNotStarted
+        );
+        require!(
+            clock.unix_timestamp <= event.end_time,
+            StrataError::EventEnded
+        );
 
-        // Event code check (anti-sybil: must physically scan QR)
+        // Event code anti-sybil
         require!(event.event_code == event_code, StrataError::InvalidEventCode);
 
-        // Capacity check
+        // Capacity guard
         require!(event.attendee_count < event.capacity, StrataError::EventFull);
 
-        // QR expiry: organizer controls validity window when they go live
+        // QR expiry (expiry == end_time in new flow, or organizer-set window)
         require!(clock.unix_timestamp < expiry, StrataError::SignatureExpired);
 
-        // Ed25519 organizer co-signature must be at instruction index 0 in this tx
+        // Ed25519 organizer co-signature at ix[0]
         {
             let ix_sysvar = ctx.accounts.instructions.to_account_info();
             let ed25519_ix = anchor_lang::solana_program::sysvar::instructions
@@ -213,21 +202,18 @@ pub mod strata {
             verify_ed25519_ix(&ed25519_ix.data, &event.organizer, expected_msg.as_bytes())?;
         }
 
-
-        // Create attendance record (Proof of Presence)
+        // Create attendance record
         let attendance = &mut ctx.accounts.attendance;
-        attendance.event          = event.key();
-        attendance.attendee       = ctx.accounts.attendee.key();
-        attendance.edition        = event.attendee_count.checked_add(1).unwrap();
-        attendance.checked_in_at  = clock.unix_timestamp;
-        attendance.nft_mint       = None;
-        attendance.bump           = ctx.bumps.attendance;
+        attendance.event         = event.key();
+        attendance.attendee      = ctx.accounts.attendee.key();
+        attendance.edition       = event.attendee_count.checked_add(1).unwrap();
+        attendance.checked_in_at = clock.unix_timestamp;
+        attendance.nft_mint      = None;
+        attendance.bump          = ctx.bumps.attendance;
 
-        // Update event count
         let event_mut = &mut ctx.accounts.event;
         event_mut.attendee_count = event_mut.attendee_count.checked_add(1).unwrap();
 
-        // Update member: attendance count + reputation
         let member = &mut ctx.accounts.member;
         member.events_attended = member.events_attended.checked_add(1).unwrap();
         member.last_active     = clock.unix_timestamp;
@@ -239,23 +225,22 @@ pub mod strata {
             .unwrap();
         member.tier = MemberTier::from_score(member.reputation_score, member.events_attended);
 
-        // Update community total
         let community = &mut ctx.accounts.community;
         community.total_checkins = community.total_checkins.checked_add(1).unwrap();
 
         emit!(AttendanceVerified {
-            event: event_mut.key(),
-            attendee: attendance.attendee,
-            edition: attendance.edition,
-            checked_in_at: attendance.checked_in_at,
+            event:            event_mut.key(),
+            attendee:         attendance.attendee,
+            edition:          attendance.edition,
+            checked_in_at:    attendance.checked_in_at,
             reputation_bonus,
-            new_tier: member.tier.clone(),
+            new_tier:         member.tier.clone(),
         });
 
         Ok(())
     }
 
-    /// Record the cNFT mint address against an attendance record (called after Bubblegum mint)
+    /// Record the NFT mint address against an attendance record
     pub fn record_nft_mint(
         ctx: Context<RecordNftMint>,
         nft_mint: Pubkey,
@@ -265,33 +250,15 @@ pub mod strata {
         attendance.nft_mint = Some(nft_mint);
 
         emit!(NftMinted {
-            event: attendance.event,
+            event:    attendance.event,
             attendee: attendance.attendee,
             nft_mint,
-            edition: attendance.edition,
+            edition:  attendance.edition,
         });
 
         Ok(())
     }
 
-    /// End the event — organizer closes check-ins
-    pub fn end_event(ctx: Context<ManageEvent>) -> Result<()> {
-        let event = &mut ctx.accounts.event;
-        require!(
-            event.status == EventStatus::Live,
-            StrataError::InvalidEventStatus
-        );
-        event.status = EventStatus::Ended;
-
-        emit!(EventStatusChanged {
-            event: event.key(),
-            status: EventStatus::Ended,
-        });
-
-        Ok(())
-    }
-
-    /// Copilot scores the event quality (logged on-chain via this instruction)
     pub fn copilot_score_event(
         ctx: Context<CopilotScoreEvent>,
         score: u8,
@@ -312,9 +279,6 @@ pub mod strata {
 
 // ─── Signature helpers ──────────────────────────────────────────────────────
 
-/// Verify that the embedded pubkey and message in an Ed25519Program instruction match
-/// expectations. Layout (all u16 LE): num_sigs(2) | pad(2) | sig_off(2) | sig_ix(2) |
-/// pk_off(2) | pk_ix(2) | msg_off(2) | msg_sz(2) | msg_ix(2) | [pubkey][sig][message]
 fn verify_ed25519_ix(data: &[u8], expected_pubkey: &Pubkey, expected_msg: &[u8]) -> Result<()> {
     require!(data.len() >= 18, StrataError::InvalidOrganizerSignature);
     let num_sigs      = u16::from_le_bytes([data[0], data[1]]);
@@ -322,7 +286,7 @@ fn verify_ed25519_ix(data: &[u8], expected_pubkey: &Pubkey, expected_msg: &[u8])
     let pubkey_offset = u16::from_le_bytes([data[8],  data[9]])  as usize;
     let msg_offset    = u16::from_le_bytes([data[12], data[13]]) as usize;
     let msg_size      = u16::from_le_bytes([data[14], data[15]]) as usize;
-    require!(data.len() >= pubkey_offset + 32,   StrataError::InvalidOrganizerSignature);
+    require!(data.len() >= pubkey_offset + 32,    StrataError::InvalidOrganizerSignature);
     require!(data.len() >= msg_offset + msg_size, StrataError::InvalidOrganizerSignature);
     require!(
         &data[pubkey_offset..pubkey_offset + 32] == expected_pubkey.as_ref(),
@@ -337,7 +301,6 @@ fn verify_ed25519_ix(data: &[u8], expected_pubkey: &Pubkey, expected_msg: &[u8])
 
 // ─── Reputation helpers ─────────────────────────────────────────────────────
 
-/// Reputation points awarded per attendance (scales with total events attended)
 fn reputation_for_attendance(events_attended: u64) -> u64 {
     match events_attended {
         1..=2  => 10,
@@ -375,65 +338,58 @@ pub struct Member {
     pub last_active:       i64,
 }
 
+/// Event PDA — created by organizer, validated time-window on every check-in
 #[account]
 pub struct Event {
     pub community:          Pubkey,
     pub organizer:          Pubkey,
     pub title:              String,   // max 64
-    pub description:        String,   // max 512
     pub location:           String,   // max 128
     pub country:            String,   // max 64
-    pub event_date:         i64,
+    pub start_time:         i64,      // unix — check-ins open from here
+    pub end_time:           i64,      // unix — check-ins close at here (= QR expiry)
     pub capacity:           u64,
     pub attendee_count:     u64,
     pub entry_fee_lamports: u64,
     pub event_code:         String,   // exactly 8 chars — embedded in QR
-    pub status:             EventStatus,
     pub event_index:        u64,
     pub escrow_bump:        u8,
     pub bump:               u8,
     pub created_at:         i64,
+    pub external_url:       String,   // max 256 — optional link to Luma / Eventbrite
     pub is_hackathon:       bool,
 }
 
-/// Created once per (event, attendee) — the on-chain Proof of Presence
+/// Attendance PDA — one per (event, attendee) — Proof of Presence
 #[account]
 pub struct Attendance {
-    pub event:          Pubkey,
-    pub attendee:       Pubkey,
-    pub edition:        u64,          // attendance number (1st, 2nd … Nth person)
-    pub checked_in_at:  i64,
-    pub nft_mint:       Option<Pubkey>, // set after Bubblegum cNFT minted
-    pub bump:           u8,
-}
-
-#[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
-pub enum EventStatus {
-    Upcoming,
-    Live,
-    Ended,
-    Cancelled,
+    pub event:         Pubkey,
+    pub attendee:      Pubkey,
+    pub edition:       u64,            // check-in number (1st, 2nd … Nth)
+    pub checked_in_at: i64,
+    pub nft_mint:      Option<Pubkey>, // set after NFT minted
+    pub bump:          u8,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub enum MemberTier {
-    Initiate,    // 0 events
-    Seeker,      // 1–2
-    Resident,    // 3–5
-    Builder,     // 6–10
-    Core,        // 11–20
-    Legend,      // 21+
+    Initiate,
+    Seeker,
+    Resident,
+    Builder,
+    Core,
+    Legend,
 }
 
 impl MemberTier {
     pub fn from_score(_score: u64, events: u64) -> Self {
         match events {
-            0      => MemberTier::Initiate,
-            1..=2  => MemberTier::Seeker,
-            3..=5  => MemberTier::Resident,
-            6..=10 => MemberTier::Builder,
+            0       => MemberTier::Initiate,
+            1..=2   => MemberTier::Seeker,
+            3..=5   => MemberTier::Resident,
+            6..=10  => MemberTier::Builder,
             11..=20 => MemberTier::Core,
-            _      => MemberTier::Legend,
+            _       => MemberTier::Legend,
         }
     }
 }
@@ -485,16 +441,27 @@ pub struct UpdateReputation<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(title: String, _description: String, _location: String, _country: String,
-              _event_date: i64, _capacity: u64, _entry_fee_lamports: u64, event_code: String,
-              _is_hackathon: bool)]
+#[instruction(title: String, _location: String, _country: String,
+              _start_time: i64, _end_time: i64, _capacity: u64,
+              _entry_fee_lamports: u64, event_code: String,
+              external_url: String, _is_hackathon: bool)]
 pub struct CreateEvent<'info> {
     #[account(mut)]
     pub community: Account<'info, Community>,
     #[account(
         init, payer = organizer,
-        space = 8 + 32 + 32 + (4+64) + (4+512) + (4+128) + (4+64)
-              + 8 + 8 + 8 + 8 + (4+8) + 1 + 8 + 1 + 1 + 8 + 1,
+        // disc(8) + community(32) + organizer(32)
+        // + title(4+64) + location(4+128) + country(4+64)
+        // + start_time(8) + end_time(8) + capacity(8) + attendee_count(8)
+        // + fee(8) + event_code(4+8) + event_index(8)
+        // + escrow_bump(1) + bump(1) + created_at(8)
+        // + external_url(4+256) + is_hackathon(1)
+        space = 8 + 32 + 32
+              + (4+64) + (4+128) + (4+64)
+              + 8 + 8 + 8 + 8 + 8
+              + (4+8)
+              + 8 + 1 + 1 + 8
+              + (4+256) + 1,
         seeds = [b"event", community.key().as_ref(), &community.event_count.to_le_bytes()],
         bump
     )]
@@ -512,16 +479,6 @@ pub struct CreateEvent<'info> {
 }
 
 #[derive(Accounts)]
-pub struct ManageEvent<'info> {
-    #[account(
-        mut,
-        constraint = event.organizer == organizer.key() @ StrataError::Unauthorized,
-    )]
-    pub event: Account<'info, Event>,
-    pub organizer: Signer<'info>,
-}
-
-#[derive(Accounts)]
 #[instruction(event_code: String)]
 pub struct CheckIn<'info> {
     #[account(mut)]
@@ -531,7 +488,6 @@ pub struct CheckIn<'info> {
         constraint = event.community == community.key() @ StrataError::EventNotInCommunity,
     )]
     pub event: Account<'info, Event>,
-    /// Proof-of-Presence record — one per (event, attendee wallet)
     #[account(
         init, payer = attendee,
         space = 8 + 32 + 32 + 8 + 8 + (1+32) + 1,
@@ -548,7 +504,7 @@ pub struct CheckIn<'info> {
     #[account(mut)]
     pub attendee: Signer<'info>,
     pub system_program: Program<'info, System>,
-    /// CHECK: Instructions sysvar — organizer Ed25519 co-signature must be at ix[0]
+    /// CHECK: Instructions sysvar — organizer Ed25519 co-signature at ix[0]
     #[account(address = anchor_lang::solana_program::sysvar::instructions::ID)]
     pub instructions: UncheckedAccount<'info>,
 }
@@ -608,17 +564,11 @@ pub struct EventCreated {
     pub title:      String,
     pub location:   String,
     pub country:    String,
-    pub event_date: i64,
+    pub start_time: i64,
+    pub end_time:   i64,
     pub capacity:   u64,
 }
 
-#[event]
-pub struct EventStatusChanged {
-    pub event:  Pubkey,
-    pub status: EventStatus,
-}
-
-/// The core event — emitted every check-in, permanently on-chain
 #[event]
 pub struct AttendanceVerified {
     pub event:            Pubkey,
@@ -654,16 +604,18 @@ pub enum StrataError {
     DescriptionTooLong,
     #[msg("Invalid amount")]
     InvalidAmount,
-    #[msg("Date must be in the future")]
+    #[msg("Start time must be in the future")]
     InvalidDeadline,
+    #[msg("End time must be after start time")]
+    InvalidEndTime,
     #[msg("Event code must be exactly 8 characters")]
     InvalidEventCode,
-    #[msg("Event is not currently live")]
-    EventNotLive,
+    #[msg("Event has not started yet")]
+    EventNotStarted,
+    #[msg("Event has ended")]
+    EventEnded,
     #[msg("Event is at full capacity")]
     EventFull,
-    #[msg("Invalid event status for this operation")]
-    InvalidEventStatus,
     #[msg("Member does not belong to this community")]
     MemberNotInCommunity,
     #[msg("Invalid member account")]
@@ -674,7 +626,7 @@ pub enum StrataError {
     NftAlreadyMinted,
     #[msg("Unauthorized")]
     Unauthorized,
-    #[msg("QR code has expired — organizer must go live again to refresh")]
+    #[msg("QR code has expired")]
     SignatureExpired,
     #[msg("Missing organizer co-signature — Ed25519 instruction must be ix[0]")]
     MissingOrganizerSignature,
