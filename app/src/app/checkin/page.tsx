@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { Transaction } from "@solana/web3.js";
+import { Transaction, Connection, PublicKey } from "@solana/web3.js";
 import { checkinCSS } from "../../styles/checkinStyles";
 
 const WLD_APP_ID = process.env.NEXT_PUBLIC_WLD_APP_ID ?? "";
@@ -21,19 +21,32 @@ function ConfettiPiece({ i }: { i: number }) {
   );
 }
 
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.devnet.solana.com";
+
+function readStr(data: Buffer, off: number): { value: string; next: number } {
+  const len = data.readUInt32LE(off);
+  return { value: data.slice(off + 4, off + 4 + len).toString("utf-8"), next: off + 4 + len };
+}
+
 interface EventInfo {
-  title: string;
-  location: string;
-  status: string;
+  title:        string;
+  location:     string;
+  country:      string;
+  status:       string;
+  startTime:    number;
+  endTime:      number;
+  capacity:     number;
+  attendeeCount: number;
+  eventCode:    string;
 }
 
 type WorldIdState = "idle" | "verifying" | "verified" | "error";
 
 function CheckInContent() {
-  const searchParams = useSearchParams();
-  const code = searchParams.get("code")?.toUpperCase() ?? "";
-  const sig  = searchParams.get("sig") ?? "";
-  const exp  = searchParams.get("exp") ?? "";
+  const searchParams   = useSearchParams();
+  const eventPubkeyStr = searchParams.get("event") ?? "";
+  const sig            = searchParams.get("sig") ?? "";
+  const exp            = searchParams.get("exp") ?? "";
 
   const { connection } = useConnection();
   const wallet = useWallet();
@@ -64,26 +77,34 @@ function CheckInContent() {
       .catch(() => setMiniKitReady(false));
   }, []);
 
-  // Fetch event info
+  // Fetch event info directly from chain by pubkey
   useEffect(() => {
-    if (!code) { setFetching(false); setNotFound(true); return; }
-    fetch(`/api/actions/checkin?eventCode=${code}&sig=${encodeURIComponent(sig)}&exp=${exp}`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.error) { setNotFound(true); }
-        else {
-          const desc  = d.description ?? "";
-          const lines = desc.split("\n").filter(Boolean);
-          setEventInfo({
-            title:    d.title?.replace("[SIGNAL] ","") ?? code,
-            location: lines[0]?.replace("📍 ","") ?? "",
-            status:   "Live",
-          });
-        }
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setFetching(false));
-  }, [code]);
+    if (!eventPubkeyStr) { setFetching(false); setNotFound(true); return; }
+    (async () => {
+      try {
+        const conn = new Connection(RPC_URL, "confirmed");
+        const info = await conn.getAccountInfo(new PublicKey(eventPubkeyStr));
+        if (!info) { setNotFound(true); return; }
+        const d = Buffer.from(info.data);
+        // Layout: disc(8)+community(32)+organizer(32)+title(str)+location(str)+country(str)
+        //         +start_time(8)+end_time(8)+capacity(8)+attendee_count(8)+fee(8)+event_code(str)
+        let o = 8 + 32 + 32;
+        const title        = readStr(d, o); o = title.next;
+        const location     = readStr(d, o); o = location.next;
+        const country      = readStr(d, o); o = country.next;
+        const startTime    = Number(d.readBigInt64LE(o)); o += 8;
+        const endTime      = Number(d.readBigInt64LE(o)); o += 8;
+        const capacity     = Number(d.readBigUInt64LE(o)); o += 8;
+        const attendeeCount = Number(d.readBigUInt64LE(o)); o += 8;
+        o += 8; // fee
+        const eventCode    = readStr(d, o);
+        const now    = Math.floor(Date.now() / 1000);
+        const status = now < startTime ? "Upcoming" : now <= endTime ? "Live" : "Ended";
+        setEventInfo({ title: title.value, location: location.value, country: country.value, status, startTime, endTime, capacity, attendeeCount, eventCode: eventCode.value });
+      } catch { setNotFound(true); }
+      finally  { setFetching(false); }
+    })();
+  }, [eventPubkeyStr]);
 
   async function handleWorldId() {
     if (!miniKitReady) return;
@@ -101,7 +122,7 @@ function CheckInContent() {
       if (typeof MiniKit.commandsAsync?.verify === "function") {
         const { finalPayload } = await MiniKit.commandsAsync.verify({
           action:             WLD_ACTION,
-          signal:             code,
+          signal:             eventInfo?.eventCode ?? eventPubkeyStr,
           verification_level: "device",
         });
         if (finalPayload?.status === "error") {
@@ -116,14 +137,14 @@ function CheckInContent() {
       } else {
         // v2 fallback: walletAuth gives us the World App address — derive nullifier from it
         const result = await MiniKit.walletAuth({
-          nonce:     `signal_${code}_${Date.now()}`,
-          statement: `Verify you are human to check in to event #${code}. This proves one World ID per event.`,
+          nonce:     `signal_${eventInfo?.eventCode ?? eventPubkeyStr}_${Date.now()}`,
+          statement: `Verify you are human to check in to event #${eventInfo?.eventCode ?? eventPubkeyStr}. This proves one World ID per event.`,
         });
         if (result?.status === "error" || !result?.data?.address) {
           throw new Error("World App wallet auth failed or was cancelled.");
         }
         // Deterministic nullifier: sha256(worldAppAddress:eventCode) via SubtleCrypto
-        const rawBytes = new TextEncoder().encode(`${result.data.address.toLowerCase()}:${code}`);
+        const rawBytes = new TextEncoder().encode(`${result.data.address.toLowerCase()}:${eventInfo?.eventCode ?? eventPubkeyStr}`);
         const raw      = rawBytes.buffer.slice(rawBytes.byteOffset, rawBytes.byteOffset + rawBytes.byteLength) as ArrayBuffer;
         const digest  = await crypto.subtle.digest("SHA-256", raw as BufferSource);
         nullifier     = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
@@ -137,7 +158,7 @@ function CheckInContent() {
         body: JSON.stringify({
           ...proofPayload,
           nullifier_hash: nullifier,
-          eventCode:      code,
+          eventCode:      eventInfo?.eventCode ?? "",
           wallet:         publicKey?.toBase58() ?? "",
         }),
       });
@@ -159,13 +180,13 @@ function CheckInContent() {
   }
 
   async function handleCheckIn() {
-    if (!publicKey || !wallet.signTransaction || !code) return;
+    if (!publicKey || !wallet.signTransaction || !eventInfo?.eventCode) return;
     setChecking(true); setError(null);
     try {
       const body: Record<string, unknown> = { account: publicKey.toBase58() };
       if (nullifierHash) body.nullifier_hash = nullifierHash;
 
-      const res = await fetch(`/api/actions/checkin?eventCode=${code}&sig=${encodeURIComponent(sig)}&exp=${exp}`, {
+      const res = await fetch(`/api/actions/checkin?eventCode=${eventInfo.eventCode}&sig=${encodeURIComponent(sig)}&exp=${exp}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
@@ -198,18 +219,13 @@ function CheckInContent() {
   const canCheckIn     = connected && wldDone;
 
   if (fetching) return <div className="info-text">Loading event…</div>;
-  if (notFound || !code) return (
+  if (notFound || !eventPubkeyStr) return (
     <div className="checkin-card">
       <div className="error-big">Event not found</div>
-      {code && (
-        <p style={{ color:"#f87171", fontSize:".8rem", marginTop:".5rem", fontFamily:"'Space Mono',monospace" }}>
-          Code tried: <strong>{code}</strong>
-        </p>
-      )}
       <p style={{ color:"#6b7280", fontSize:".82rem", marginTop:".75rem", lineHeight:1.7 }}>
-        {!code
-          ? "No event code in URL. Go to the organizer page, start your event, and click \"Open Check-In Page\"."
-          : "This event code doesn't exist on-chain. Make sure the event is Live before checking in."}
+        {!eventPubkeyStr
+          ? "No event in URL. Scan the QR code from the organizer."
+          : "This event doesn't exist on-chain or the pubkey is invalid."}
       </p>
       <div style={{ marginTop:"1.25rem", display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap" }}>
         <a href="/organizer" style={{ display:"inline-flex", alignItems:"center", gap:".4rem", padding:".55rem 1.25rem", background:"var(--purple)", color:"#fff", borderRadius:8, fontSize:".82rem", fontWeight:600, textDecoration:"none", fontFamily:"'Space Grotesk',sans-serif" }}>
@@ -232,7 +248,7 @@ function CheckInContent() {
             </div>
           )}
           <p className="success-sub">
-            Your Proof of Presence for <strong style={{ color:"#fff" }}>{eventInfo?.title ?? code}</strong> is now permanently on Solana.
+            Your Proof of Presence for <strong style={{ color:"#fff" }}>{eventInfo?.title ?? eventInfo?.eventCode}</strong> is now permanently on Solana.
             <br /><br />
             Go to your profile to <strong style={{ color:"var(--purple)" }}>Claim your NFT</strong>.
           </p>
@@ -254,14 +270,15 @@ function CheckInContent() {
         {eventInfo?.status === "Live" ? "LIVE NOW" : "EVENT"}
       </div>
 
-      <h1 className="event-title">{eventInfo?.title ?? code}</h1>
+      <h1 className="event-title">{eventInfo?.title}</h1>
       {eventInfo?.location && (
         <div className="event-meta">
-          {eventInfo.location}<br />
+          {eventInfo.location}{eventInfo.country ? `, ${eventInfo.country}` : ""}<br />
+          {eventInfo.attendeeCount}/{eventInfo.capacity} checked in · {new Date(eventInfo.startTime * 1000).toLocaleDateString("en-US", { dateStyle: "medium" })}<br />
           Check in to earn your on-chain Proof of Presence + claimable NFT
         </div>
       )}
-      <div className="event-code">#{code}</div>
+      <div className="event-code">#{eventInfo?.eventCode}</div>
 
       {/* Step 1 — Connect wallet */}
       {!connected && (

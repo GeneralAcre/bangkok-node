@@ -6,7 +6,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
-import { StrataClient } from "../../utils/strata-client";
+import { StrataClient, findEventPDA } from "../../utils/strata-client";
 import { organizerCSS } from "../../styles/organizerStyles";
 import { Nav } from "../../components/Nav";
 
@@ -146,13 +146,14 @@ export default function OrganizerPage() {
   // ── Get / refresh QR for an existing event ────────────────────────────────
 
   async function handleGetQR(ev: EventRow) {
-    if (!wallet.signMessage || !publicKey) return;
+    if (!wallet.signMessage || !publicKey || !COMMUNITY_PDA_STR) return;
     try {
+      const [ePDA]   = findEventPDA(new PublicKey(COMMUNITY_PDA_STR), ev.eventIndex);
       const expiry   = ev.endTime || Math.floor(Date.now() / 1000) + 86_400;
       const message  = new TextEncoder().encode(`signal_checkin:${ev.eventCode}:${expiry}`);
       const sigBytes = await wallet.signMessage(message);
       const sigHex   = Buffer.from(sigBytes).toString("hex");
-      const url = `${window.location.origin}/checkin/${ev.eventCode}?sig=${sigHex}&exp=${expiry}`;
+      const url = `${window.location.origin}/checkin?event=${ePDA.toBase58()}&sig=${sigHex}&exp=${expiry}`;
       setQrData({ code: ev.eventCode, url, eventName: ev.title });
     } catch (err: any) {
       const m = err?.message ?? "";
@@ -199,7 +200,7 @@ export default function OrganizerPage() {
       const registered = await client.isMemberRegistered(community, publicKey);
       if (!registered) await client.registerMember(community, publicKey.toBase58().slice(0, 8));
 
-      await client.createEvent({
+      const { eventPDA } = await client.createEvent({
         community,
         title,
         location,
@@ -219,7 +220,7 @@ export default function OrganizerPage() {
       const sigBytes = await wallet.signMessage!(message);
       const sigHex   = Buffer.from(sigBytes).toString("hex");
 
-      const checkinUrl = `${window.location.origin}/checkin/${code}?sig=${sigHex}&exp=${expiry}`;
+      const checkinUrl = `${window.location.origin}/checkin?event=${eventPDA.toBase58()}&sig=${sigHex}&exp=${expiry}`;
       setQrData({ code, url: checkinUrl, eventName: title });
       setDeployStep("done");
 
