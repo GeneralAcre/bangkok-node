@@ -172,7 +172,17 @@ export async function GET(_req: NextRequest, { params }: { params: { wallet: str
       if (evInfos[i]) attendedEvents.push(ePDAs[i].toBase58());
     }
 
-    const { score, tier } = computeStrataScore(attended, hackathons);
+    // Sum approved achievement points (admin-verified only)
+    let achievementPoints = 0;
+    try {
+      const achRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/api/achievement/wallet/${wallet}`);
+      if (achRes.ok) {
+        const achData = await achRes.json();
+        achievementPoints = achData.totalPoints ?? 0;
+      }
+    } catch {}
+
+    const { score, tier } = computeStrataScore(attended, hackathons, achievementPoints);
     const tierIndex = ["Initiate","Seeker","Resident","Builder","Core","Legend"].indexOf(tier);
     const proof     = generateProofData(wallet, score, tierIndex);
 

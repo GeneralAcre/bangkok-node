@@ -29,22 +29,26 @@ const RANK_COLORS: Record<number, string> = {
 
 export default function LeaderboardPage() {
   const { publicKey } = useWallet();
-  const [entries,   setEntries]   = useState<LbEntry[]>([]);
-  const [community, setCommunity] = useState<CommunityInfo | null>(null);
-  const [loading,   setLoading]   = useState(true);
-  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
-  const [view,      setView]      = useState<ViewTab>("active");
-  const [error,     setError]     = useState<string | null>(null);
+  const [entries,        setEntries]        = useState<LbEntry[]>([]);
+  const [community,      setCommunity]      = useState<CommunityInfo | null>(null);
+  const [loading,        setLoading]        = useState(true);
+  const [updatedAt,      setUpdatedAt]      = useState<number | null>(null);
+  const [view,           setView]           = useState<ViewTab>("active");
+  const [error,          setError]          = useState<string | null>(null);
+  const [wldVerified,    setWldVerified]    = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setLoading(true);
-    fetch("/api/leaderboard")
-      .then(r => r.json())
-      .then(d => {
-        setEntries(d.entries ?? []);
-        setCommunity(d.community ?? null);
-        setUpdatedAt(d.updatedAt ?? null);
-        if (d.error) setError(d.error);
+    Promise.all([
+      fetch("/api/leaderboard").then(r => r.json()),
+      fetch("/api/worldid/verified").then(r => r.json()).catch(() => ({ wallets: [] })),
+    ])
+      .then(([lb, wld]) => {
+        setEntries(lb.entries ?? []);
+        setCommunity(lb.community ?? null);
+        setUpdatedAt(lb.updatedAt ?? null);
+        if (lb.error) setError(lb.error);
+        setWldVerified(new Set<string>(wld.wallets ?? []));
       })
       .catch(e => setError(e?.message ?? "Failed to load"))
       .finally(() => setLoading(false));
@@ -108,6 +112,9 @@ export default function LeaderboardPage() {
             <div className="lb-card-name">
               {displayName}
               {isMe && <span className="you-badge">you</span>}
+              {wldVerified.has(entry.wallet) && (
+                <span title="World ID Verified" style={{ fontSize:".75rem", marginLeft:".25rem", opacity:.85 }}>🌐</span>
+              )}
             </div>
             {entry.username && (
               <div className="lb-card-addr">{shortAddr}</div>
@@ -118,7 +125,7 @@ export default function LeaderboardPage() {
         {/* Big score */}
         <div className="lb-card-score">
           <div className="lb-score-num">{entry.score.toLocaleString()}</div>
-          <div className="lb-score-lbl">Strata Score</div>
+          <div className="lb-score-lbl">Signal Score</div>
         </div>
 
         {/* Tags */}
@@ -165,7 +172,7 @@ export default function LeaderboardPage() {
         <div className="page-header">
           <div className="eyebrow">On-Chain Ranking</div>
           <h1 className="page-title">Leaderboard</h1>
-          <p className="page-sub">Top builders ranked by Strata Score · Updated every 2 minutes</p>
+          <p className="page-sub">Top builders ranked by Signal Score · Updated every 2 minutes</p>
         </div>
 
         {/* Tabs */}
@@ -232,9 +239,12 @@ export default function LeaderboardPage() {
                       <div className="hof-wallet">
                         {entry.username || `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`}
                         {isMe && <span className="you-badge" style={{ marginLeft: ".5rem" }}>you</span>}
+                        {wldVerified.has(entry.wallet) && (
+                          <span title="World ID Verified" style={{ fontSize:".8rem", marginLeft:".3rem", opacity:.85 }}>🌐</span>
+                        )}
                       </div>
                       <div className="hof-score">{entry.score.toLocaleString()}</div>
-                      <div className="hof-score-lbl">Strata Score</div>
+                      <div className="hof-score-lbl">Signal Score</div>
                       <div className="hof-tier" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
                         {ti} {entry.tier}
                       </div>

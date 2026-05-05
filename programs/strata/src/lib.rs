@@ -177,31 +177,42 @@ pub mod strata {
         Ok(())
     }
 
-    /// Check in — the core mechanic: verify event_code → create Attendance record
-    /// This is what the Solana Actions / Blink QR triggers
+    /// Check in — verify event_code + organizer Ed25519 co-signature → create Attendance record
+    /// Transaction must have [Ed25519VerifyIx, CheckInIx] — the Ed25519 ix is verified here.
     pub fn check_in(
         ctx: Context<CheckIn>,
         event_code: String,
+        expiry: i64,
     ) -> Result<()> {
         let event = &ctx.accounts.event;
+        let clock  = Clock::get()?;
 
-        // Validate event is accepting attendees
-        require!(
-            event.status == EventStatus::Live || event.status == EventStatus::Upcoming,
-            StrataError::EventNotLive
-        );
-        // Validate event code matches (anti-sybil: must be physically present to scan)
-        require!(
-            event.event_code == event_code,
-            StrataError::InvalidEventCode
-        );
+        // Only accept Live events — organizer must explicitly call start_event
+        require!(event.status == EventStatus::Live, StrataError::EventNotLive);
+
+        // Event code check (anti-sybil: must physically scan QR)
+        require!(event.event_code == event_code, StrataError::InvalidEventCode);
+
         // Capacity check
-        require!(
-            event.attendee_count < event.capacity,
-            StrataError::EventFull
-        );
+        require!(event.attendee_count < event.capacity, StrataError::EventFull);
 
-        let clock = Clock::get()?;
+        // QR expiry: organizer controls validity window when they go live
+        require!(clock.unix_timestamp < expiry, StrataError::SignatureExpired);
+
+        // Ed25519 organizer co-signature must be at instruction index 0 in this tx
+        {
+            let ix_sysvar = ctx.accounts.instructions.to_account_info();
+            let ed25519_ix = anchor_lang::solana_program::sysvar::instructions
+                ::load_instruction_at_checked(0, &ix_sysvar)
+                .map_err(|_| error!(StrataError::MissingOrganizerSignature))?;
+            require!(
+                ed25519_ix.program_id == anchor_lang::solana_program::ed25519_program::id(),
+                StrataError::MissingOrganizerSignature
+            );
+            let expected_msg = format!("signal_checkin:{}:{}", event_code, expiry);
+            verify_ed25519_ix(&ed25519_ix.data, &event.organizer, expected_msg.as_bytes())?;
+        }
+
 
         // Create attendance record (Proof of Presence)
         let attendance = &mut ctx.accounts.attendance;
@@ -297,6 +308,31 @@ pub mod strata {
 
         Ok(())
     }
+}
+
+// ─── Signature helpers ──────────────────────────────────────────────────────
+
+/// Verify that the embedded pubkey and message in an Ed25519Program instruction match
+/// expectations. Layout (all u16 LE): num_sigs(2) | pad(2) | sig_off(2) | sig_ix(2) |
+/// pk_off(2) | pk_ix(2) | msg_off(2) | msg_sz(2) | msg_ix(2) | [pubkey][sig][message]
+fn verify_ed25519_ix(data: &[u8], expected_pubkey: &Pubkey, expected_msg: &[u8]) -> Result<()> {
+    require!(data.len() >= 18, StrataError::InvalidOrganizerSignature);
+    let num_sigs      = u16::from_le_bytes([data[0], data[1]]);
+    require!(num_sigs >= 1, StrataError::MissingOrganizerSignature);
+    let pubkey_offset = u16::from_le_bytes([data[8],  data[9]])  as usize;
+    let msg_offset    = u16::from_le_bytes([data[12], data[13]]) as usize;
+    let msg_size      = u16::from_le_bytes([data[14], data[15]]) as usize;
+    require!(data.len() >= pubkey_offset + 32,   StrataError::InvalidOrganizerSignature);
+    require!(data.len() >= msg_offset + msg_size, StrataError::InvalidOrganizerSignature);
+    require!(
+        &data[pubkey_offset..pubkey_offset + 32] == expected_pubkey.as_ref(),
+        StrataError::InvalidOrganizerSignature
+    );
+    require!(
+        &data[msg_offset..msg_offset + msg_size] == expected_msg,
+        StrataError::InvalidOrganizerSignature
+    );
+    Ok(())
 }
 
 // ─── Reputation helpers ─────────────────────────────────────────────────────
@@ -512,6 +548,9 @@ pub struct CheckIn<'info> {
     #[account(mut)]
     pub attendee: Signer<'info>,
     pub system_program: Program<'info, System>,
+    /// CHECK: Instructions sysvar — organizer Ed25519 co-signature must be at ix[0]
+    #[account(address = anchor_lang::solana_program::sysvar::instructions::ID)]
+    pub instructions: UncheckedAccount<'info>,
 }
 
 #[derive(Accounts)]
@@ -635,4 +674,10 @@ pub enum StrataError {
     NftAlreadyMinted,
     #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("QR code has expired — organizer must go live again to refresh")]
+    SignatureExpired,
+    #[msg("Missing organizer co-signature — Ed25519 instruction must be ix[0]")]
+    MissingOrganizerSignature,
+    #[msg("Invalid organizer signature or message mismatch")]
+    InvalidOrganizerSignature,
 }

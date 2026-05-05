@@ -59,8 +59,12 @@ export function tierFromScore(score: number): StrataScoreTier {
   return "Initiate";
 }
 
-export function computeStrataScore(eventCount: number, hackathonCount: number): StrataScore {
-  const base  = (eventCount * 10) + (hackathonCount * 30);
+export function computeStrataScore(
+  eventCount:        number,
+  hackathonCount:    number,
+  achievementPoints: number = 0,
+): StrataScore {
+  const base  = (eventCount * 10) + (hackathonCount * 30) + achievementPoints;
   const tier  = tierFromScore(base);
   const score = base + SCORE_TIER_BONUS[tier];
   return { score, tier: tierFromScore(score), eventCount, hackathonCount };

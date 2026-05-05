@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { computeStrataScore } from "../../../../utils/scoring";
+import { claims } from "../../achievement/store";
 
 const RPC_URL        = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.devnet.solana.com";
 const COMMUNITY_PDA  = process.env.NEXT_PUBLIC_COMMUNITY_PDA;
@@ -83,7 +84,11 @@ export async function GET(_req: NextRequest, { params }: { params: { wallet: str
       if (evInfos[i] && isHackathon(evInfos[i]!.data)) hackathons++;
     }
 
-    return NextResponse.json({ ...computeStrataScore(attended, hackathons), isVerified: true });
+    const achievementPoints = Array.from(claims.values())
+      .filter(c => c.wallet === params.wallet && c.status === "approved")
+      .reduce((sum, c) => sum + (c.points ?? 0), 0);
+
+    return NextResponse.json({ ...computeStrataScore(attended, hackathons, achievementPoints), isVerified: true });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message }, { status: 500 });
   }

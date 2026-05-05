@@ -49,17 +49,20 @@ export async function GET() {
     const eventsData: Array<{
       title: string; location: string; country: string; status: string;
       attendeeCount: number; capacity: number; eventCode: string; eventDate: number;
+      eventIndex: number; organizer: string;
     }> = [];
     let totalCheckins = 0;
 
-    for (const info of infos) {
+    for (let i = 0; i < infos.length; i++) {
+      const info = infos[i];
       if (!info) continue;
       try {
         const d = info.data;
         // Event: disc(8) + community(32) + organizer(32) + title(str) + description(str)
         //        + location(str) + country(str) + event_date(8) + capacity(8)
         //        + attendee_count(8) + fee(8) + event_code(str) + status(1)
-        let o = 8 + 32 + 32;
+        let o = 8 + 32;
+        const organizer   = new PublicKey(d.slice(o, o + 32)).toBase58(); o += 32;
         const title       = readStr(d, o); o = title.next;
         o = readStr(d, o).next;             // description (skip)
         const location    = readStr(d, o); o = location.next;
@@ -73,7 +76,7 @@ export async function GET() {
         const status      = statusByte === 1 ? "Live" : statusByte === 2 ? "Ended" : "Upcoming";
 
         totalCheckins += attendeeCount;
-        eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate });
+        eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate, eventIndex: i, organizer });
       } catch {}
     }
 

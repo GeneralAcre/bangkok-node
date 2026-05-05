@@ -33,11 +33,12 @@ function communityEventCount(data: Buffer): number {
 interface ParsedEvent {
   title: string; location: string; country: string;
   eventDate: number; capacity: number; attendeeCount: number;
-  eventCode: string; isHackathon: boolean;
+  eventCode: string; isHackathon: boolean; organizer: string;
 }
 
 function parseEvent(data: Buffer): ParsedEvent {
-  let off = 8 + 32 + 32;
+  let off = 8 + 32;
+  const organizer     = new PublicKey(data.slice(off, off + 32)).toBase58(); off += 32;
   const title   = readStr(data, off); off = title.next;
   off = readStr(data, off).next;       // description
   const location = readStr(data, off); off = location.next;
@@ -49,20 +50,22 @@ function parseEvent(data: Buffer): ParsedEvent {
   const eventCode = readStr(data, off); off = eventCode.next;
   off += 1 + 8 + 1 + 1 + 8; // status + eventIndex + escrowBump + bump + createdAt
   const isHackathon = data.length > off && data[off] !== 0;
-  return { title: title.value, location: location.value, country: country.value, eventDate, capacity, attendeeCount, eventCode: eventCode.value, isHackathon };
+  return { title: title.value, location: location.value, country: country.value, eventDate, capacity, attendeeCount, eventCode: eventCode.value, isHackathon, organizer };
 }
 
 interface ParsedAttendance {
   checkedInAt: number;
   nftMint: string | null;
+  edition: number;
 }
 
 function parseAttendance(data: Buffer): ParsedAttendance {
-  let off = 8 + 32 + 32 + 8; // disc + event + attendee + edition
-  const checkedInAt = Number(data.readBigInt64LE(off)); off += 8;
+  let off = 8 + 32 + 32; // disc + event + attendee
+  const edition     = Number(data.readBigUInt64LE(off)); off += 8;
+  const checkedInAt = Number(data.readBigInt64LE(off));  off += 8;
   const hasNft = data[off] !== 0; off += 1;
   const nftMint = hasNft ? new PublicKey(data.slice(off, off + 32)).toBase58() : null;
-  return { checkedInAt, nftMint };
+  return { checkedInAt, nftMint, edition };
 }
 
 function makeEPDA(community: PublicKey, i: number, prog: PublicKey): PublicKey {
@@ -193,10 +196,13 @@ export default function WalletProfilePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          userWallet:  walletStr,
-          eventTitle:  rec.event.title,
-          eventCode:   rec.event.eventCode,
-          checkedInAt: rec.attendance.checkedInAt,
+          userWallet:      walletStr,
+          nftType:         "attendance",
+          eventTitle:      rec.event.title,
+          eventCode:       rec.event.eventCode,
+          checkedInAt:     rec.attendance.checkedInAt,
+          organizerPubkey: rec.event.organizer,
+          capacitySlot:    rec.attendance.edition,
         }),
       });
       const d = await res.json();
@@ -254,7 +260,7 @@ export default function WalletProfilePage() {
                 ) : (
                   <>
                     <div className="score-num">{scoreData?.score ?? 0}</div>
-                    <div className="score-label">Strata Score</div>
+                    <div className="score-label">Signal Score</div>
                     {progress && (
                       <>
                         <div className="progress-bar-wrap">

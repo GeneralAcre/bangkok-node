@@ -25,9 +25,15 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     animation: gradMove 5s ease infinite;
   }
+  .hero-tagline {
+    font-family: 'Epilogue', sans-serif;
+    font-size: clamp(1.1rem,2.8vw,1.65rem); font-weight: 700;
+    color: #e8e8e8; letter-spacing: -.01em;
+    margin-bottom: 1.1rem;
+  }
   .hero-sub {
-    font-size: clamp(1rem,2vw,1.2rem); color: #888; max-width: 520px;
-    margin: 0 auto 2.5rem; line-height: 1.7; font-weight: 400;
+    font-size: clamp(.9rem,1.8vw,1.05rem); color: #888; max-width: 500px;
+    margin: 0 auto 2.5rem; line-height: 1.75; font-weight: 400;
   }
   .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
@@ -193,6 +199,68 @@
     .hero { padding: 5rem .75rem 2rem; }
     .section-title { font-size: 1.4rem; }
   }
+
+  /* ── Events ── */
+  .events-section { padding-top: 5rem; padding-bottom: 2rem; }
+  .events-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
+  }
+  .events-source {
+    display: inline-flex; align-items: center; gap: .5rem;
+    font-family: 'Epilogue', sans-serif; font-size: .7rem; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: #888;
+  }
+  .events-source a { color: #888; text-decoration: none; transition: color .2s; }
+  .events-source a:hover { color: #e8e8e8; }
+  .events-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  .event-card {
+    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px; overflow: hidden; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; transition: border-color .2s, transform .2s;
+  }
+  .event-card:hover { border-color: rgba(255,255,255,.22); transform: translateY(-3px); text-decoration: none; }
+  .event-cover {
+    width: 100%; aspect-ratio: 16/9; background: rgba(255,255,255,.05);
+    overflow: hidden; flex-shrink: 0; position: relative;
+  }
+  .event-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .event-cover-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.75rem; color: rgba(255,255,255,.15);
+  }
+  .event-body { padding: 1rem 1.1rem 1.1rem; display: flex; flex-direction: column; gap: .45rem; flex: 1; }
+  .event-date-line {
+    font-family: 'Epilogue', sans-serif; font-size: .7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .09em; color: #ffffff;
+  }
+  .event-title-card {
+    font-family: 'Epilogue', sans-serif; font-size: .95rem; font-weight: 700;
+    color: #e8e8e8; line-height: 1.3; flex: 1;
+  }
+  .event-location {
+    font-size: .75rem; color: #888; display: flex; align-items: center; gap: .35rem;
+    margin-top: auto; padding-top: .4rem;
+  }
+  .event-register {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-family: 'Epilogue', sans-serif; font-size: .72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .08em; color: #ffffff;
+    padding: .5rem 1rem; border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
+    margin-top: .6rem; transition: border-color .2s, background .2s; text-decoration: none;
+  }
+  .event-register:hover { border-color: rgba(255,255,255,.5); background: rgba(255,255,255,.06); }
+  .events-cta { text-align: center; margin-top: 1.5rem; }
+  .events-cta a {
+    font-family: 'Epilogue', sans-serif; font-size: .78rem; font-weight: 600;
+    color: #888; text-decoration: none; letter-spacing: .06em; transition: color .2s;
+  }
+  .events-cta a:hover { color: #e8e8e8; }
 
   /* ── FAQ ── */
   .faq-section { padding-top: 4rem; padding-bottom: 5rem; }

@@ -120,6 +120,10 @@
   .code-row { display:flex; gap:.5rem; margin-bottom:.25rem; align-items:flex-start; }
   .code-row input { flex:1; margin-bottom:0; }
   @media(max-width:480px){ .code-row{ flex-direction:column; } .code-row input{ width:100%; } .code-row .btn{ width:100%; justify-content:center; } }
+  .luma-row { display:flex; gap:.5rem; margin-bottom:.25rem; align-items:flex-start; }
+  .luma-row input { flex:1; margin-bottom:0; }
+  .luma-row .btn { white-space:nowrap; flex-shrink:0; }
+  @media(max-width:540px){ .luma-row{ flex-direction:column; } .luma-row input{ width:100%; } .luma-row .btn{ width:100%; justify-content:center; } }
   .field-note { font-size:.75rem; color:#888; margin-top:-.5rem; margin-bottom:.9rem; }
 
   /* ── Buttons ── */

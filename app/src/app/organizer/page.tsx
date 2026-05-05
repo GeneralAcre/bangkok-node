@@ -5,7 +5,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import { StrataClient } from "../../utils/strata-client";
+import { StrataClient, findEventPDA } from "../../utils/strata-client";
 import { organizerCSS } from "../../styles/organizerStyles";
 import { Nav } from "../../components/Nav";
 
@@ -15,6 +15,13 @@ interface EventRow {
   title: string; location: string; country: string;
   status: string; attendeeCount: number; capacity: number;
   eventCode: string; eventDate: number;
+  eventIndex: number; organizer: string;
+}
+
+interface LiveQR {
+  eventCode: string;
+  url: string;
+  expiresAt: number;
 }
 
 type EventFilter = "all" | "live" | "upcoming" | "ended";
@@ -49,6 +56,12 @@ export default function OrganizerPage() {
   const [eventsFilter, setEventsFilter] = useState<EventFilter>("all");
   const [showForm,     setShowForm]     = useState(false);
 
+  const [goLiveResult, setGoLiveResult] = useState<LiveQR | null>(null);
+  const [goLiveLoading, setGoLiveLoading] = useState<string | null>(null); // holds eventCode being processed
+
+  const [lumaUrl,      setLumaUrl]      = useState("");
+  const [lumaFetching, setLumaFetching] = useState(false);
+  const [lumaError,    setLumaError]    = useState<string | null>(null);
   const [title,        setTitle]        = useState("");
   const [description,  setDescription]  = useState("");
   const [location,     setLocation]     = useState("");
@@ -99,6 +112,28 @@ export default function OrganizerPage() {
     init();
   }, [connected, publicKey, connection, wallet]);
 
+  async function handleLumaFetch() {
+    if (!lumaUrl) return;
+    setLumaFetching(true);
+    setLumaError(null);
+    try {
+      const res = await fetch(`/api/luma-events/parse?url=${encodeURIComponent(lumaUrl)}`);
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Failed to parse event URL");
+      if (d.title)       setTitle(d.title);
+      if (d.location)    setLocation(d.location);
+      if (d.country)     setCountry(d.country);
+      if (d.date)        setEventDatePart(d.date);
+      if (d.time)        setEventTimePart(d.time);
+      if (d.description) setDescription(d.description);
+      if (d.capacity)    setCapacity(String(d.capacity));
+    } catch (e: any) {
+      setLumaError(e?.message ?? "Could not parse the event URL");
+    } finally {
+      setLumaFetching(false);
+    }
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!client || !COMMUNITY_PDA_STR) return;
@@ -114,15 +149,18 @@ export default function OrganizerPage() {
       const community = new PublicKey(COMMUNITY_PDA_STR);
       const registered = await client.isMemberRegistered(community, publicKey!);
       if (!registered) await client.registerMember(community, publicKey!.toBase58().slice(0, 12));
+      const storedDesc = lumaUrl
+        ? `[source:${lumaUrl}]${description ? "\n" + description : ""}`
+        : (description || title);
       await client.createEvent({
-        community, title, description: description || title,
+        community, title, description: storedDesc,
         location, country, eventDate: Math.floor(new Date(eventDate).getTime() / 1000),
         capacity: parseInt(capacity, 10), entryFeeLamports: 0,
         eventCode: eventCode.toUpperCase().slice(0, 8),
         isHackathon,
       });
       setMsg({ type:"ok", text:`✓ "${title}" deployed on-chain!\n\nGo to your Profile → Organized tab to go live and share the QR.` });
-      setTitle(""); setDescription(""); setLocation(""); setEventDatePart(""); setEventTimePart("09:00"); setEventCode(randomCode()); setIsHackathon(false);
+      setTitle(""); setDescription(""); setLocation(""); setLumaUrl(""); setLumaError(null); setEventDatePart(""); setEventTimePart("09:00"); setEventCode(randomCode()); setIsHackathon(false);
     } catch (err: any) {
       const m = err?.message ?? "";
       if (m.includes("already been processed") || m.includes("already in use")) {
@@ -135,6 +173,40 @@ export default function OrganizerPage() {
     } finally { setLoading(false); }
   }
 
+
+  async function handleGoLive(ev: EventRow) {
+    if (!client || !wallet.signMessage || !publicKey || !COMMUNITY_PDA_STR) return;
+    setGoLiveLoading(ev.eventCode);
+    setGoLiveResult(null);
+    try {
+      // Expiry: 24 hours from now
+      const expiry  = Math.floor(Date.now() / 1000) + 86_400;
+      const message = new TextEncoder().encode(`signal_checkin:${ev.eventCode}:${expiry}`);
+      const sigBytes = await wallet.signMessage(message);
+      const sigHex   = Buffer.from(sigBytes).toString("hex");
+
+      // Go live on-chain
+      const community = new PublicKey(COMMUNITY_PDA_STR);
+      const [eventPDA] = findEventPDA(community, ev.eventIndex);
+      await client.startEvent(eventPDA);
+
+      const url = `${window.location.origin}/checkin?code=${ev.eventCode}&sig=${sigHex}&exp=${expiry}`;
+      setGoLiveResult({ eventCode: ev.eventCode, url, expiresAt: expiry });
+      // Refresh events list
+      const r = await fetch("/api/stats");
+      const d = await r.json();
+      setAllEvents(d.allEvents ?? []);
+    } catch (err: any) {
+      const m = err?.message ?? "";
+      if (m.includes("rejected") || m.includes("cancelled")) {
+        setMsg({ type: "err", text: "Transaction cancelled." });
+      } else {
+        setMsg({ type: "err", text: m || "Go Live failed." });
+      }
+    } finally {
+      setGoLiveLoading(null);
+    }
+  }
 
   return (
     <>
@@ -151,8 +223,8 @@ export default function OrganizerPage() {
       <div className="page">
         <div className="page-header" style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", flexWrap:"wrap", gap:"1rem" }}>
           <div>
-            <h1 className="page-title">Organizer</h1>
-            <p className="page-sub">On-chain events · QR check-ins · Proof of Presence</p>
+            <h1 className="page-title">Attach to Event</h1>
+            <p className="page-sub">Wrap any Luma or Eventbrite event with on-chain check-ins · QR · NFT · Signal Score</p>
           </div>
           <button
             className={`btn ${showForm ? "btn-primary" : "btn-demo"}`}
@@ -224,9 +296,22 @@ export default function OrganizerPage() {
                           <div className="ev-stat-col">{ev.attendeeCount}/{ev.capacity}</div>
                           <div className="ev-cta-col">
                             {ev.status === "Live" ? (
-                              <a href={`/checkin?code=${ev.eventCode}`} className="btn-checkin">
-                                Check In →
-                              </a>
+                              goLiveResult?.eventCode === ev.eventCode ? (
+                                <button className="btn-checkin" onClick={() => setGoLiveResult(r => r?.eventCode === ev.eventCode ? r : null)} style={{ background: "var(--g)" }}>
+                                  ✓ Live · Copy QR
+                                </button>
+                              ) : (
+                                <a href={`/checkin?code=${ev.eventCode}`} className="btn-checkin">Check In</a>
+                              )
+                            ) : ev.status === "Upcoming" && ev.organizer === publicKey?.toBase58() ? (
+                              <button
+                                className="btn-checkin"
+                                onClick={() => handleGoLive(ev)}
+                                disabled={goLiveLoading === ev.eventCode}
+                                style={{ background: "transparent", border: "1px solid #fff", color: "#fff" }}
+                              >
+                                {goLiveLoading === ev.eventCode ? "Signing…" : "⬡ Go Live"}
+                              </button>
                             ) : ev.status === "Upcoming" ? (
                               <span className="badge-upcoming">Upcoming</span>
                             ) : (
@@ -242,6 +327,35 @@ export default function OrganizerPage() {
             </div>
           );
         })()}
+
+        {/* Go Live QR result */}
+        {goLiveResult && (
+          <div className="card" style={{ borderColor: "rgba(255,255,255,.25)" }}>
+            <div className="card-title" style={{ color: "#fff" }}>✓ Event is Live — Share this QR URL</div>
+            <p style={{ fontSize: ".8rem", color: "#aaa", margin: "0 0 .75rem" }}>
+              Valid for 24 hours. Attendees scan with Phantom to check in.
+              Each scan is co-verified by your organizer signature.
+            </p>
+            <div style={{ background: "rgba(255,255,255,.06)", borderRadius: 10, padding: ".75rem 1rem", fontFamily: "'Space Mono',monospace", fontSize: ".72rem", wordBreak: "break-all", color: "#e8e8e8", marginBottom: ".75rem" }}>
+              {goLiveResult.url}
+            </div>
+            <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap" }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => navigator.clipboard.writeText(goLiveResult.url)}
+              >
+                ⎘ Copy Check-in URL
+              </button>
+              <a href={goLiveResult.url} target="_blank" rel="noreferrer" className="btn btn-ghost">
+                Open Check-in Page ↗
+              </a>
+              <button className="btn btn-ghost" onClick={() => setGoLiveResult(null)}>Dismiss</button>
+            </div>
+            <p style={{ fontSize: ".7rem", color: "#666", marginTop: ".6rem" }}>
+              Expires: {new Date(goLiveResult.expiresAt * 1000).toLocaleString()}
+            </p>
+          </div>
+        )}
 
         {showForm && (
           <>
@@ -274,11 +388,11 @@ export default function OrganizerPage() {
                 <div className="card-title">How it works</div>
                 <div className="how-grid">
                   {[
-                    ["Step 1", "Fill the form & click Deploy Event"],
-                    ["Step 2", "Click GO LIVE when your event starts"],
-                    ["Step 3", "Share the QR code with attendees"],
-                    ["Step 4", "Attendees scan with Phantom — one tap"],
-                    ["Step 5", "Go to /profile → click CLAIM NFT"],
+                    ["Step 1", "Paste your Luma or Eventbrite URL (optional)"],
+                    ["Step 2", "Fill event details & click Deploy Event"],
+                    ["Step 3", "Click GO LIVE — Signal generates your check-in QR"],
+                    ["Step 4", "Attendees scan with Phantom — one tap, on-chain"],
+                    ["Step 5", "Attendees go to Profile → Claim NFT → earn Score"],
                   ].map(([n, t]) => (
                     <div className="how-step" key={n}>
                       <div className="how-num">{n}</div>
@@ -294,6 +408,31 @@ export default function OrganizerPage() {
               <div className="card">
                 <div className="card-title">Launch Event</div>
                 <form onSubmit={handleCreate}>
+                  <label>
+                    Luma / Eventbrite URL
+                    <span style={{ color:"#888", fontWeight:400, marginLeft:".4rem" }}>(optional — auto-fills form)</span>
+                  </label>
+                  <div className="luma-row">
+                    <input
+                      type="url"
+                      value={lumaUrl}
+                      onChange={e => { setLumaUrl(e.target.value); setLumaError(null); }}
+                      placeholder="https://lu.ma/your-event  or  https://eventbrite.com/e/..."
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={handleLumaFetch}
+                      disabled={!lumaUrl || lumaFetching}
+                    >
+                      {lumaFetching ? "Fetching…" : "Fetch Details →"}
+                    </button>
+                  </div>
+                  {lumaError && (
+                    <p className="field-note" style={{ color:"#f87171", marginTop:".15rem" }}>{lumaError}</p>
+                  )}
+                  <p className="field-note">Paste your event URL and click Fetch — title, location, date &amp; capacity will be auto-filled.</p>
+
                   <label>Event Title *</label>
                   <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Bangkok Web3 Meetup #1" required />
 
@@ -348,9 +487,9 @@ export default function OrganizerPage() {
                       onChange={e => setIsHackathon(e.target.checked)}
                       style={{ width:16, height:16, accentColor:"#ffffff", cursor:"pointer" }}
                     />
-                    <span style={{ fontSize:".85rem", color:"#1b2d4b", fontWeight:500 }}>
+                    <span style={{ fontSize:".85rem", color:"#e8e8e8", fontWeight:500 }}>
                       Hackathon event
-                      <span style={{ marginLeft:".4rem", fontSize:".72rem", color:"#5d8ba2", fontFamily:"'Space Mono',monospace" }}>
+                      <span style={{ marginLeft:".4rem", fontSize:".72rem", color:"#888", fontFamily:"'Space Mono',monospace" }}>
                         (×3 score multiplier for attendees)
                       </span>
                     </span>

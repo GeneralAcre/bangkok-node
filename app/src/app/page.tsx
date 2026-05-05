@@ -7,14 +7,15 @@ import { Nav } from "../components/Nav";
 import { PageBackground } from "../components/PageBackground";
 import { StatBox } from "../components/StatBox";
 import { homeCSS } from "../styles/homeStyles";
+import type { LumaEvent } from "./api/luma-events/route";
 
 const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
 const STEPS = [
-  { n: "1", t: "Host an Event",   d: "Deploy your event on Solana with a unique code. One transaction — permanent on-chain record.", cta: "Deploy Event", href: "/organizer" },
-  { n: "2", t: "Scan & Check In", d: "Attendees scan your QR or visit /checkin. One tap builds, signs, and confirms on Solana.",   cta: "Check In Now",  href: "/checkin" },
-  { n: "3", t: "Claim Your NFT",  d: "Every check-in unlocks a Metaplex NFT. Permanent proof of presence, forever in your wallet.", cta: "View Profile",  href: "/profile" },
+  { n: "1", t: "Attach to Event",  d: "Paste your Luma or Eventbrite URL. Signal deploys a check-in layer on Solana and generates a QR code — one transaction.", cta: "Attach Now",   href: "/organizer" },
+  { n: "2", t: "Scan & Check In",  d: "Attendees scan the QR with Phantom Wallet. Verify humanity with World ID — one human, one check-in per event — then submit on-chain. Sybil-resistant by default.",  cta: "Check In",     href: "/events" },
+  { n: "3", t: "NFT + Score",      d: "Every check-in mints a Metaplex NFT and updates the attendee's Signal Score. Permanent proof of presence, forever on-chain.", cta: "Builder Passport", href: "/credentials" },
 ];
 
 const FAQ_ITEMS = [
@@ -53,7 +54,9 @@ export default function HomePage() {
   const [stats,       setStats]       = useState({ events: 0, members: 0, checkins: 0 });
   const [statsLoaded, setStatsLoaded] = useState(false);
   const [walletSearch, setWalletSearch] = useState("");
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [openFaq,     setOpenFaq]     = useState<number | null>(null);
+  const [lumaEvents,  setLumaEvents]  = useState<LumaEvent[]>([]);
+  const [lumaLoaded,  setLumaLoaded]  = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -94,6 +97,13 @@ export default function HomePage() {
     load();
   }, [connection]);
 
+
+  useEffect(() => {
+    fetch("/api/luma-events")
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.events) { setLumaEvents(d.events); setLumaLoaded(true); } })
+      .catch(() => setLumaLoaded(true));
+  }, []);
 
   function handleWalletSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -152,13 +162,15 @@ export default function HomePage() {
                 </g>
               </svg>
             </div>
+            <p className="hero-tagline">For Every Event, Everywhere.</p>
             <p className="hero-sub">
-              Your on-chain builder identity. Verified by Solana.<br />
-              Every check-in is permanent. Every event builds your score.
+              Signal is the sybil-resistant verification layer for live events. Attach it to any Luma or
+              Eventbrite event — attendees scan your QR, verify their humanity with World ID,
+              check in on Solana, and earn a permanent NFT. One human, one score. No fakes.
             </p>
             <div className="hero-ctas">
-              <a href="/organizer"   className="btn-primary">Host an Event</a>
-              <a href="/leaderboard" className="btn-glass">Leaderboard</a>
+              <a href="/organizer" className="btn-primary">Attach to Event</a>
+              <a href="/events"    className="btn-glass">Check In</a>
             </div>
             <form className="wallet-search" onSubmit={handleWalletSearch}>
               <input
@@ -182,7 +194,7 @@ export default function HomePage() {
 
         {/* How it works */}
         <div className="container section">
-          <h2 className="steps-heading">Simple Steps to Host,<br />Check In, and Earn</h2>
+          <h2 className="steps-heading">Attach. Scan. Earn.<br />The full loop in 3 steps.</h2>
           <div className="steps">
             {STEPS.map(s => (
               <div className="step-card" key={s.n}>
@@ -194,6 +206,67 @@ export default function HomePage() {
                 <a href={s.href} className="step-cta">{s.cta}</a>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* Upcoming Events */}
+        <div className="container events-section">
+          <div className="events-header">
+            <div>
+              <div className="section-eyebrow">Upcoming Events</div>
+              <h2 className="section-title" style={{ marginBottom: 0 }}>Superteam Calendar</h2>
+            </div>
+            <div className="events-source">
+              Powered by{" "}
+              <a href="https://lu.ma/superteam" target="_blank" rel="noreferrer">lu.ma/superteam ↗</a>
+            </div>
+          </div>
+
+          {!lumaLoaded ? (
+            <div className="events-grid">
+              {[1,2,3,4].map(i => (
+                <div key={i} style={{ background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.08)", borderRadius:16, overflow:"hidden" }}>
+                  <div style={{ width:"100%", aspectRatio:"16/9", background:"rgba(255,255,255,.06)" }} />
+                  <div style={{ padding:"1rem 1.1rem", display:"flex", flexDirection:"column", gap:".5rem" }}>
+                    <div style={{ height:10, borderRadius:4, background:"rgba(255,255,255,.08)", width:"40%" }} />
+                    <div style={{ height:14, borderRadius:4, background:"rgba(255,255,255,.08)", width:"80%" }} />
+                    <div style={{ height:10, borderRadius:4, background:"rgba(255,255,255,.06)", width:"55%" }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="events-grid">
+              {lumaEvents.map(ev => {
+                const d = new Date(ev.startAt);
+                const dateStr = d.toLocaleDateString("en-US", { month:"short", day:"numeric" });
+                const timeStr = d.toLocaleTimeString("en-US", { hour:"numeric", minute:"2-digit" });
+                return (
+                  <a key={ev.id} href={ev.url} target="_blank" rel="noreferrer" className="event-card">
+                    <div className="event-cover">
+                      {ev.coverUrl
+                        ? <img src={ev.coverUrl} alt={ev.title} />
+                        : <div className="event-cover-placeholder">◈</div>
+                      }
+                    </div>
+                    <div className="event-body">
+                      <div className="event-date-line">{dateStr} · {timeStr}</div>
+                      <div className="event-title-card">{ev.title}</div>
+                      <div className="event-location">
+                        {ev.isOnline ? "🌐" : "📍"} {ev.location}
+                      </div>
+                      <span className="event-register">Register ↗</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="events-cta">
+            <a href="https://lu.ma/superteam" target="_blank" rel="noreferrer">
+              View all Superteam events on Luma ↗
+            </a>
           </div>
         </div>
 

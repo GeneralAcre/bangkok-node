@@ -8,15 +8,14 @@ const WalletMultiButton = dynamic(
   { ssr: false }
 );
 
-type ActivePage = "home" | "organizer" | "profile" | "leaderboard" | "marketplace" | "credentials";
+type ActivePage = "home" | "organizer" | "profile" | "leaderboard" | "events" | "credentials";
 
 const NAV_LINKS: { href: string; label: string; key: ActivePage }[] = [
-  { href: "/",            label: "Home",        key: "home" },
-  { href: "/organizer",   label: "Organizer",   key: "organizer" },
-  { href: "/marketplace", label: "Marketplace", key: "marketplace" },
-  { href: "/credentials", label: "Credentials", key: "credentials" },
-  { href: "/leaderboard", label: "Leaderboard", key: "leaderboard" },
-  { href: "/profile",     label: "Profile",     key: "profile" },
+  { href: "/",            label: "Home",             key: "home" },
+  { href: "/organizer",   label: "Attach to Event",  key: "organizer" },
+  { href: "/events",      label: "Check In",         key: "events" },
+  { href: "/leaderboard", label: "Leaderboard",      key: "leaderboard" },
+  { href: "/credentials", label: "Builder Passport", key: "credentials" },
 ];
 
 export function Nav({ active }: { active: ActivePage }) {

@@ -17,8 +17,14 @@ import {
   Transaction,
   TransactionInstruction,
   SystemProgram,
+  Ed25519Program,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
 } from "@solana/web3.js";
 import { createHash } from "crypto";
+import { pendingNullifiers, usedNullifiers, verifiedWallets } from "../../worldid/store";
+
+const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+const WLD_REQUIRED    = !!process.env.WLD_APP_ID;
 
 // ── Config ──────────────────────────────────────────────────────────────────
 
@@ -79,6 +85,12 @@ function borshString(s: string): Buffer {
   return Buffer.concat([len, encoded]);
 }
 
+function borshI64(n: number): Buffer {
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64LE(BigInt(n), 0);
+  return buf;
+}
+
 // Read a variable-length Anchor string: u32 len + bytes
 function readStr(data: Buffer, offset: number): { value: string; next: number } {
   const len   = data.readUInt32LE(offset);
@@ -113,12 +125,14 @@ interface EventData {
   attendeeCount: bigint;
   eventIndex:    bigint;
   communityKey:  PublicKey;
+  organizer:     PublicKey;
 }
 
 // ── Full event parser (returns event_code too) ───────────────────────────────
 
 function parseEventFull(data: Buffer, index: number, community: PublicKey): EventData & { eventCode: string } {
-  let off = 8 + 32 + 32; // disc + community + organizer
+  let off = 8 + 32; // disc + community
+  const organizer     = new PublicKey(data.slice(off, off + 32)); off += 32;
   const title         = readStr(data, off); off = title.next;
   const _description  = readStr(data, off); off = _description.next;
   const location      = readStr(data, off); off = location.next;
@@ -138,6 +152,7 @@ function parseEventFull(data: Buffer, index: number, community: PublicKey): Even
     attendeeCount,
     eventIndex:    BigInt(index),
     communityKey:  community,
+    organizer,
     eventCode:     eventCode.value,
   };
 }
@@ -183,11 +198,17 @@ export async function OPTIONS() {
 
 export async function GET(req: NextRequest) {
   const eventCode = req.nextUrl.searchParams.get("eventCode")?.toUpperCase();
+  const sig       = req.nextUrl.searchParams.get("sig") ?? "";
+  const exp       = req.nextUrl.searchParams.get("exp") ?? "";
+
   if (!eventCode) {
     return NextResponse.json({ error: "Missing eventCode param" }, { status: 400, headers: CORS });
   }
   if (!COMMUNITY_PDA) {
     return NextResponse.json({ error: "Server not configured — COMMUNITY_PDA missing" }, { status: 500, headers: CORS });
+  }
+  if (!sig || !exp) {
+    return NextResponse.json({ error: "Missing organizer signature — ask the organizer to go live again" }, { status: 400, headers: CORS });
   }
 
   try {
@@ -202,15 +223,18 @@ export async function GET(req: NextRequest) {
     const { data } = found;
     const spotsLeft = Number(data.capacity) - Number(data.attendeeCount);
     const dateStr   = new Date(data.eventDate * 1000).toLocaleDateString("en-US", { dateStyle: "full" });
+    const expiry    = parseInt(exp, 10);
+    const expired   = Date.now() / 1000 > expiry;
 
     const payload = {
       type:        "action",
       icon:        `${APP_URL}/strata-icon.png`,
-      title:       `[STRATA] ${data.title}`,
+      title:       `[SIGNAL] ${data.title}`,
       description: [
         `${data.location}, ${data.country}`,
         `${dateStr}`,
         `${data.attendeeCount} checked in — ${spotsLeft} spots left`,
+        expired ? `⚠ QR expired — ask organizer to refresh` : ``,
         ``,
         `Tap Check In to create your on-chain Proof-of-Presence.`,
         `New here? You'll be auto-registered in the community.`,
@@ -220,7 +244,7 @@ export async function GET(req: NextRequest) {
         actions: [
           {
             label: "Check In",
-            href:  `${APP_URL}/api/actions/checkin?eventCode=${eventCode}`,
+            href:  `${APP_URL}/api/actions/checkin?eventCode=${eventCode}&sig=${encodeURIComponent(sig)}&exp=${exp}`,
             type:  "transaction",
           },
         ],
@@ -239,25 +263,63 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const eventCode = req.nextUrl.searchParams.get("eventCode")?.toUpperCase();
+  const sigHex    = req.nextUrl.searchParams.get("sig");
+  const expStr    = req.nextUrl.searchParams.get("exp");
+
   if (!eventCode) {
     return NextResponse.json({ error: "Missing eventCode param" }, { status: 400, headers: CORS });
+  }
+  if (!sigHex || !expStr) {
+    return NextResponse.json({ error: "Missing organizer signature (sig/exp) — ask the organizer to go live again" }, { status: 400, headers: CORS });
   }
   if (!COMMUNITY_PDA) {
     return NextResponse.json({ error: "Server not configured" }, { status: 500, headers: CORS });
   }
 
-  let body: { account: string };
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: CORS });
+  const expiry = parseInt(expStr, 10);
+  if (isNaN(expiry) || Date.now() / 1000 > expiry) {
+    return NextResponse.json({ error: "QR code has expired — ask the organizer to go live again" }, { status: 400, headers: CORS });
+  }
+
+  let body: { account: string; nullifier_hash?: string };
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400, headers: CORS }); }
+
+  // World ID nullifier deduplication
+  const nullifierHash = body.nullifier_hash ?? null;
+  if (WLD_REQUIRED && !nullifierHash) {
+    return NextResponse.json(
+      { error: "World ID verification required — verify your humanity before checking in" },
+      { status: 403, headers: CORS }
+    );
+  }
+  if (nullifierHash) {
+    const nullifierKey = `${nullifierHash}:${eventCode}`;
+    if (usedNullifiers.has(nullifierKey)) {
+      return NextResponse.json(
+        { error: "This World ID has already checked in to this event" },
+        { status: 409, headers: CORS }
+      );
+    }
+    // Must have been pre-validated by /api/worldid/verify
+    const pending = pendingNullifiers.get(nullifierKey);
+    if (WLD_REQUIRED && !pending) {
+      return NextResponse.json(
+        { error: "World ID proof not validated — call /api/worldid/verify first" },
+        { status: 403, headers: CORS }
+      );
+    }
   }
 
   let attendee: PublicKey;
-  try {
-    attendee = new PublicKey(body.account);
-  } catch {
-    return NextResponse.json({ error: "Invalid wallet address" }, { status: 400, headers: CORS });
+  try { attendee = new PublicKey(body.account); }
+  catch { return NextResponse.json({ error: "Invalid wallet address" }, { status: 400, headers: CORS }); }
+
+  let sigBytes: Buffer;
+  try { sigBytes = Buffer.from(sigHex, "hex"); }
+  catch { return NextResponse.json({ error: "Invalid signature encoding" }, { status: 400, headers: CORS }); }
+  if (sigBytes.length !== 64) {
+    return NextResponse.json({ error: "Signature must be 64 bytes" }, { status: 400, headers: CORS });
   }
 
   try {
@@ -275,57 +337,73 @@ export async function POST(req: NextRequest) {
 
     const ixs: TransactionInstruction[] = [];
 
-    // Auto-register if member account doesn't exist
+    // ix[0]: Ed25519 organizer co-signature — must be first in tx
+    const message = Buffer.from(`signal_checkin:${eventCode}:${expiry}`, "utf-8");
+    ixs.push(Ed25519Program.createInstructionWithPublicKey({
+      publicKey:  data.organizer.toBytes(),
+      message:    message,
+      signature:  sigBytes,
+    }));
+
+    // Auto-register member if new
     const memberInfo = await connection.getAccountInfo(mPDA);
     if (!memberInfo) {
-      const usernameDefault = attendee.toBase58().slice(0, 8);
-      const ixData = Buffer.concat([
-        REGISTER_MEMBER_DISC,
-        borshString(usernameDefault),
-      ]);
       ixs.push(new TransactionInstruction({
         programId: PROGRAM_ID,
-        data: ixData,
+        data: Buffer.concat([REGISTER_MEMBER_DISC, borshString(attendee.toBase58().slice(0, 8))]),
         keys: [
-          { pubkey: communityKey, isSigner: false, isWritable: true  },
-          { pubkey: mPDA,         isSigner: false, isWritable: true  },
-          { pubkey: attendee,     isSigner: true,  isWritable: true  },
-          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          { pubkey: communityKey,             isSigner: false, isWritable: true  },
+          { pubkey: mPDA,                     isSigner: false, isWritable: true  },
+          { pubkey: attendee,                 isSigner: true,  isWritable: true  },
+          { pubkey: SystemProgram.programId,  isSigner: false, isWritable: false },
         ],
       }));
     }
 
-    // check_in instruction
+    // check_in instruction: event_code + expiry (new param)
     const checkInData = Buffer.concat([
       CHECK_IN_DISC,
       borshString(eventCode.slice(0, 8)),
+      borshI64(expiry),
     ]);
     ixs.push(new TransactionInstruction({
       programId: PROGRAM_ID,
       data: checkInData,
       keys: [
-        { pubkey: communityKey, isSigner: false, isWritable: true  },
-        { pubkey: ePDA,         isSigner: false, isWritable: true  },
-        { pubkey: aPDA,         isSigner: false, isWritable: true  },
-        { pubkey: mPDA,         isSigner: false, isWritable: true  },
-        { pubkey: attendee,     isSigner: true,  isWritable: true  },
-        { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        { pubkey: communityKey,              isSigner: false, isWritable: true  },
+        { pubkey: ePDA,                      isSigner: false, isWritable: true  },
+        { pubkey: aPDA,                      isSigner: false, isWritable: true  },
+        { pubkey: mPDA,                      isSigner: false, isWritable: true  },
+        { pubkey: attendee,                  isSigner: true,  isWritable: true  },
+        { pubkey: SystemProgram.programId,   isSigner: false, isWritable: false },
+        { pubkey: SYSVAR_INSTRUCTIONS_PUBKEY, isSigner: false, isWritable: false },
       ],
     }));
 
-    const { blockhash, lastValidBlockHeight } =
-      await connection.getLatestBlockhash("confirmed");
+    // Memo ix: stamp nullifier hash on-chain if World ID was used
+    if (nullifierHash) {
+      ixs.push(new TransactionInstruction({
+        programId: MEMO_PROGRAM_ID,
+        data:      Buffer.from(`signal:wid:${nullifierHash}`, "utf-8"),
+        keys:      [{ pubkey: attendee, isSigner: true, isWritable: false }],
+      }));
+    }
 
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
     const tx = new Transaction({ feePayer: attendee, blockhash, lastValidBlockHeight });
-    ixs.forEach((ix) => tx.add(ix));
+    ixs.forEach(ix => tx.add(ix));
 
-    const serialized = tx.serialize({ requireAllSignatures: false });
+    // Commit nullifier — mark as spent so same World ID can't check in again
+    if (nullifierHash) {
+      const nullifierKey = `${nullifierHash}:${eventCode}`;
+      usedNullifiers.add(nullifierKey);
+      pendingNullifiers.delete(nullifierKey);
+      verifiedWallets.add(attendee.toBase58());
+    }
 
     return NextResponse.json(
-      {
-        transaction: serialized.toString("base64"),
-        message: `Checked in to ${data.title}! Your Proof-of-Presence is now on-chain.`,
-      },
+      { transaction: tx.serialize({ requireAllSignatures: false }).toString("base64"),
+        message: `Checked in to ${data.title}! Your Proof-of-Presence is now on-chain.` },
       { headers: CORS }
     );
 

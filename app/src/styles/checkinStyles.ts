@@ -90,4 +90,40 @@
 
   .info-text { font-size:.9rem; color:#888; text-align:center; padding:2rem 0; }
   .error-big { font-size:1.1rem; color:#f87171; text-align:center; padding:2rem 0; }
+
+  /* ── World ID ── */
+  .wld-section {
+    margin:1.25rem 0 .5rem;
+    background:rgba(0,140,255,.06); border:1px solid rgba(0,140,255,.18);
+    border-radius:14px; padding:1.25rem 1.1rem;
+    display:flex; flex-direction:column; align-items:center; gap:.75rem; text-align:center;
+  }
+  .wld-label {
+    font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+    color:#60c8f5; font-weight:700;
+  }
+  .wld-desc { font-size:.8rem; color:#888; line-height:1.6; max-width:340px; }
+  .wld-loading { font-size:.8rem; color:#888; }
+  .wld-unavailable {
+    background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+    border-radius:10px; padding:1rem 1.25rem; text-align:center; color:#e8e8e8; font-size:.85rem;
+  }
+  .btn-worldid {
+    display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+    width:100%; padding:.75rem 1.5rem;
+    background:linear-gradient(135deg,#0050c8,#0080ff);
+    color:#fff; border:none; border-radius:12px;
+    font-family:'Epilogue',sans-serif; font-size:.9rem; font-weight:700;
+    cursor:pointer; transition:all .2s; letter-spacing:.02em;
+  }
+  .btn-worldid:hover:not(:disabled) { opacity:.9; transform:translateY(-1px); box-shadow:0 6px 24px rgba(0,128,255,.35); }
+  .btn-worldid:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+
+  .wld-verified-badge {
+    display:inline-flex; align-items:center; justify-content:center; gap:.4rem;
+    background:rgba(0,180,255,.1); border:1px solid rgba(0,180,255,.28);
+    border-radius:100px; padding:.35rem 1rem;
+    font-size:.72rem; font-weight:700; color:#60c8f5;
+    margin:.75rem auto 0; letter-spacing:.04em;
+  }
 `;

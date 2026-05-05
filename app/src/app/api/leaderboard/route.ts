@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { computeStrataScore } from "../../../utils/scoring";
+import { claims } from "../achievement/store";
 
 const RPC_URL        = process.env.NEXT_PUBLIC_RPC_URL ?? "https://api.devnet.solana.com";
 const COMMUNITY_PDA  = process.env.NEXT_PUBLIC_COMMUNITY_PDA;
@@ -91,7 +92,10 @@ export async function GET() {
       .map(([wallet, evs]) => {
         const ec = evs.size;
         const hc = Array.from(evs).filter(e => hackathonSet.has(e)).length;
-        const { score, tier } = computeStrataScore(ec, hc);
+        const ap = Array.from(claims.values())
+          .filter(c => c.wallet === wallet && c.status === "approved")
+          .reduce((sum, c) => sum + (c.points ?? 0), 0);
+        const { score, tier } = computeStrataScore(ec, hc, ap);
         return { wallet, score, tier, eventCount: ec, hackathonCount: hc };
       })
       .sort((a, b) => b.score - a.score)
