@@ -1,5 +1,5 @@
 {
-  "address": "49u7b39dxetV3Jojzx5b1zgfb2XiYEYPdmxnhBJK8VWG",
+  "address": "CmStH6nDHyHtsG5PLj9yvKmAQsY9GjDW2Ap8asMZrz57",
   "metadata": {
     "name": "strata",
     "version": "0.1.0",
@@ -16,9 +16,9 @@
         { "name": "systemProgram", "address": "11111111111111111111111111111111" }
       ],
       "args": [
-        { "name": "name", "type": "string" },
+        { "name": "name",        "type": "string" },
         { "name": "description", "type": "string" },
-        { "name": "country", "type": "string" }
+        { "name": "country",     "type": "string" }
       ]
     },
     {
@@ -26,8 +26,8 @@
       "discriminator": [44,19,160,59,17,122,38,16],
       "accounts": [
         { "name": "community", "writable": true },
-        { "name": "member", "writable": true },
-        { "name": "wallet", "writable": true, "signer": true },
+        { "name": "member",    "writable": true },
+        { "name": "wallet",    "writable": true, "signer": true },
         { "name": "systemProgram", "address": "11111111111111111111111111111111" }
       ],
       "args": [
@@ -39,22 +39,22 @@
       "discriminator": [194,220,43,201,54,209,49,178],
       "accounts": [
         { "name": "community" },
-        { "name": "member", "writable": true },
+        { "name": "member",    "writable": true },
         { "name": "authority", "signer": true }
       ],
       "args": [
         { "name": "newScore", "type": "u64" },
-        { "name": "reason", "type": "string" }
+        { "name": "reason",   "type": "string" }
       ]
     },
     {
       "name": "createEvent",
       "discriminator": [49,219,29,203,22,98,100,87],
       "accounts": [
-        { "name": "community", "writable": true },
-        { "name": "event", "writable": true },
-        { "name": "escrowVault", "writable": true },
-        { "name": "organizer", "writable": true, "signer": true },
+        { "name": "community",    "writable": true },
+        { "name": "event",        "writable": true },
+        { "name": "escrowVault",  "writable": true },
+        { "name": "organizer",    "writable": true, "signer": true },
         { "name": "systemProgram", "address": "11111111111111111111111111111111" }
       ],
       "args": [
@@ -71,27 +71,20 @@
       ]
     },
     {
-      "name": "startEvent",
-      "discriminator": [61,196,227,97,8,81,107,23],
-      "accounts": [
-        { "name": "event", "writable": true },
-        { "name": "organizer", "signer": true }
-      ],
-      "args": []
-    },
-    {
       "name": "checkIn",
       "discriminator": [209,253,4,217,250,241,207,50],
       "accounts": [
-        { "name": "community", "writable": true },
-        { "name": "event", "writable": true },
+        { "name": "community",  "writable": true },
+        { "name": "event",      "writable": true },
         { "name": "attendance", "writable": true },
-        { "name": "member", "writable": true },
-        { "name": "attendee", "writable": true, "signer": true },
-        { "name": "systemProgram", "address": "11111111111111111111111111111111" }
+        { "name": "member",     "writable": true },
+        { "name": "attendee",   "writable": true, "signer": true },
+        { "name": "systemProgram", "address": "11111111111111111111111111111111" },
+        { "name": "instructions",  "address": "Sysvar1nstructions1111111111111111111111111" }
       ],
       "args": [
-        { "name": "eventCode", "type": "string" }
+        { "name": "eventCode", "type": "string" },
+        { "name": "expiry",    "type": "i64" }
       ]
     },
     {
@@ -99,20 +92,11 @@
       "discriminator": [12,17,121,204,15,101,68,196],
       "accounts": [
         { "name": "attendance", "writable": true },
-        { "name": "authority", "signer": true }
+        { "name": "authority",  "signer": true }
       ],
       "args": [
         { "name": "nftMint", "type": "pubkey" }
       ]
-    },
-    {
-      "name": "endEvent",
-      "discriminator": [210,72,122,58,113,167,161,20],
-      "accounts": [
-        { "name": "event", "writable": true },
-        { "name": "organizer", "signer": true }
-      ],
-      "args": []
     },
     {
       "name": "copilotScoreEvent",
@@ -123,7 +107,7 @@
         { "name": "authority", "signer": true }
       ],
       "args": [
-        { "name": "score", "type": "u8" },
+        { "name": "score",     "type": "u8" },
         { "name": "reasoning", "type": "string" }
       ]
     }
@@ -177,19 +161,19 @@
           { "name": "community",        "type": "pubkey" },
           { "name": "organizer",        "type": "pubkey" },
           { "name": "title",            "type": "string" },
-          { "name": "description",      "type": "string" },
           { "name": "location",         "type": "string" },
           { "name": "country",          "type": "string" },
-          { "name": "eventDate",        "type": "i64" },
+          { "name": "startTime",        "type": "i64" },
+          { "name": "endTime",          "type": "i64" },
           { "name": "capacity",         "type": "u64" },
           { "name": "attendeeCount",    "type": "u64" },
           { "name": "entryFeeLamports", "type": "u64" },
           { "name": "eventCode",        "type": "string" },
-          { "name": "status",           "type": { "defined": { "name": "EventStatus" } } },
           { "name": "eventIndex",       "type": "u64" },
           { "name": "escrowBump",       "type": "u8" },
           { "name": "bump",             "type": "u8" },
           { "name": "createdAt",        "type": "i64" },
+          { "name": "externalUrl",      "type": "string" },
           { "name": "isHackathon",      "type": "bool" }
         ]
       }
@@ -209,18 +193,6 @@
       }
     },
     {
-      "name": "EventStatus",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          { "name": "Upcoming" },
-          { "name": "Live" },
-          { "name": "Ended" },
-          { "name": "Cancelled" }
-        ]
-      }
-    },
-    {
       "name": "MemberTier",
       "type": {
         "kind": "enum",
@@ -236,18 +208,22 @@
     }
   ],
   "errors": [
-    { "code": 6000, "name": "NameTooLong",          "msg": "Name exceeds maximum length" },
-    { "code": 6001, "name": "DescriptionTooLong",   "msg": "Description exceeds maximum length" },
-    { "code": 6002, "name": "InvalidAmount",        "msg": "Invalid amount" },
-    { "code": 6003, "name": "InvalidDeadline",      "msg": "Date must be in the future" },
-    { "code": 6004, "name": "InvalidEventCode",     "msg": "Event code must be exactly 8 characters" },
-    { "code": 6005, "name": "EventNotLive",         "msg": "Event is not currently live" },
-    { "code": 6006, "name": "EventFull",            "msg": "Event is at full capacity" },
-    { "code": 6007, "name": "InvalidEventStatus",   "msg": "Invalid event status for this operation" },
-    { "code": 6008, "name": "MemberNotInCommunity", "msg": "Member does not belong to this community" },
-    { "code": 6009, "name": "InvalidMember",        "msg": "Invalid member account" },
-    { "code": 6010, "name": "EventNotInCommunity",  "msg": "Event does not belong to this community" },
-    { "code": 6011, "name": "NftAlreadyMinted",     "msg": "NFT already minted for this attendance" },
-    { "code": 6012, "name": "Unauthorized",         "msg": "Unauthorized" }
+    { "code": 6000, "name": "NameTooLong",               "msg": "Name exceeds maximum length" },
+    { "code": 6001, "name": "DescriptionTooLong",        "msg": "Description exceeds maximum length" },
+    { "code": 6002, "name": "InvalidAmount",             "msg": "Invalid amount" },
+    { "code": 6003, "name": "InvalidDeadline",           "msg": "Start time must be in the future" },
+    { "code": 6004, "name": "InvalidEndTime",            "msg": "End time must be after start time" },
+    { "code": 6005, "name": "InvalidEventCode",          "msg": "Event code must be exactly 8 characters" },
+    { "code": 6006, "name": "EventNotStarted",           "msg": "Event has not started yet" },
+    { "code": 6007, "name": "EventEnded",                "msg": "Event has ended" },
+    { "code": 6008, "name": "EventFull",                 "msg": "Event is at full capacity" },
+    { "code": 6009, "name": "MemberNotInCommunity",      "msg": "Member does not belong to this community" },
+    { "code": 6010, "name": "InvalidMember",             "msg": "Invalid member account" },
+    { "code": 6011, "name": "EventNotInCommunity",       "msg": "Event does not belong to this community" },
+    { "code": 6012, "name": "NftAlreadyMinted",          "msg": "NFT already minted for this attendance" },
+    { "code": 6013, "name": "Unauthorized",              "msg": "Unauthorized" },
+    { "code": 6014, "name": "SignatureExpired",          "msg": "QR code has expired" },
+    { "code": 6015, "name": "MissingOrganizerSignature", "msg": "Missing organizer co-signature — Ed25519 instruction must be ix[0]" },
+    { "code": 6016, "name": "InvalidOrganizerSignature", "msg": "Invalid organizer signature or message mismatch" }
   ]
 }

@@ -23,11 +23,20 @@ interface MintRequest {
   checkedInAt?:  number;
   organizerPubkey?: string;
   capacitySlot?: number;   // edition number (1st, 2nd … Nth person)
+  eventsAttended?: number; // total events attended — determines badge level
   // achievement
   hackathonName?: string;
   rank?:          string;
   sourceUrl?:     string;
   verifiedByAdmin?: string;
+}
+
+function badgeLevel(eventsAttended: number): number {
+  if (eventsAttended >= 20) return 5;
+  if (eventsAttended >= 10) return 4;
+  if (eventsAttended >= 5)  return 3;
+  if (eventsAttended >= 3)  return 2;
+  return 1;
 }
 
 interface NftMetadata {
@@ -120,11 +129,13 @@ export async function POST(req: NextRequest) {
     const appUrl  = process.env.NEXT_PUBLIC_APP_URL ?? "https://strata-project.vercel.app";
 
     const metadata = buildMetadata(body);
+    const level    = badgeLevel(body.eventsAttended ?? 1);
+    const imageUrl = `${appUrl}/nft-badge/nft-signal-lv${level}.png`;
     const uri = `data:application/json;base64,${Buffer.from(JSON.stringify({
       ...metadata,
-      image:        `${appUrl}/nft-badge.svg`,
+      image:        imageUrl,
       external_url: appUrl,
-      properties:   { category: "image" },
+      properties:   { category: "image", files: [{ uri: imageUrl, type: "image/png" }] },
     })).toString("base64")}`;
 
     const umi  = createUmi(rpc);

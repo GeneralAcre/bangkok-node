@@ -1,18 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { PublicKey } from "@solana/web3.js";
+import { useState, useEffect } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { credentialCSS } from "../../styles/credentialStyles";
 import { StrataScoreTier } from "../../utils/scoring";
 import { Nav } from "../../components/Nav";
-
-// ── Env ───────────────────────────────────────────────────────────────────────
+import { Footer } from "../../components/Footer";
 
 const COMMUNITY_PDA  = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 const PROGRAM_ID_STR = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
-
-// ── Constants ─────────────────────────────────────────────────────────────────
 
 const TIERS: Array<{ name: StrataScoreTier; icon: string; minScore: number; color: string }> = [
   { name: "Initiate", icon: "◦",  minScore: 0,    color: "#6b7280" },
@@ -23,13 +19,13 @@ const TIERS: Array<{ name: StrataScoreTier; icon: string; minScore: number; colo
   { name: "Legend",   icon: "✺",  minScore: 2000, color: "#7c3aed" },
 ];
 
-const DEMO_WALLETS = [
-  { label: "Legend",  addr: "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU" },
-  { label: "Builder", addr: "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS" },
-  { label: "Seeker",  addr: "DRpbCBMxVnDK7maPM5tGv6MvB3v1sRMC86PZ8okm21hy" },
+const NFT_BADGES = [
+  { level: 1, img: "/nft-badge/nft-signal-lv1.png", label: "Signal Lv.1", minEvents: 1,  xp: 100,  desc: "Attended your first event" },
+  { level: 2, img: "/nft-badge/nft-signal-lv2.png", label: "Signal Lv.2", minEvents: 3,  xp: 300,  desc: "Attended 3 events" },
+  { level: 3, img: "/nft-badge/nft-signal-lv3.png", label: "Signal Lv.3", minEvents: 5,  xp: 500,  desc: "Attended 5 events" },
+  { level: 4, img: "/nft-badge/nft-signal-lv4.png", label: "Signal Lv.4", minEvents: 10, xp: 1000, desc: "Attended 10 events" },
+  { level: 5, img: "/nft-badge/nft-signal-lv5.png", label: "Signal Lv.5", minEvents: 20, xp: 2000, desc: "Attended 20 events" },
 ];
-
-// ── Types ─────────────────────────────────────────────────────────────────────
 
 interface CredentialData {
   owner: string;
@@ -42,28 +38,6 @@ interface CredentialData {
   lastCheckinAt: number;
   lastIssuer: string;
   isOnChain: boolean;
-}
-
-interface ParsedEvent {
-  title: string;
-  location: string;
-  country: string;
-  eventDate: number;
-  eventCode: string;
-  isHackathon: boolean;
-  organizer: string;
-}
-
-interface ParsedAttendance {
-  checkedInAt: number;
-  nftMint: string | null;
-  edition: number;
-}
-
-interface AttendedEvent {
-  eventPDA:   string;
-  event:      ParsedEvent;
-  attendance: ParsedAttendance;
 }
 
 interface Achievement {
@@ -86,173 +60,12 @@ interface ClaimForm {
   description:   string;
 }
 
-// ── Borsh helpers ─────────────────────────────────────────────────────────────
-
-function readStr(data: Buffer, off: number): { value: string; next: number } {
-  const len = data.readUInt32LE(off);
-  return { value: data.slice(off + 4, off + 4 + len).toString("utf-8"), next: off + 4 + len };
-}
-
-function communityEventCount(data: Buffer): number {
-  let off = 8 + 32;
-  off = readStr(data, off).next;
-  off = readStr(data, off).next;
-  off = readStr(data, off).next;
-  off += 8;
-  return Number(data.readBigUInt64LE(off));
-}
-
-function parseEvent(data: Buffer): ParsedEvent {
-  let off = 8 + 32;
-  const organizer = new PublicKey(data.slice(off, off + 32)).toBase58(); off += 32;
-  const title     = readStr(data, off); off = title.next;
-  off = readStr(data, off).next;
-  const location  = readStr(data, off); off = location.next;
-  const country   = readStr(data, off); off = country.next;
-  const eventDate = Number(data.readBigInt64LE(off)); off += 8;
-  off += 8 + 8 + 8;
-  const eventCode = readStr(data, off); off = eventCode.next;
-  off += 1 + 8 + 1 + 1 + 8;
-  const isHackathon = data.length > off && data[off] !== 0;
-  return { title: title.value, location: location.value, country: country.value, eventDate, eventCode: eventCode.value, isHackathon, organizer };
-}
-
-function parseAttendance(data: Buffer): ParsedAttendance {
-  let off = 8 + 32 + 32;
-  const edition     = Number(data.readBigUInt64LE(off)); off += 8;
-  const checkedInAt = Number(data.readBigInt64LE(off));  off += 8;
-  const hasNft = data[off] !== 0; off += 1;
-  const nftMint = hasNft ? new PublicKey(data.slice(off, off + 32)).toBase58() : null;
-  return { checkedInAt, nftMint, edition };
-}
-
-function makeEPDA(community: PublicKey, i: number, prog: PublicKey): PublicKey {
-  const buf = Buffer.alloc(8);
-  buf.writeBigUInt64LE(BigInt(i));
-  return PublicKey.findProgramAddressSync([Buffer.from("event"), community.toBuffer(), buf], prog)[0];
-}
-
-function makeAPDA(event: PublicKey, attendee: PublicKey, prog: PublicKey): PublicKey {
-  return PublicKey.findProgramAddressSync([Buffer.from("attendance"), event.toBuffer(), attendee.toBuffer()], prog)[0];
-}
-
-// ── Tier helpers ──────────────────────────────────────────────────────────────
-
 function tierProgress(score: number, idx: number) {
   if (idx >= TIERS.length - 1) return { pct: 100, next: null as string | null, needed: 0 };
-  const from  = TIERS[idx].minScore;
-  const to    = TIERS[idx + 1].minScore;
-  const pct   = Math.min(100, Math.round(((score - from) / (to - from)) * 100));
+  const from = TIERS[idx].minScore;
+  const to   = TIERS[idx + 1].minScore;
+  const pct  = Math.min(100, Math.round(((score - from) / (to - from)) * 100));
   return { pct, next: TIERS[idx + 1].name, needed: Math.max(0, to - score) };
-}
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatsBar({
-  cred, rank, total, rankLoading,
-  achievementCount, achievementPoints, achLoading,
-}: {
-  cred: CredentialData;
-  rank: number | null;
-  total: number;
-  rankLoading: boolean;
-  achievementCount: number;
-  achievementPoints: number;
-  achLoading: boolean;
-}) {
-  const tier = TIERS[cred.tierIndex] ?? TIERS[0];
-  const prog = tierProgress(cred.score, cred.tierIndex);
-
-  return (
-    <div className="stats-bar">
-      {/* Signal Level */}
-      <div className="stat-card">
-        <div className="stat-card-label">Signal Level</div>
-        <div className="level-icon" style={{ color: tier.color }}>{tier.icon}</div>
-        <div className="level-name" style={{ color: tier.color }}>{tier.name}</div>
-        <div className="level-num">LVL {cred.tierIndex + 1} · {cred.score.toLocaleString()} XP</div>
-        <div className="xp-bar-wrap">
-          <div className="xp-bar" style={{ width: `${prog.pct}%` }} />
-        </div>
-        <div className="xp-next">
-          {prog.next ? `${prog.needed} pts → ${prog.next}` : "Max tier reached"}
-        </div>
-      </div>
-
-      {/* Events */}
-      <div className="stat-card">
-        <div className="stat-card-label">Events</div>
-        <div className="stat-card-value">{cred.eventsAttended}</div>
-        <div className="stat-card-sub">Attended</div>
-        {cred.hackathonCount > 0 && (
-          <div className="stat-card-sub" style={{ color: "#a78bfa" }}>
-            {cred.hackathonCount} Hackathon{cred.hackathonCount !== 1 ? "s" : ""}
-          </div>
-        )}
-      </div>
-
-      {/* Rank */}
-      <div className="stat-card">
-        <div className="stat-card-label">Rank</div>
-        {rankLoading ? (
-          <div className="shimmer" style={{ height: 32, width: 64, marginTop: ".25rem" }} />
-        ) : (
-          <div className="stat-card-value">{rank !== null ? `#${rank}` : "—"}</div>
-        )}
-        <div className="stat-card-sub">of {total || "—"} builders</div>
-      </div>
-
-      {/* Achievements */}
-      <div className="stat-card">
-        <div className="stat-card-label">Achievements</div>
-        {achLoading ? (
-          <div className="shimmer" style={{ height: 32, width: 48, marginTop: ".25rem" }} />
-        ) : (
-          <div className="stat-card-value">{achievementCount}</div>
-        )}
-        <div className="stat-card-sub">Verified NFTs</div>
-        {achievementPoints > 0 && (
-          <div className="stat-card-sub" style={{ color: "var(--teal)" }}>
-            +{achievementPoints} pts boost
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StatsBarSkeleton() {
-  return (
-    <div className="stats-bar">
-      {[0, 1, 2, 3].map(i => (
-        <div key={i} className="stat-card" style={{ gap: ".55rem" }}>
-          <div className="shimmer" style={{ height: 9, width: "55%" }} />
-          <div className="shimmer" style={{ height: 32, width: "60%" }} />
-          <div className="shimmer" style={{ height: 8, width: "75%" }} />
-          <div className="shimmer" style={{ height: 4, borderRadius: 100 }} />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function EventCard({ rec }: { rec: AttendedEvent }) {
-  const dateStr = new Date(rec.attendance.checkedInAt * 1000).toLocaleDateString("en-US", { dateStyle: "medium" });
-  const pts     = rec.event.isHackathon ? 40 : 10;
-  return (
-    <div className="event-row">
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: ".4rem", flexWrap: "wrap" }}>
-          <div className="event-name">{rec.event.title}</div>
-          {rec.event.isHackathon && <span className="badge-hackathon">Hackathon</span>}
-        </div>
-        <div className="event-meta">
-          {rec.event.location}{rec.event.country ? `, ${rec.event.country}` : ""} · {dateStr} · #{rec.event.eventCode}
-        </div>
-      </div>
-      <div className="event-pts">+{pts} pts</div>
-    </div>
-  );
 }
 
 function AchievementCard({ ach }: { ach: Achievement }) {
@@ -266,30 +79,25 @@ function AchievementCard({ ach }: { ach: Achievement }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-
 export default function CredentialsPage() {
-  const { publicKey }  = useWallet();
-  const { connection } = useConnection();
-  const walletAddr     = publicKey?.toBase58() ?? "";
-  const inputRef       = useRef<HTMLInputElement>(null);
-
-  const [query,  setQuery]  = useState("");
-  const [target, setTarget] = useState("");
+  const { publicKey } = useWallet();
+  const walletAddr    = publicKey?.toBase58() ?? "";
+  const target        = walletAddr;
 
   const [cred,         setCred]         = useState<CredentialData | null>(null);
   const [rank,         setRank]         = useState<number | null>(null);
   const [leaderTotal,  setLeaderTotal]  = useState(0);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [achievePts,   setAchievePts]   = useState(0);
-  const [events,       setEvents]       = useState<AttendedEvent[]>([]);
   const [worldVerified, setWorldVerified] = useState(false);
 
   const [credLoading, setCredLoading] = useState(false);
   const [rankLoading, setRankLoading] = useState(false);
   const [achLoading,  setAchLoading]  = useState(false);
-  const [evLoading,   setEvLoading]   = useState(false);
   const [error,       setError]       = useState("");
+
+  const [selectedBadge, setSelectedBadge] = useState<typeof NFT_BADGES[0] | null>(null);
+  const [badgeEarned,   setBadgeEarned]   = useState(false);
 
   const [claimOpen,    setClaimOpen]    = useState(false);
   const [claimForm,    setClaimForm]    = useState<ClaimForm>({ hackathonName: "", projectUrl: "", rank: "", description: "" });
@@ -308,15 +116,6 @@ export default function CredentialsPage() {
   const isAdminWallet = !!publicKey && !!ADMIN_WALLET && publicKey.toBase58() === ADMIN_WALLET;
   const isAdmin = isAdminWallet || !!adminKey;
 
-  // Auto-load own wallet on connect
-  useEffect(() => {
-    if (walletAddr && !target) {
-      setQuery(walletAddr);
-      setTarget(walletAddr);
-    }
-  }, [walletAddr]);
-
-  // Fetch credential + rank + achievements when target changes
   useEffect(() => {
     if (!target) return;
     setCred(null); setRank(null); setLeaderTotal(0); setAchievements([]); setAchievePts(0); setWorldVerified(false); setError("");
@@ -353,50 +152,6 @@ export default function CredentialsPage() {
       .catch(() => {});
   }, [target]);
 
-  // Load on-chain event attendance
-  const loadEvents = useCallback(async () => {
-    if (!target || !COMMUNITY_PDA || !PROGRAM_ID_STR) { setEvLoading(false); return; }
-    let walletKey: PublicKey;
-    try { walletKey = new PublicKey(target); } catch { setEvLoading(false); return; }
-
-    setEvLoading(true);
-    try {
-      const community = new PublicKey(COMMUNITY_PDA);
-      const prog      = new PublicKey(PROGRAM_ID_STR);
-      const commInfo  = await connection.getAccountInfo(community);
-      if (!commInfo) { setEvLoading(false); return; }
-
-      const count = communityEventCount(commInfo.data);
-      const ePDAs = Array.from({ length: count }, (_, i) => makeEPDA(community, i, prog));
-      const aPDAs = ePDAs.map(ep => makeAPDA(ep, walletKey, prog));
-
-      const batchGet = async (keys: PublicKey[]) => {
-        const out = [];
-        for (let i = 0; i < keys.length; i += 100)
-          out.push(...await connection.getMultipleAccountsInfo(keys.slice(i, i + 100)));
-        return out;
-      };
-
-      const [evInfos, atInfos] = await Promise.all([batchGet(ePDAs), batchGet(aPDAs)]);
-      const attended: AttendedEvent[] = [];
-      for (let i = 0; i < count; i++) {
-        if (!atInfos[i] || !evInfos[i]) continue;
-        try {
-          attended.push({
-            eventPDA:   ePDAs[i].toBase58(),
-            event:      parseEvent(evInfos[i]!.data),
-            attendance: parseAttendance(atInfos[i]!.data),
-          });
-        } catch {}
-      }
-      attended.sort((a, b) => b.attendance.checkedInAt - a.attendance.checkedInAt);
-      setEvents(attended);
-    } catch {}
-    setEvLoading(false);
-  }, [target, connection]);
-
-  useEffect(() => { loadEvents(); }, [loadEvents]);
-
   useEffect(() => {
     if (!target) { setMyClaims([]); return; }
     setClaimsLoading(true);
@@ -428,19 +183,6 @@ export default function CredentialsPage() {
       .catch(() => {})
       .finally(() => setClaimsLoading(false));
   }, [isAdmin, adminKey]);
-
-  function doLookup(addr: string) {
-    const t = addr.trim();
-    if (!t) return;
-    setQuery(t);
-    setTarget(t);
-    setEvents([]);
-  }
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    doLookup(query);
-  }
 
   async function handleClaimSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -489,14 +231,15 @@ export default function CredentialsPage() {
     }
   }
 
+  const tier = cred ? (TIERS[cred.tierIndex] ?? TIERS[0]) : TIERS[0];
+  const prog = cred ? tierProgress(cred.score, cred.tierIndex) : { pct: 0, next: "Seeker", needed: 100 };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: credentialCSS }} />
       <div className="grid-bg" />
       <div className="orb-wrap">
-        <div className="orb orb1" />
-        <div className="orb orb2" />
-        <div className="orb orb3" />
+        <div className="orb orb1" /><div className="orb orb2" /><div className="orb orb3" />
       </div>
       <div className="scanline" />
       <Nav active="credentials" />
@@ -506,91 +249,314 @@ export default function CredentialsPage() {
         <div className="cred-title">Builder Passport</div>
         <div className="cred-subtitle">Your portable on-chain identity, earned across every platform.</div>
 
-        {/* Search bar */}
-        <div className="query-section">
-          <div className="query-label">Wallet Address</div>
-          <form className="query-bar" onSubmit={handleSubmit}>
-            <input
-              ref={inputRef}
-              className="query-input"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Enter wallet address…"
-              spellCheck={false}
-            />
-            <button className="query-btn" type="submit" disabled={credLoading}>
-              {credLoading ? "Loading…" : "Fetch →"}
-            </button>
-          </form>
-          <div className="demo-wallets">
-            <span className="demo-label">Demo:</span>
-            {DEMO_WALLETS.map(d => (
-              <button key={d.addr} className="demo-pill" onClick={() => doLookup(d.addr)}>
-                {TIERS.find(t => t.name === d.label)?.icon ?? "◦"} {d.label}
-              </button>
-            ))}
-            {walletAddr && (
-              <button className="demo-pill" onClick={() => doLookup(walletAddr)}>◎ My Wallet</button>
-            )}
+        {/* ── Not connected ── */}
+        {!walletAddr && (
+          <div style={{
+            textAlign: "center", padding: "5rem 1rem",
+            border: "1px dashed rgba(255,255,255,.1)", borderRadius: 20,
+            marginTop: "2rem",
+          }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>◈</div>
+            <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: ".5rem" }}>Connect your wallet</div>
+            <div style={{ color: "#888", fontSize: ".85rem" }}>Your Builder Passport is tied to your wallet address.</div>
           </div>
-        </div>
+        )}
 
-        {error && <div className="error-box">Error: {error}</div>}
+        {/* ── Loading skeleton ── */}
+        {walletAddr && credLoading && (
+          <div className="shimmer" style={{ height: 220, borderRadius: 20, marginTop: "1.5rem" }} />
+        )}
 
-        {/* Stats bar */}
-        {credLoading && <StatsBarSkeleton />}
+        {error && <div className="error-box" style={{ marginTop: "1rem" }}>Error: {error}</div>}
 
-        {!credLoading && cred && (
-          <>
-            <StatsBar
-              cred={cred}
-              rank={rank}
-              total={leaderTotal}
-              rankLoading={rankLoading}
-              achievementCount={achievements.length}
-              achievementPoints={achievePts}
-              achLoading={achLoading}
-            />
+        {/* ── Profile Banner ── */}
+        {walletAddr && cred && (
+          <div style={{
+            position: "relative",
+            background: "rgba(255,255,255,.03)",
+            border: "1px solid rgba(255,255,255,.14)",
+            borderRadius: 20, overflow: "hidden",
+            marginTop: "1.5rem", marginBottom: "1.75rem",
+          }}>
+            {/* Cover strip */}
+            <div style={{
+              height: 80,
+              background: "linear-gradient(120deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%)",
+              borderBottom: "1px solid rgba(255,255,255,.08)",
+            }} />
 
-            {worldVerified && (
-              <div style={{
-                display:"inline-flex", alignItems:"center", gap:".4rem",
-                background:"rgba(0,180,255,.08)", border:"1px solid rgba(0,180,255,.22)",
-                borderRadius:100, padding:".3rem .9rem",
-                fontSize:".7rem", fontWeight:700, color:"#60c8f5",
-                letterSpacing:".06em", marginBottom:"1.25rem",
-              }}>
-                🌐 World ID Verified
+            <div style={{ padding: "0 1.75rem 1.75rem" }}>
+              {/* Avatar row */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: "1rem", marginTop: -36, marginBottom: "1rem" }}>
+                <div style={{
+                  width: 72, height: 72, flexShrink: 0,
+                  background: "#111",
+                  border: "2px solid rgba(255,255,255,.3)",
+                  borderRadius: 16,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "2rem", color: "#ffffff",
+                }}>
+                  {tier.icon}
+                </div>
+                <div style={{ paddingBottom: ".25rem" }}>
+                  <div style={{ fontFamily: "'Space Mono',monospace", fontSize: ".82rem", color: "#e8e8e8", fontWeight: 700 }}>
+                    {walletAddr.slice(0, 8)}…{walletAddr.slice(-6)}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginTop: ".2rem", flexWrap: "wrap" }}>
+                    <span style={{
+                      color: "#fff", fontSize: ".72rem", fontWeight: 700,
+                      fontFamily: "'Orbitron',sans-serif", letterSpacing: ".08em",
+                      border: "1px solid rgba(255,255,255,.2)", borderRadius: 100,
+                      padding: ".1rem .55rem",
+                    }}>
+                      {tier.icon} {tier.name}
+                    </span>
+                    {worldVerified && (
+                      <span style={{
+                        background: "rgba(0,180,255,.1)", border: "1px solid rgba(0,180,255,.3)",
+                        color: "#60c8f5", borderRadius: 100, padding: ".1rem .5rem",
+                        fontSize: ".58rem", fontWeight: 700, fontFamily: "'Orbitron',sans-serif",
+                      }}>
+                        🌐 World ID
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
 
-            {/* Events gallery */}
-            <div className="section-head">
-              Events Attended
-              {!evLoading && events.length > 0 && (
-                <span className="section-count">{events.length}</span>
+              {/* Stats grid */}
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+                gap: ".75rem",
+              }}>
+                {/* Level + XP */}
+                <div style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,.14)",
+                  borderRadius: 12, padding: ".9rem 1rem",
+                }}>
+                  <div style={{ fontSize: ".55rem", color: "#888", fontFamily: "'Orbitron',sans-serif", letterSpacing: ".12em", marginBottom: ".4rem" }}>SIGNAL LEVEL</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1, marginBottom: ".15rem" }}>
+                    {cred.tierIndex + 1}
+                    <span style={{ fontSize: ".7rem", color: "#888", fontWeight: 400, marginLeft: ".25rem" }}>LVL</span>
+                  </div>
+                  <div style={{ fontSize: ".65rem", color: "#888", marginBottom: ".5rem" }}>{cred.score.toLocaleString()} XP</div>
+                  <div style={{ height: 3, background: "rgba(255,255,255,.1)", borderRadius: 100, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${prog.pct}%`, background: "#ffffff", borderRadius: 100, transition: "width .6s ease" }} />
+                  </div>
+                  {prog.next && (
+                    <div style={{ fontSize: ".58rem", color: "#555", marginTop: ".3rem" }}>{prog.needed} pts → {prog.next}</div>
+                  )}
+                </div>
+
+                {/* Rank */}
+                <div style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,.14)",
+                  borderRadius: 12, padding: ".9rem 1rem",
+                }}>
+                  <div style={{ fontSize: ".55rem", color: "#888", fontFamily: "'Orbitron',sans-serif", letterSpacing: ".12em", marginBottom: ".4rem" }}>RANK</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1, marginBottom: ".15rem" }}>
+                    {rankLoading ? "—" : rank !== null ? `#${rank}` : "—"}
+                  </div>
+                  <div style={{ fontSize: ".65rem", color: "#888" }}>of {leaderTotal || "—"} builders</div>
+                </div>
+
+                {/* Events */}
+                <div style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,.14)",
+                  borderRadius: 12, padding: ".9rem 1rem",
+                }}>
+                  <div style={{ fontSize: ".55rem", color: "#888", fontFamily: "'Orbitron',sans-serif", letterSpacing: ".12em", marginBottom: ".4rem" }}>EVENTS</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1, marginBottom: ".15rem" }}>{cred.eventsAttended}</div>
+                  <div style={{ fontSize: ".65rem", color: "#888" }}>Attended</div>
+                </div>
+
+                {/* Hackathons */}
+                <div style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,.14)",
+                  borderRadius: 12, padding: ".9rem 1rem",
+                }}>
+                  <div style={{ fontSize: ".55rem", color: "#888", fontFamily: "'Orbitron',sans-serif", letterSpacing: ".12em", marginBottom: ".4rem" }}>HACKATHONS</div>
+                  <div style={{ fontSize: "2rem", fontWeight: 900, color: "#ffffff", lineHeight: 1, marginBottom: ".15rem" }}>{cred.hackathonCount}</div>
+                  <div style={{ fontSize: ".65rem", color: "#888" }}>Competed</div>
+                  {achievePts > 0 && <div style={{ fontSize: ".58rem", color: "#00FFC2", marginTop: ".2rem" }}>+{achievePts} pts boost</div>}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Signal Badges ── */}
+        {walletAddr && cred && (
+          <div style={{ marginBottom: "2rem" }}>
+            <div className="section-head" style={{ marginBottom: "1rem" }}>
+              Signal Badges
+              <span style={{ fontFamily: "inherit", fontSize: ".72rem", color: "#555", fontWeight: 400, letterSpacing: 0, marginLeft: ".75rem" }}>
+                earned by attending events
+              </span>
+            </div>
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              {NFT_BADGES.map(badge => {
+                const earned = cred.eventsAttended >= badge.minEvents;
+                return (
+                  <div
+                    key={badge.level}
+                    onClick={() => { setSelectedBadge(badge); setBadgeEarned(earned); }}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: ".45rem",
+                      opacity: earned ? 1 : 0.4,
+                      transition: "opacity .2s, transform .15s",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.06)")}
+                    onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                  >
+                    <div style={{
+                      width: 88, height: 88, position: "relative",
+                      background: "transparent",
+                      border: `1.5px solid ${earned ? "rgba(255,255,255,.35)" : "rgba(255,255,255,.1)"}`,
+                      borderRadius: 16, overflow: "hidden",
+                      boxShadow: earned ? "0 0 18px rgba(255,255,255,.08)" : "none",
+                    }}>
+                      <img
+                        src={badge.img}
+                        alt={badge.label}
+                        style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+                      />
+                      {!earned && (
+                        <div style={{
+                          position: "absolute", inset: 0,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          background: "rgba(0,0,0,.5)", fontSize: "1.3rem",
+                        }}>🔒</div>
+                      )}
+                    </div>
+                    <div style={{
+                      fontSize: ".6rem", fontFamily: "'Orbitron',sans-serif",
+                      color: earned ? "#ffffff" : "#555", letterSpacing: ".06em",
+                    }}>
+                      {badge.label}
+                    </div>
+                    <div style={{ fontSize: ".58rem", color: earned ? "#888" : "#444" }}>
+                      {earned ? "✓ Earned" : `${badge.minEvents} events`}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── NFT Badge Modal ── */}
+        {selectedBadge && (
+          <div
+            onClick={() => setSelectedBadge(null)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 9999,
+              background: "rgba(0,0,0,.75)", backdropFilter: "blur(6px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "1rem",
+            }}
+          >
+            <div
+              onClick={e => e.stopPropagation()}
+              style={{
+                position: "relative", width: "100%", maxWidth: 340,
+                background: "#111", border: "1px solid rgba(255,255,255,.15)",
+                borderRadius: 24, padding: "2rem 1.75rem 1.75rem",
+                display: "flex", flexDirection: "column", alignItems: "center",
+                gap: "1rem", textAlign: "center",
+                boxShadow: "0 24px 80px rgba(0,0,0,.6)",
+              }}
+            >
+              {/* Close */}
+              <button
+                onClick={() => setSelectedBadge(null)}
+                style={{
+                  position: "absolute", top: 14, right: 16,
+                  background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.12)",
+                  color: "#888", borderRadius: 8, width: 28, height: 28,
+                  cursor: "pointer", fontSize: ".85rem", display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >✕</button>
+
+              {/* Header */}
+              {badgeEarned ? (
+                <div style={{
+                  fontFamily: "'Orbitron',sans-serif", fontSize: ".65rem", fontWeight: 700,
+                  letterSpacing: ".2em", color: "#00FFC2", textTransform: "uppercase",
+                }}>Congratulations!</div>
+              ) : (
+                <div style={{
+                  fontFamily: "'Orbitron',sans-serif", fontSize: ".65rem", fontWeight: 700,
+                  letterSpacing: ".2em", color: "#888", textTransform: "uppercase",
+                }}>Locked</div>
+              )}
+
+              {/* NFT image */}
+              <div style={{ position: "relative", width: 140, height: 140 }}>
+                <img
+                  src={selectedBadge.img}
+                  alt={selectedBadge.label}
+                  style={{
+                    width: "100%", height: "100%", objectFit: "contain", display: "block",
+                    opacity: badgeEarned ? 1 : 0.25,
+                  }}
+                />
+                {!badgeEarned && (
+                  <div style={{
+                    position: "absolute", top: "50%", left: "50%",
+                    transform: "translate(-50%,-50%)",
+                    fontSize: "2.2rem", lineHeight: 1,
+                  }}>🔒</div>
+                )}
+              </div>
+
+              {/* Badge title */}
+              <div style={{
+                fontFamily: "'Orbitron',sans-serif", fontSize: ".95rem", fontWeight: 900,
+                color: "#ffffff", letterSpacing: ".1em", textTransform: "uppercase",
+              }}>
+                {selectedBadge.label}
+              </div>
+
+              {/* Description */}
+              <div style={{ fontSize: ".82rem", color: "#888", lineHeight: 1.5 }}>
+                {badgeEarned
+                  ? selectedBadge.desc
+                  : `Attend ${selectedBadge.minEvents} event${selectedBadge.minEvents > 1 ? "s" : ""} to unlock this badge`
+                }
+              </div>
+
+              {/* XP or progress */}
+              {badgeEarned ? (
+                <div style={{
+                  background: "rgba(0,255,194,.1)", border: "1px solid rgba(0,255,194,.3)",
+                  color: "#00FFC2", borderRadius: 100, padding: ".45rem 1.4rem",
+                  fontFamily: "'Orbitron',sans-serif", fontSize: ".8rem", fontWeight: 700,
+                  letterSpacing: ".08em",
+                }}>
+                  +{selectedBadge.xp.toLocaleString()} XP
+                </div>
+              ) : (
+                <div style={{
+                  background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.1)",
+                  color: "#888", borderRadius: 100, padding: ".45rem 1.4rem",
+                  fontFamily: "'Orbitron',sans-serif", fontSize: ".72rem", fontWeight: 700,
+                  letterSpacing: ".08em",
+                }}>
+                  {Math.max(0, selectedBadge.minEvents - (cred?.eventsAttended ?? 0))} more event{selectedBadge.minEvents - (cred?.eventsAttended ?? 0) !== 1 ? "s" : ""} needed
+                </div>
               )}
             </div>
+          </div>
+        )}
 
-            {evLoading ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "2rem" }}>
-                {[0, 1, 2].map(i => (
-                  <div key={i} className="shimmer" style={{ height: 58, borderRadius: 12 }} />
-                ))}
-              </div>
-            ) : events.length === 0 ? (
-              <div className="empty-small" style={{ marginBottom: "2rem" }}>
-                {COMMUNITY_PDA ? "No attendance records found for this wallet." : "Configure RPC to see on-chain events."}
-              </div>
-            ) : (
-              <div className="event-list">
-                {events.map(rec => <EventCard key={rec.eventPDA} rec={rec} />)}
-              </div>
-            )}
-
-            {/* Achievements gallery */}
+        {/* ── Hackathon Achievements ── */}
+        {walletAddr && cred && (
+          <>
             <div className="section-head">
-              Achievements
+              Hackathon Achievements
               {!achLoading && achievements.length > 0 && (
                 <span className="section-count">{achievements.length}</span>
               )}
@@ -605,18 +571,14 @@ export default function CredentialsPage() {
             ) : achievements.length === 0 ? (
               <div className="empty-small" style={{ marginBottom: "2rem" }}>No verified achievements yet.</div>
             ) : (
-              <div className="ach-grid">
+              <div className="ach-grid" style={{ marginBottom: "2rem" }}>
                 {achievements.map(a => <AchievementCard key={a.id} ach={a} />)}
               </div>
             )}
           </>
         )}
 
-        {!credLoading && !cred && !error && (
-          <div className="cred-empty">Enter a wallet address above to view your Builder Passport</div>
-        )}
-
-        {/* Claim Achievement NFT */}
+        {/* ── Claim Achievement NFT ── */}
         {walletAddr && (
           <div className="claim-section">
             <div className="claim-head">
@@ -635,7 +597,7 @@ export default function CredentialsPage() {
             <p style={{ fontSize: ".78rem", color: "#888", lineHeight: 1.6, marginBottom: ".5rem" }}>
               Won or placed in a hackathon? Submit your claim below. Signal admin will verify your result
               and mint a <strong style={{ color: "#e8e8e8" }}>Verified by Signal</strong> Achievement NFT
-              directly to your wallet. Points are added to your Signal Score only after admin signs the approval.
+              directly to your wallet.
             </p>
 
             {claimOpen && (
@@ -702,9 +664,8 @@ export default function CredentialsPage() {
         )}
 
         {/* ── Claims Inbox ── */}
-        {(target || walletAddr) && (
+        {walletAddr && (
           <div style={{ marginTop: "2.5rem", borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: "2rem" }}>
-
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", gap: "1rem" }}>
               <div>
                 <div style={{
@@ -752,15 +713,11 @@ export default function CredentialsPage() {
                           fontSize: ".7rem", cursor: "pointer", fontFamily: "'Orbitron',sans-serif",
                           fontWeight: 700, letterSpacing: ".06em",
                         }}
-                      >
-                        Unlock
-                      </button>
+                      >Unlock</button>
                       <button
                         onClick={() => { setAdminKeyOpen(false); setAdminKeyInput(""); }}
                         style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: ".8rem" }}
-                      >
-                        ✕
-                      </button>
+                      >✕</button>
                     </>
                   ) : (
                     <button
@@ -805,7 +762,7 @@ export default function CredentialsPage() {
                 color: "#555", fontSize: ".82rem",
               }}>
                 No claims yet.{" "}
-                {walletAddr && <span style={{ color: "#888" }}>Use &quot;+ Claim&quot; above to submit a hackathon win.</span>}
+                <span style={{ color: "#888" }}>Use &quot;+ Claim&quot; above to submit a hackathon win.</span>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
@@ -813,7 +770,7 @@ export default function CredentialsPage() {
                   const statusColor  = claim.status === "approved" ? "#00FFC2" : claim.status === "rejected" ? "#f87171" : "#fbbf24";
                   const statusBg     = claim.status === "approved" ? "rgba(0,255,194,.08)" : claim.status === "rejected" ? "rgba(239,68,68,.08)" : "rgba(251,191,36,.08)";
                   const statusBorder = claim.status === "approved" ? "rgba(0,255,194,.2)" : claim.status === "rejected" ? "rgba(239,68,68,.2)" : "rgba(251,191,36,.2)";
-                  const msg = actionMsg[claim.id];
+                  const msg      = actionMsg[claim.id];
                   const isActing = actioning === claim.id;
 
                   return (
@@ -821,16 +778,11 @@ export default function CredentialsPage() {
                       background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)",
                       borderRadius: 12, padding: "1rem 1.1rem",
                       display: "flex", flexDirection: "column", gap: ".5rem",
-                      transition: "border-color .2s",
                     }}>
                       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: ".75rem" }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, fontSize: ".88rem", color: "#e8e8e8", marginBottom: ".15rem" }}>
-                            {claim.hackathonName}
-                          </div>
-                          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: ".72rem", color: "#00FFC2" }}>
-                            {claim.rank}
-                          </div>
+                          <div style={{ fontWeight: 700, fontSize: ".88rem", color: "#e8e8e8", marginBottom: ".15rem" }}>{claim.hackathonName}</div>
+                          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: ".72rem", color: "#00FFC2" }}>{claim.rank}</div>
                         </div>
                         <span style={{
                           background: statusBg, border: `1px solid ${statusBorder}`,
@@ -844,9 +796,7 @@ export default function CredentialsPage() {
 
                       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
                         <a
-                          href={claim.projectUrl}
-                          target="_blank"
-                          rel="noreferrer"
+                          href={claim.projectUrl} target="_blank" rel="noreferrer"
                           style={{ fontFamily: "'Space Mono',monospace", fontSize: ".68rem", color: "#888", textDecoration: "none" }}
                           onMouseOver={e => (e.currentTarget.style.color = "#e8e8e8")}
                           onMouseOut={e => (e.currentTarget.style.color = "#888")}
@@ -882,7 +832,7 @@ export default function CredentialsPage() {
                               color: "#00FFC2", borderRadius: 8, padding: ".35rem .9rem",
                               fontSize: ".72rem", cursor: isActing ? "not-allowed" : "pointer",
                               fontFamily: "'Orbitron',sans-serif", fontWeight: 700,
-                              letterSpacing: ".06em", opacity: isActing ? .5 : 1, transition: "opacity .15s",
+                              letterSpacing: ".06em", opacity: isActing ? .5 : 1,
                             }}
                           >
                             {isActing ? "…" : "✓ Approve"}
@@ -895,23 +845,19 @@ export default function CredentialsPage() {
                               color: "#f87171", borderRadius: 8, padding: ".35rem .9rem",
                               fontSize: ".72rem", cursor: isActing ? "not-allowed" : "pointer",
                               fontFamily: "'Orbitron',sans-serif", fontWeight: 700,
-                              letterSpacing: ".06em", opacity: isActing ? .5 : 1, transition: "opacity .15s",
+                              letterSpacing: ".06em", opacity: isActing ? .5 : 1,
                             }}
                           >
                             ✕ Reject
                           </button>
                           {msg && (
-                            <span style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171" }}>
-                              {msg.text}
-                            </span>
+                            <span style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171" }}>{msg.text}</span>
                           )}
                         </div>
                       )}
 
                       {msg && claim.status !== "pending" && (
-                        <div style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171", marginTop: ".1rem" }}>
-                          {msg.text}
-                        </div>
+                        <div style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171", marginTop: ".1rem" }}>{msg.text}</div>
                       )}
                     </div>
                   );
@@ -921,6 +867,7 @@ export default function CredentialsPage() {
           </div>
         )}
       </div>
+      <Footer />
     </>
   );
 }

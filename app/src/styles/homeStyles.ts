@@ -26,9 +26,9 @@
     animation: gradMove 5s ease infinite;
   }
   .hero-tagline {
-    font-family: 'Epilogue', sans-serif;
-    font-size: clamp(1.1rem,2.8vw,1.65rem); font-weight: 700;
-    color: #e8e8e8; letter-spacing: -.01em;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(.85rem,2.2vw,1.3rem); font-weight: 700;
+    color: #e8e8e8; letter-spacing: .06em;
     margin-bottom: 1.1rem;
   }
   .hero-sub {
@@ -179,7 +179,7 @@
     .step-card { padding: 1.5rem; }
   }
   @media (max-width: 580px) {
-    .hero { padding: 5.5rem 1rem 2.5rem; }
+    .hero { padding: 5.5rem 1.5rem 2.5rem; }
     .hero-badge { font-size: .72rem; padding: .35rem .9rem; }
     .hero-sub { font-size: .92rem; margin-bottom: 1.75rem; }
     .hero-ctas { flex-direction: column; align-items: stretch; }
@@ -196,7 +196,7 @@
     .hof-rank { font-size: .95rem; }
   }
   @media (max-width: 420px) {
-    .hero { padding: 5rem .75rem 2rem; }
+    .hero { padding: 5rem 1.25rem 2rem; }
     .section-title { font-size: 1.4rem; }
   }
 

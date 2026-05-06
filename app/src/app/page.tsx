@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import { useConnection } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { Nav } from "../components/Nav";
+import { Footer } from "../components/Footer";
 import { PageBackground } from "../components/PageBackground";
 import { StatBox } from "../components/StatBox";
 import { homeCSS } from "../styles/homeStyles";
 import type { LumaEvent } from "./api/luma-events/route";
 
-const PROGRAM_ID_STR    = process.env.NEXT_PUBLIC_PROGRAM_ID ?? "";
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
 const STEPS = [
@@ -21,31 +21,23 @@ const STEPS = [
 const FAQ_ITEMS = [
   {
     q: "What is Signal?",
-    a: "Signal is an on-chain Proof of Presence protocol on Solana that transforms event attendance into permanent identity. By replacing centralized databases with cryptographic transactions, it ensures every check-in is a verifiable, immutable record: Show up, scan, and stay verified on-chain forever.",
+    a: "Signal turns event attendance into on-chain identity. Show up → scan QR → get verified proof on Solana. Forever.",
   },
   {
-    q: "How does checking in to an event work?",
-    a: "Organizers deploy an event on-chain and share a QR code. Attendees scan it with Phantom Wallet — it opens as a native Solana Action (Blink) and submits the check-in transaction in one tap. No app download required.",
+    q: "How does Signal work?",
+    a: "Organizer creates event → gets a QR code. You scan with Phantom at the door. Solana transaction confirms → NFT mints to your wallet instantly.",
   },
   {
-    q: "What is a Signal Score and what are the tiers?",
-    a: "Your Signal Score is an on-chain reputation built from your attendance history. Every event adds to your score across 6 tiers: Initiate → Builder → Contributor → Veteran → Expert → Legend. Hackathon events count 3× toward your score.",
+    q: "What do I get?",
+    a: "Every check-in earns you an attendance NFT badge and Signal Score points. Win hackathons and claim verified Achievement NFTs. Your Builder Passport shows everything in one place.",
   },
   {
-    q: "What NFT do I receive when I check in?",
-    a: "Each check-in mints a unique Metaplex NFT to your wallet — a tamper-proof attendance badge with the event name, edition number, and on-chain provenance. It lives permanently in your Solana wallet.",
+    q: "How does Signal Score work?",
+    a: "You earn points for real verified actions — check-ins, hackathon wins, streaks. Score is calculated from NFTs in your wallet only. Nothing is self-reported. Nothing is editable.",
   },
   {
-    q: "How do I host an event on Signal?",
-    a: "Go to the Organizer page, connect your Phantom wallet, fill in the event title, location, date, and capacity, then click Deploy Event. You receive a unique QR code to share with attendees. When the event starts, go to your Profile and click Go Live.",
-  },
-  {
-    q: "Do I need SOL to check in or host an event?",
-    a: "A small amount of Solana devnet SOL covers the transaction fee. You can get free devnet SOL at faucet.solana.com. Signal currently runs on Solana Devnet — all SOL is test SOL with no real-world monetary value.",
-  },
-  {
-    q: "Is my attendance data stored on a server?",
-    a: "No. Every check-in, event record, and reputation score is stored directly on the Solana blockchain. Signal has no centralized backend — your on-chain history is immutable and belongs to you forever.",
+    q: "What is a Signal Score?",
+    a: "Your reputation as a builder. One number that proves you actually show up and ship things. Can't be bought. Can't be faked. Every point is an on-chain transaction.",
   },
 ];
 
@@ -253,7 +245,7 @@ export default function HomePage() {
                       <div className="event-date-line">{dateStr} · {timeStr}</div>
                       <div className="event-title-card">{ev.title}</div>
                       <div className="event-location">
-                        {ev.isOnline ? "🌐" : "📍"} {ev.location}
+                        {ev.location}
                       </div>
                       <span className="event-register">Register ↗</span>
                     </div>
@@ -297,26 +289,7 @@ export default function HomePage() {
 
       </div>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-inner">
-          <div>
-            <a href="/" style={{ display: "inline-block" }}>
-              <img src="/Strata-logo.svg" alt="Signal" style={{ height: 28, display: "block" }} />
-            </a>
-            <div style={{ fontSize: ".72rem", color: "#888", marginTop: ".25rem" }}>Proof of Presence Protocol · Solana Devnet</div>
-          </div>
-          <div className="footer-links">
-            <a href="/organizer"   className="footer-link">Organizer</a>
-            <a href="/leaderboard" className="footer-link">Leaderboard</a>
-            <a href="/profile"     className="footer-link">Profile</a>
-            {PROGRAM_ID_STR && (
-              <a href={`https://explorer.solana.com/address/${PROGRAM_ID_STR}?cluster=devnet`} target="_blank" rel="noreferrer" className="footer-link">Program</a>
-            )}
-            <a href="https://github.com/GeneralAcre/bangkok-node" target="_blank" rel="noreferrer" className="footer-link">GitHub</a>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

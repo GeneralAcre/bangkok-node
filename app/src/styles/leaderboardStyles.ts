@@ -1,5 +1,5 @@
 ﻿export const leaderboardCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#0a0a0a; color:#e8e8e8; font-family:'DM Sans',sans-serif; min-height:100vh; }
   :root {
@@ -39,8 +39,8 @@
     color:#ffffff; display:inline-block;
   }
   .page-title {
-    font-family:'Epilogue',sans-serif; font-size:clamp(1.6rem,3.5vw,2.6rem);
-    font-weight:900; letter-spacing:-.025em; margin-bottom:.5rem;
+    font-family:'Orbitron',sans-serif; font-size:clamp(1.3rem,3vw,2.2rem);
+    font-weight:800; letter-spacing:.04em; margin-bottom:.5rem;
     background:linear-gradient(135deg,#ffffff 0%,#ffffff 60%,#e8e8e8 100%);
     background-size:200% 200%; -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     background-clip:text; animation:gradMove 5s ease infinite;

@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { Nav } from "../../components/Nav";
+import { Footer } from "../../components/Footer";
 import { PageBackground } from "../../components/PageBackground";
 
 const CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#0a0a0a; color:#e8e8e8; font-family:'DM Sans',sans-serif; min-height:100vh; }
   @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -19,8 +20,8 @@ const CSS = `
     letter-spacing:.14em; text-transform:uppercase; color:#ffffff; margin-bottom:.75rem;
   }
   .page-title {
-    font-family:'Epilogue',sans-serif; font-size:clamp(1.8rem,4vw,2.8rem);
-    font-weight:900; letter-spacing:-.02em; color:#ffffff; margin-bottom:.5rem;
+    font-family:'Orbitron',sans-serif; font-size:clamp(1.3rem,3.5vw,2.2rem);
+    font-weight:800; letter-spacing:.04em; color:#ffffff; margin-bottom:.5rem;
   }
   .page-sub { font-size:.92rem; color:#888; margin-bottom:3rem; max-width:480px; line-height:1.6; }
 
@@ -247,8 +248,8 @@ export default function EventsPage() {
                 <div className="event-info">
                   <div className="event-title">{ev.title}</div>
                   <div className="event-meta">
-                    <span>📍 {ev.location}, {ev.country}</span>
-                    <span>📅 {formatDate(ev.eventDate)}</span>
+                    <span>{ev.location}{ev.country && ev.country !== "Global" ? `, ${ev.country}` : ""}</span>
+                    <span>{formatDate(ev.eventDate)}</span>
                   </div>
                 </div>
 
@@ -285,6 +286,7 @@ export default function EventsPage() {
           <a href="/organizer" className="btn-host">Deploy Event →</a>
         </div>
       </div>
+      <Footer />
     </>
   );
 }

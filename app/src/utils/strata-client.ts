@@ -7,6 +7,7 @@ import {
   Connection,
   PublicKey,
   SystemProgram,
+  ComputeBudgetProgram,
 } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
 import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
@@ -278,6 +279,10 @@ export class StrataClient {
         organizer:     this.wallet,
         systemProgram: SystemProgram.programId,
       })
+      .preInstructions([
+        ComputeBudgetProgram.requestHeapFrame({ bytes: 256 * 1024 }),
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
+      ])
       .rpc();
 
     return { tx, eventPDA, eventIndex: idx };

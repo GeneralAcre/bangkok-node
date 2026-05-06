@@ -6,7 +6,7 @@ const COMMUNITY_PDA = process.env.NEXT_PUBLIC_COMMUNITY_PDA;
 const PROGRAM_ID    = process.env.NEXT_PUBLIC_PROGRAM_ID;
 
 let cache: { data: unknown; ts: number } | null = null;
-// Cache cleared — bump this comment to invalidate: v2
+// Cache cleared — bump this comment to invalidate: v3
 const CACHE_TTL = 60_000;
 
 function readStr(data: Buffer, off: number): { value: string; next: number } {
@@ -51,7 +51,7 @@ export async function GET() {
       title: string; location: string; country: string; status: string;
       attendeeCount: number; capacity: number; eventCode: string;
       eventDate: number; endTime: number;
-      eventIndex: number; organizer: string;
+      eventIndex: number; organizer: string; pubkey: string;
     }> = [];
     let totalCheckins = 0;
 
@@ -89,7 +89,7 @@ export async function GET() {
 
         if (isValidEvent) {
           totalCheckins += attendeeCount;
-          eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate: startTime, endTime, eventIndex: i, organizer });
+          eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate: startTime, endTime, eventIndex: i, organizer, pubkey: pdas[i].toBase58() });
         }
       } catch {}
     }

@@ -7,10 +7,11 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import {
   StrataClient, parseTier, MemberAccount, EventAccount,
-  AttendanceAccount, MemberTier,
+  AttendanceAccount, MemberTier, findAttendancePDA,
 } from "../../utils/strata-client";
 import { computeStrataScore, SCORE_TIER_ICON } from "../../utils/scoring";
 import { Nav } from "../../components/Nav";
+import { Footer } from "../../components/Footer";
 import { PageBackground } from "../../components/PageBackground";
 import { profileCSS } from "../../styles/profileStyles";
 
@@ -166,22 +167,35 @@ export default function ProfilePage() {
   }
 
   async function handleClaimNft(rec: AttendedEvent) {
-    if (!publicKey) return;
+    if (!publicKey || !client) return;
     setClaiming(rec.eventPubkey); setError(null); setSuccess(null);
     try {
+      const eventsAttended = attended.indexOf(rec) + 1;
       const res = await fetch("/api/mint-nft", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          userWallet:  publicKey.toBase58(),
-          eventTitle:  rec.event?.title ?? "Signal Event",
-          eventCode:   rec.event?.eventCode ?? "",
-          checkedInAt: rec.attendance.checkedInAt.toNumber(),
+          userWallet:     publicKey.toBase58(),
+          eventTitle:     rec.event?.title ?? "Signal Event",
+          eventCode:      rec.event?.eventCode ?? "",
+          checkedInAt:    rec.attendance.checkedInAt.toNumber(),
+          capacitySlot:   rec.attendance.edition.toNumber(),
+          eventsAttended,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Mint failed");
+
+      // Record the mint address on-chain in the attendance PDA
+      try {
+        const [attendancePDA] = findAttendancePDA(new PublicKey(rec.eventPubkey), publicKey);
+        await (client.program.methods as any)
+          .recordNftMint(new PublicKey(data.mint))
+          .accounts({ attendance: attendancePDA, authority: publicKey })
+          .rpc();
+      } catch { /* non-fatal — NFT is already in wallet */ }
+
       setMinted(prev => ({ ...prev, [rec.eventPubkey]: data.mint }));
-      setSuccess(`✓ NFT minted for "${rec.event?.title ?? "Signal Event"}"! It's now in your wallet.`);
+      setSuccess(`NFT minted for "${rec.event?.title ?? "Signal Event"}"! It's now in your wallet.`);
     } catch (e: any) {
       setError(e?.message ?? "NFT mint failed");
     } finally { setClaiming(null); }
@@ -619,6 +633,7 @@ export default function ProfilePage() {
         )}
 
       </div>
+      <Footer />
     </>
   );
 }

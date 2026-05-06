@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { Transaction, Connection, PublicKey } from "@solana/web3.js";
+import { QRCodeSVG } from "qrcode.react";
 import { checkinCSS } from "../../styles/checkinStyles";
 
 const WLD_APP_ID = process.env.NEXT_PUBLIC_WLD_APP_ID ?? "";
@@ -38,6 +39,7 @@ interface EventInfo {
   capacity:     number;
   attendeeCount: number;
   eventCode:    string;
+  organizer:    string;
 }
 
 type WorldIdState = "idle" | "verifying" | "verified" | "error";
@@ -59,6 +61,9 @@ function CheckInContent() {
   const [error,      setError]      = useState<string | null>(null);
   const [success,    setSuccess]    = useState<{ sig: string } | null>(null);
   const [confetti,   setConfetti]   = useState(false);
+  const [qrUrl,      setQrUrl]      = useState<string | null>(null);
+  const [showQr,     setShowQr]     = useState(false);
+  const [generatingQr, setGeneratingQr] = useState(false);
 
   // World ID state
   const [wldState,       setWldState]       = useState<WorldIdState>("idle");
@@ -88,6 +93,7 @@ function CheckInContent() {
         const d = Buffer.from(info.data);
         // Layout: disc(8)+community(32)+organizer(32)+title(str)+location(str)+country(str)
         //         +start_time(8)+end_time(8)+capacity(8)+attendee_count(8)+fee(8)+event_code(str)
+        const organizerPubkey = new PublicKey(d.slice(40, 72)).toBase58();
         let o = 8 + 32 + 32;
         const title        = readStr(d, o); o = title.next;
         const location     = readStr(d, o); o = location.next;
@@ -100,7 +106,7 @@ function CheckInContent() {
         const eventCode    = readStr(d, o);
         const now    = Math.floor(Date.now() / 1000);
         const status = now < startTime ? "Upcoming" : now <= endTime ? "Live" : "Ended";
-        setEventInfo({ title: title.value, location: location.value, country: country.value, status, startTime, endTime, capacity, attendeeCount, eventCode: eventCode.value });
+        setEventInfo({ title: title.value, location: location.value, country: country.value, status, startTime, endTime, capacity, attendeeCount, eventCode: eventCode.value, organizer: organizerPubkey });
       } catch { setNotFound(true); }
       finally  { setFetching(false); }
     })();
@@ -213,6 +219,25 @@ function CheckInContent() {
     } finally { setChecking(false); }
   }
 
+  async function handleGenerateQR() {
+    if (!wallet.signMessage || !publicKey || !eventInfo) return;
+    setGeneratingQr(true);
+    try {
+      const expiry  = eventInfo.endTime;
+      const message = new TextEncoder().encode(`signal_checkin:${eventInfo.eventCode}:${expiry}`);
+      const sigBytes = await wallet.signMessage(message);
+      const sigHex  = Buffer.from(sigBytes).toString("hex");
+      const url = `${window.location.origin}/checkin?event=${eventPubkeyStr}&sig=${sigHex}&exp=${expiry}`;
+      setQrUrl(url);
+      setShowQr(true);
+    } catch (e: any) {
+      const m = e?.message ?? "";
+      if (!m.includes("rejected") && !m.includes("cancelled")) setError(m || "Failed to generate QR");
+    } finally {
+      setGeneratingQr(false);
+    }
+  }
+
   // Whether World ID step is needed
   const wldRequired    = !!WLD_APP_ID;
   const wldDone        = !wldRequired || wldState === "verified";
@@ -263,8 +288,55 @@ function CheckInContent() {
     );
   }
 
+  const isOrganizer    = connected && publicKey?.toBase58() === eventInfo?.organizer;
+  // organizer can check in once they've generated a QR (sig present) or navigated via QR URL
+  const showCheckinForm = !isOrganizer || !!sig;
+
   return (
+    <>
+    {/* QR overlay for organizer */}
+    {showQr && qrUrl && (
+      <div onClick={() => setShowQr(false)} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.88)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <div onClick={e => e.stopPropagation()} style={{ background:"#fff", borderRadius:20, padding:"2rem 2.5rem", textAlign:"center", maxWidth:340, width:"90%" }}>
+          <div style={{ fontWeight:800, fontSize:"1rem", color:"#0a0a0a", marginBottom:".25rem" }}>{eventInfo?.title}</div>
+          <div style={{ fontSize:".78rem", color:"#6b7280", marginBottom:"1.25rem" }}>#{eventInfo?.eventCode} · Show this to attendees</div>
+          <QRCodeSVG value={qrUrl} size={220} />
+          <a
+            href={qrUrl}
+            onClick={() => setShowQr(false)}
+            style={{ marginTop:"1rem", display:"block", width:"100%", padding:".6rem", background:"#0a0a0a", color:"#fff", borderRadius:10, fontWeight:700, fontSize:".85rem", textDecoration:"none", boxSizing:"border-box" }}
+          >
+            Check In Myself →
+          </a>
+          <button onClick={() => setShowQr(false)} style={{ marginTop:".5rem", display:"block", width:"100%", padding:".55rem", background:"transparent", color:"#6b7280", border:"1px solid rgba(0,0,0,.12)", borderRadius:10, fontWeight:600, cursor:"pointer", fontSize:".82rem" }}>
+            Close
+          </button>
+        </div>
+      </div>
+    )}
+
     <div className="checkin-card">
+      {/* Organizer QR section */}
+      {isOrganizer && !sig && (
+        <div style={{ background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.12)", borderRadius:12, padding:"1rem 1.25rem", marginBottom:"1.25rem", textAlign:"center" }}>
+          <div style={{ fontSize:".72rem", color:"#9ca3af", letterSpacing:".08em", textTransform:"uppercase", marginBottom:".6rem" }}>You are the organizer</div>
+          {qrUrl ? (
+            <div style={{ display:"flex", gap:".6rem", justifyContent:"center", flexWrap:"wrap" }}>
+              <button onClick={() => setShowQr(true)} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer" }}>
+                Show QR Code
+              </button>
+              <a href={qrUrl} style={{ padding:".55rem 1.4rem", background:"transparent", color:"#fff", border:"1px solid rgba(255,255,255,.3)", borderRadius:8, fontWeight:700, fontSize:".82rem", cursor:"pointer", textDecoration:"none" }}>
+                Check In Myself →
+              </a>
+            </div>
+          ) : (
+            <button onClick={handleGenerateQR} disabled={generatingQr} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer", opacity: generatingQr ? .6 : 1 }}>
+              {generatingQr ? "Signing…" : "Generate QR for Attendees"}
+            </button>
+          )}
+        </div>
+      )}
+
       <div className={`event-badge ${eventInfo?.status === "Live" ? "event-badge-live" : ""}`}>
         {eventInfo?.status === "Live" && <span className="live-dot" />}
         {eventInfo?.status === "Live" ? "LIVE NOW" : "EVENT"}
@@ -281,7 +353,7 @@ function CheckInContent() {
       <div className="event-code">#{eventInfo?.eventCode}</div>
 
       {/* Step 1 — Connect wallet */}
-      {!connected && (
+      {!connected && showCheckinForm && (
         <div className="connect-prompt">
           <p>Connect your Phantom wallet to check in</p>
           <WalletMultiButton />
@@ -289,7 +361,7 @@ function CheckInContent() {
       )}
 
       {/* Step 2 — World ID verification */}
-      {connected && wldRequired && wldState !== "verified" && (
+      {showCheckinForm && connected && wldRequired && wldState !== "verified" && (
         <div className="wld-section">
           <div className="wld-label">Step 2 of 2 — Verify you're human</div>
           <p className="wld-desc">
@@ -334,14 +406,14 @@ function CheckInContent() {
       )}
 
       {/* Step 2 badge when verified */}
-      {connected && wldState === "verified" && (
+      {showCheckinForm && connected && wldState === "verified" && (
         <div className="wld-verified-badge">
           🌐 World ID Verified
         </div>
       )}
 
       {/* Step 3 (or Step 2 if no WLD) — Check In */}
-      {canCheckIn && (
+      {showCheckinForm && canCheckIn && (
         <>
           <button className="btn-checkin" onClick={handleCheckIn} disabled={checking}>
             {checking
@@ -357,6 +429,7 @@ function CheckInContent() {
 
       {error && <div className="msg-err">{error}</div>}
     </div>
+    </>
   );
 }
 

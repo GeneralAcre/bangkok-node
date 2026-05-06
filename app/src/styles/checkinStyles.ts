@@ -1,5 +1,5 @@
 ﻿export const checkinCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#0a0a0a; color:#e8e8e8; font-family:'DM Sans',sans-serif; min-height:100vh; }
   :root {
@@ -36,8 +36,8 @@
   .live-dot { width:6px; height:6px; border-radius:50%; background:#ffffff; animation:pulse 2s infinite; }
 
   .event-title {
-    font-family:'Epilogue',sans-serif; font-size:1.75rem; font-weight:800;
-    color:#e8e8e8; margin-bottom:.6rem; line-height:1.2;
+    font-family:'Orbitron',sans-serif; font-size:clamp(1.1rem,4vw,1.6rem); font-weight:800;
+    color:#e8e8e8; margin-bottom:.6rem; line-height:1.25; letter-spacing:.04em;
   }
   .event-meta { font-size:.88rem; color:#888; line-height:1.8; margin-bottom:2rem; }
   .event-code {

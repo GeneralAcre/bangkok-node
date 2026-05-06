@@ -1,5 +1,5 @@
 ﻿@import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
 
 @layer base {
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -89,9 +89,9 @@
 .nav-mobile-right { display: none; align-items: center; gap: .5rem; }
 .nav-hamburger {
   display: flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px;
+  width: 32px; height: 32px;
   background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
-  border-radius: 10px; color: #e8e8e8; cursor: pointer; flex-shrink: 0;
+  border-radius: 8px; color: #e8e8e8; cursor: pointer; flex-shrink: 0;
 }
 .nav-hamburger:hover { background: rgba(255,255,255,.1); }
 .nav-mobile-menu {
@@ -121,25 +121,30 @@
   background: rgba(255,255,255,.06) !important;
   color: #e8e8e8 !important;
   font-family: 'Epilogue', sans-serif !important;
-  font-size: .7rem !important;
+  font-size: .68rem !important;
   letter-spacing: .04em !important;
   text-transform: uppercase !important;
   font-weight: 600 !important;
-  border-radius: 20px !important;
-  padding: .3rem .85rem !important;
-  height: auto !important;
+  border-radius: 8px !important;
+  padding: 0 .7rem !important;
+  height: 32px !important;
+  line-height: 32px !important;
   border: 1px solid rgba(255,255,255,.12) !important;
   min-width: 0 !important;
+  white-space: nowrap !important;
 }
 .wallet-adapter-button:hover { background: rgba(255,255,255,.1) !important; }
-.wallet-adapter-button-start-icon { width: 16px !important; height: 16px !important; margin-right: 6px !important; }
+.wallet-adapter-button-start-icon {
+  width: 14px !important; height: 14px !important;
+  margin-right: 5px !important; flex-shrink: 0 !important;
+}
 .wallet-adapter-button-trigger { background: rgba(255,255,255,.06) !important; }
 
 /* ── Page / Container ── */
 .page { position: relative; z-index: 1; }
 .container { max-width: 1400px; margin: 0 auto; padding: 0 2.5rem; }
-@media (max-width: 768px) { .nav-inner, .container { padding: 0 1.25rem; } }
-@media (max-width: 480px)  { .nav-inner, .container { padding: 0 1rem; } }
+@media (max-width: 768px) { .nav-inner { padding: 0 1.25rem; } .container { padding: 0 1.5rem; } }
+@media (max-width: 480px)  { .nav-inner { padding: 0 1rem; } .container { padding: 0 1.25rem; } }
 
 /* ── Stat shimmer ── */
 .stat-shimmer {

@@ -1,5 +1,5 @@
 ﻿export const organizerCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #0a0a0a; color: #e8e8e8; font-family: 'DM Sans', sans-serif; min-height: 100vh; }
@@ -46,7 +46,8 @@
   .page-header { margin-bottom:1.5rem; animation:fadeUp .5s ease both; align-items:flex-start; }
   @media(max-width:480px){ .page-header{ flex-direction:column !important; gap:.75rem !important; } }
   .page-title {
-    font-family:'Epilogue',sans-serif; font-size:clamp(1.4rem,3.5vw,2.2rem); font-weight:900; margin-bottom:.3rem;
+    font-family:'Orbitron',sans-serif; font-size:clamp(1.2rem,3vw,2rem); font-weight:800; margin-bottom:.3rem;
+    letter-spacing:.04em;
     background:linear-gradient(135deg,#ffffff 0%,#ffffff 50%,#e8e8e8 80%);
     background-size:200% auto;
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;

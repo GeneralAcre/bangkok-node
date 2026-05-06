@@ -9,6 +9,7 @@ import { QRCodeSVG, QRCodeCanvas } from "qrcode.react";
 import { StrataClient, findEventPDA } from "../../utils/strata-client";
 import { organizerCSS } from "../../styles/organizerStyles";
 import { Nav } from "../../components/Nav";
+import { Footer } from "../../components/Footer";
 
 const COMMUNITY_PDA_STR = process.env.NEXT_PUBLIC_COMMUNITY_PDA ?? "";
 
@@ -16,7 +17,7 @@ interface EventRow {
   title: string; location: string; country: string;
   status: string; attendeeCount: number; capacity: number;
   eventCode: string; eventDate: number; endTime: number;
-  eventIndex: number; organizer: string;
+  eventIndex: number; organizer: string; pubkey: string;
 }
 
 interface QrData {
@@ -443,7 +444,7 @@ export default function OrganizerPage() {
                       <button type="button" className="time-trigger" onClick={() => setStartTimeOpen(o => !o)}>
                         {startTimePart}
                         <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: startTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                          <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
+                          <path d="M1 1l4 4 4-4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </button>
                       {startTimeOpen && (
@@ -477,7 +478,7 @@ export default function OrganizerPage() {
                       <button type="button" className="time-trigger" onClick={() => setEndTimeOpen(o => !o)}>
                         {endTimePart}
                         <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: endTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                          <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
+                          <path d="M1 1l4 4 4-4" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" />
                         </svg>
                       </button>
                       {endTimeOpen && (
@@ -603,20 +604,20 @@ export default function OrganizerPage() {
                             <div className="ev-sub">
                               <span className="ev-code">#{ev.eventCode}</span>
                               <span className="ev-sep">·</span>
-                              {ev.location}{ev.country ? `, ${ev.country}` : ""}
+                              {ev.location}{ev.country && ev.country !== "Global" ? `, ${ev.country}` : ""}
                             </div>
                           </div>
                           <div className="ev-date-col">{formatEventDate(ev.eventDate)}</div>
                           <div className="ev-stat-col">{ev.attendeeCount}/{(ev.capacity === 0 || ev.capacity > 100000) ? "—" : ev.capacity}</div>
                           <div className="ev-cta-col">
                             {ev.status === "Live" ? (
-                              <button className="btn-checkin" onClick={() => handleGetQR(ev)} title="Show check-in QR">
-                                QR ↗
-                              </button>
-                            ) : ev.status === "Upcoming" && ev.organizer === publicKey?.toBase58() ? (
-                              <button className="btn-checkin" onClick={() => handleGetQR(ev)} style={{ background: "transparent", border: "1px solid #fff", color: "#fff" }}>
-                                QR ↗
-                              </button>
+                              <a
+                                href={`/checkin?event=${ev.pubkey}`}
+                                className="btn-checkin"
+                                style={{ display:"inline-block", textDecoration:"none", textAlign:"center" }}
+                              >
+                                Check In ↗
+                              </a>
                             ) : ev.status === "Upcoming" ? (
                               <span className="badge-upcoming">Upcoming</span>
                             ) : (
@@ -633,6 +634,7 @@ export default function OrganizerPage() {
           );
         })()}
       </div>
+      <Footer />
     </>
   );
 }

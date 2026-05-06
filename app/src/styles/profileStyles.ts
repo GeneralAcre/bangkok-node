@@ -1,5 +1,5 @@
 ﻿export const profileCSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800;900&family=Epilogue:wght@400;500;600;700;800;900&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Mono:wght@400;700&display=swap');
 
   *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
   html, body { background:#0a0a0a; color:#e8e8e8; font-family:'DM Sans',sans-serif; min-height:100vh; }
@@ -42,8 +42,9 @@
   }
   .identity-body { flex:1; min-width:0; }
   .identity-name {
-    font-family:'Epilogue',sans-serif; font-size:16px; font-weight:700; color:#e8e8e8;
+    font-family:'Orbitron',sans-serif; font-size:15px; font-weight:700; color:#e8e8e8;
     margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    letter-spacing:.03em;
   }
   .tier-badge {
     display:inline-flex; align-items:center; gap:5px;

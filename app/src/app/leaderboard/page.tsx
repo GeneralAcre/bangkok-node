@@ -6,6 +6,7 @@ import {
   StrataScoreTier, SCORE_TIER_COLOR, SCORE_TIER_BG, SCORE_TIER_ICON,
 } from "../../utils/scoring";
 import { Nav } from "../../components/Nav";
+import { Footer } from "../../components/Footer";
 import { leaderboardCSS } from "../../styles/leaderboardStyles";
 
 interface LbEntry {
@@ -36,6 +37,7 @@ export default function LeaderboardPage() {
   const [view,           setView]           = useState<ViewTab>("active");
   const [error,          setError]          = useState<string | null>(null);
   const [wldVerified,    setWldVerified]    = useState<Set<string>>(new Set());
+  const [walletSearch,   setWalletSearch]   = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -55,6 +57,12 @@ export default function LeaderboardPage() {
   }, []);
 
   const myWallet = publicKey?.toBase58();
+
+  function handleWalletSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const addr = walletSearch.trim();
+    if (addr) window.location.href = `/profile/${addr}`;
+  }
 
   const TABS: { key: ViewTab; label: string }[] = [
     { key: "active",       label: "Active" },
@@ -188,6 +196,33 @@ export default function LeaderboardPage() {
           ))}
         </div>
 
+        {/* Wallet search */}
+        <form onSubmit={handleWalletSearch} style={{ display:"flex", gap:".5rem", margin:"1.5rem 0" }}>
+          <input
+            value={walletSearch}
+            onChange={e => setWalletSearch(e.target.value)}
+            placeholder="Look up any wallet address…"
+            style={{
+              flex:1, padding:".6rem 1rem", borderRadius:10,
+              background:"rgba(255,255,255,.06)", border:"1px solid rgba(255,255,255,.12)",
+              color:"#e8e8e8", fontSize:".85rem", outline:"none",
+              fontFamily:"'Space Mono',monospace",
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding:".6rem 1.2rem", borderRadius:10, border:"none",
+              background:"#ffffff", color:"#0a0a0a",
+              fontFamily:"'Epilogue',sans-serif", fontWeight:800,
+              fontSize:".78rem", letterSpacing:".06em", textTransform:"uppercase",
+              cursor:"pointer", whiteSpace:"nowrap",
+            }}
+          >
+            View Profile
+          </button>
+        </form>
+
         {loading ? (
           <div className="lb-cards-grid">
             {Array.from({ length: 6 }, (_, i) => (
@@ -266,6 +301,7 @@ export default function LeaderboardPage() {
           </>
         )}
       </div>
+      <Footer />
     </>
   );
 }
