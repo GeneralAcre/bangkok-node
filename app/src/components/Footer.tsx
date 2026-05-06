@@ -252,10 +252,7 @@ export function Footer() {
         <div className="sf-badge-group">
           <div className="sf-badge-label">Built on</div>
           <div className="sf-badge-logo">
-            <svg width="18" height="14" viewBox="0 0 646 500" fill="currentColor">
-              <path d="M108.53 341.18a14.4 14.4 0 0 1 10.18-4.21h502.06a7.2 7.2 0 0 1 5.09 12.29L518.36 456.76a14.4 14.4 0 0 1-10.18 4.21H6.12A7.2 7.2 0 0 1 1.03 449L108.53 341.18zm0-180.79A14.52 14.52 0 0 1 118.71 156h502.06a7.2 7.2 0 0 1 5.09 12.29L518.36 275.79a14.4 14.4 0 0 1-10.18 4.21H6.12A7.2 7.2 0 0 1 1.03 268L108.53 160.39zM518.36 43.24A14.4 14.4 0 0 0 508.18 39H6.12A7.2 7.2 0 0 0 1.03 51.29l107.5 107.5a14.4 14.4 0 0 0 10.18 4.21h502.06a7.2 7.2 0 0 0 5.09-12.29z"/>
-            </svg>
-            Solana
+            <img src="/solanaWordMark.svg" alt="Solana" style={{ height: 18, display: "block" }} />
           </div>
         </div>
 
@@ -284,10 +281,9 @@ export function Footer() {
         </p>
         <div className="sf-powered">
           powered by&nbsp;
-          <svg width="16" height="13" viewBox="0 0 646 500" fill="currentColor">
-            <path d="M108.53 341.18a14.4 14.4 0 0 1 10.18-4.21h502.06a7.2 7.2 0 0 1 5.09 12.29L518.36 456.76a14.4 14.4 0 0 1-10.18 4.21H6.12A7.2 7.2 0 0 1 1.03 449L108.53 341.18zm0-180.79A14.52 14.52 0 0 1 118.71 156h502.06a7.2 7.2 0 0 1 5.09 12.29L518.36 275.79a14.4 14.4 0 0 1-10.18 4.21H6.12A7.2 7.2 0 0 1 1.03 268L108.53 160.39zM518.36 43.24A14.4 14.4 0 0 0 508.18 39H6.12A7.2 7.2 0 0 0 1.03 51.29l107.5 107.5a14.4 14.4 0 0 0 10.18 4.21h502.06a7.2 7.2 0 0 0 5.09-12.29z"/>
-          </svg>
-          &nbsp;SOLANA
+          <img src="/solanaLogoMark.svg" alt="Solana" style={{ height: 14, display: "inline-block", verticalAlign: "middle" }} />
+          &nbsp;
+          <img src="/solanaWordMark.svg" alt="Solana" style={{ height: 13, display: "inline-block", verticalAlign: "middle" }} />
         </div>
       </div>
     </footer>
