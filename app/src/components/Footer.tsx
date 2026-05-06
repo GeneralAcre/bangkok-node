@@ -224,7 +224,7 @@ export function Footer() {
         {/* Legal */}
         <div>
           <div className="sf-col-title">Legal &amp; Compliance</div>
-          <a href="#" className="sf-nav-link">Terms of Use</a>
+          <a href="/terms" className="sf-nav-link">Terms of Use</a>
         </div>
 
         {/* Social */}
