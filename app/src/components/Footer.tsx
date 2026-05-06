@@ -5,9 +5,17 @@ import { useState } from "react";
 const FOOTER_CSS = `
 .sf-root {
   background: #0a0a0a;
-  border-top: 1px solid rgba(255,255,255,.08);
   font-family: 'Space Grotesk', sans-serif;
   color: #e8e8e8;
+  position: relative;
+  margin-top: 4rem;
+}
+.sf-root::before {
+  content: '';
+  display: block;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.06) 15%, rgba(255,255,255,.35) 50%, rgba(255,255,255,.06) 85%, transparent 100%);
+  box-shadow: 0 0 24px 2px rgba(255,255,255,.08);
 }
 .sf-top {
   max-width: 1200px;
