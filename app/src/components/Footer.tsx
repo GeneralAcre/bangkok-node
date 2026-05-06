@@ -281,8 +281,6 @@ export function Footer() {
         </p>
         <div className="sf-powered">
           powered by&nbsp;
-          <img src="/solanaLogoMark.svg" alt="Solana" style={{ height: 14, display: "inline-block", verticalAlign: "middle" }} />
-          &nbsp;
           <img src="/solanaWordMark.svg" alt="Solana" style={{ height: 13, display: "inline-block", verticalAlign: "middle" }} />
         </div>
       </div>
