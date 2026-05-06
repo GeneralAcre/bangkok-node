@@ -36,7 +36,7 @@ function formatEventDate(ts: number): string {
 }
 
 function getMonthYear(ts: number): string {
-  if (!ts || ts <= 0) return "Undated";
+  if (!ts || ts <= 0 || ts > 9_999_999_999) return "Undated";
   const d = new Date(ts * 1000);
   if (isNaN(d.getTime())) return "Undated";
   return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -85,7 +85,7 @@ export default function OrganizerPage() {
   const [allEvents,     setAllEvents]     = useState<EventRow[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsFilter,  setEventsFilter]  = useState<EventFilter>("all");
-  const [showForm,      setShowForm]      = useState(false);
+  const [activeView,    setActiveView]    = useState<"events" | "form">("events");
 
   // Deploy flow
   const [deployStep, setDeployStep] = useState<DeployStep>("idle");
@@ -93,7 +93,6 @@ export default function OrganizerPage() {
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
   // Form fields
-  const [externalUrl,   setExternalUrl]   = useState("");
   const [title,         setTitle]         = useState("");
   const [location,      setLocation]      = useState("");
   const [country,       setCountry]       = useState("Global");
@@ -128,7 +127,11 @@ export default function OrganizerPage() {
   useEffect(() => {
     fetch("/api/stats")
       .then(r => r.json())
-      .then(d => setAllEvents(d.allEvents ?? []))
+      .then(d => setAllEvents(
+        (d.allEvents ?? []).filter((ev: EventRow) =>
+          ev.eventDate > 0 && ev.capacity > 0 && ev.capacity < 1_000_000
+        )
+      ))
       .catch(() => {})
       .finally(() => setEventsLoading(false));
   }, []);
@@ -220,7 +223,7 @@ export default function OrganizerPage() {
         capacity:         cap,
         entryFeeLamports: 0,
         eventCode:        code,
-        externalUrl:      externalUrl || "",
+        externalUrl:      "",
         isHackathon:      false,
       });
 
@@ -235,7 +238,7 @@ export default function OrganizerPage() {
       setDeployStep("done");
 
       // Reset form
-      setTitle(""); setLocation(""); setCountry("Global"); setExternalUrl("");
+      setTitle(""); setLocation(""); setCountry("Global");
       setStartDatePart(""); setStartTimePart("09:00");
       setEndDatePart(""); setEndTimePart("21:00");
       setCapacity("50"); setEventCode(randomCode());
@@ -243,7 +246,11 @@ export default function OrganizerPage() {
       // Refresh events list
       const r = await fetch("/api/stats");
       const d = await r.json();
-      setAllEvents(d.allEvents ?? []);
+      setAllEvents(
+        (d.allEvents ?? []).filter((ev: EventRow) =>
+          ev.eventDate > 0 && ev.capacity > 0 && ev.capacity < 1_000_000
+        )
+      );
 
     } catch (err: any) {
       setDeployStep("error");
@@ -344,17 +351,190 @@ export default function OrganizerPage() {
             <h1 className="page-title">Attach to Event</h1>
             <p className="page-sub">Wrap any event with on-chain check-ins · QR · NFT · Signal Score</p>
           </div>
-          <button
-            className={`btn ${showForm ? "btn-primary" : "btn-demo"}`}
-            onClick={() => { setShowForm(v => !v); setMsg(null); setDeployStep("idle"); }}
-            style={{ marginTop: ".35rem", flexShrink: 0 }}
-          >
-            {showForm ? "✕ Close" : "⬡ Host Event"}
-          </button>
+          <div style={{ display: "flex", gap: ".5rem", flexShrink: 0, marginTop: ".35rem" }}>
+            <button
+              className={`btn ${activeView === "events" ? "btn-primary" : "btn-demo"}`}
+              onClick={() => setActiveView("events")}
+            >
+              ☰ Events
+            </button>
+            <button
+              className={`btn ${activeView === "form" ? "btn-primary" : "btn-demo"}`}
+              onClick={() => { setActiveView("form"); setMsg(null); setDeployStep("idle"); }}
+            >
+              ⬡ Host Event
+            </button>
+          </div>
         </div>
 
+        {/* ── Host Event form ── */}
+        {activeView === "form" && (
+          <>
+            {msg && (
+              <div style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: ".75rem",
+                background: msg.type === "ok" ? "rgba(0,255,194,.08)" : "rgba(220,38,38,.12)",
+                border: `1.5px solid ${msg.type === "ok" ? "rgba(0,255,194,.3)" : "rgba(220,38,38,.4)"}`,
+                borderRadius: 12,
+                padding: "1rem 1.25rem",
+                marginBottom: "1.25rem",
+                color: msg.type === "ok" ? "#00FFC2" : "#f87171",
+                fontSize: ".85rem",
+                lineHeight: 1.6,
+              }}>
+                <span style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: ".05rem" }}>
+                  {msg.type === "ok" ? "✓" : "⚠"}
+                </span>
+                <div>
+                  <div style={{ fontWeight: 700, marginBottom: ".2rem" }}>
+                    {msg.type === "ok" ? "Success" : "Error"}
+                  </div>
+                  <div>{msg.text}</div>
+                  {msg.type === "err" && msg.text.toLowerCase().includes("sol") && (
+                    <div style={{ marginTop: ".4rem" }}>
+                      <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
+                        style={{ color: "#fbbf24", fontWeight: 600 }}>
+                        → Get free devnet SOL at faucet.solana.com ↗
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="card">
+              <div className="card-title">Launch Event</div>
+              <form onSubmit={handleDeploy}>
+
+                {/* Event Name */}
+                <label>Event Name *</label>
+                <input
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="Bangkok Web3 Meetup"
+                  required
+                />
+
+                {/* Location */}
+                <label>Location *</label>
+                <input
+                  value={location}
+                  onChange={e => setLocation(e.target.value)}
+                  placeholder="Bangkok, Thailand"
+                  required
+                />
+
+                {/* Start Date + Time */}
+                <div className="row">
+                  <div>
+                    <label>Start Date *</label>
+                    <input
+                      type="date"
+                      value={startDatePart}
+                      onChange={e => setStartDatePart(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>Start Time *</label>
+                    <div ref={startTimeRef} className="time-dropdown">
+                      <button type="button" className="time-trigger" onClick={() => setStartTimeOpen(o => !o)}>
+                        {startTimePart}
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: startTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                          <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                      {startTimeOpen && (
+                        <div className="time-options">
+                          {TIME_OPTIONS.map(t => (
+                            <div key={t} className={`time-option${t === startTimePart ? " active" : ""}`}
+                              onClick={() => { setStartTimePart(t); setStartTimeOpen(false); }}>
+                              {t}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* End Date + Time */}
+                <div className="row">
+                  <div>
+                    <label>End Date *</label>
+                    <input
+                      type="date"
+                      value={endDatePart}
+                      onChange={e => setEndDatePart(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label>End Time *</label>
+                    <div ref={endTimeRef} className="time-dropdown">
+                      <button type="button" className="time-trigger" onClick={() => setEndTimeOpen(o => !o)}>
+                        {endTimePart}
+                        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: endTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
+                          <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                      {endTimeOpen && (
+                        <div className="time-options">
+                          {TIME_OPTIONS.map(t => (
+                            <div key={t} className={`time-option${t === endTimePart ? " active" : ""}`}
+                              onClick={() => { setEndTimePart(t); setEndTimeOpen(false); }}>
+                              {t}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Capacity */}
+                <label>Max Capacity *</label>
+                <input
+                  type="number"
+                  value={capacity}
+                  onChange={e => setCapacity(e.target.value || "50")}
+                  min="1"
+                  placeholder="50"
+                  required
+                />
+
+                {/* Deploy progress */}
+                {deployStep !== "idle" && deployStep !== "error" && (
+                  <DeploySteps step={deployStep} />
+                )}
+
+                <button
+                  className="btn btn-primary btn-block"
+                  type="submit"
+                  disabled={isDeploying || !connected}
+                  style={{ marginTop: ".75rem" }}
+                >
+                  {isDeploying
+                    ? <><span className="step-spin" style={{ display: "inline-block" }}>◈</span> Deploying…</>
+                    : !connected
+                    ? "Connect wallet to deploy"
+                    : "⬡ Deploy & Go Live"}
+                </button>
+
+                {!connected && (
+                  <div style={{ marginTop: "1rem", display: "flex", justifyContent: "center" }}>
+                    <WalletMultiButton />
+                  </div>
+                )}
+              </form>
+            </div>
+          </>
+        )}
+
         {/* ── Events listing ── */}
-        {(() => {
+        {activeView === "events" && (() => {
           const filtered = allEvents.filter(ev =>
             eventsFilter === "all" ? true : ev.status.toLowerCase() === eventsFilter
           );
@@ -387,11 +567,29 @@ export default function OrganizerPage() {
               {eventsLoading ? (
                 <div className="ev-empty">Loading events…</div>
               ) : filtered.length === 0 ? (
-                <div className="ev-empty">
-                  {eventsFilter === "all"
-                    ? `No events yet. Click "Host Event" to deploy your first.`
-                    : `No ${eventsFilter} events.`}
-                </div>
+                eventsFilter === "all" ? (
+                  <div style={{
+                    border: "1px dashed rgba(255,255,255,.15)",
+                    borderRadius: 16, padding: "2.5rem",
+                    textAlign: "center", background: "rgba(255,255,255,.02)",
+                  }}>
+                    <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>⬡</div>
+                    <div style={{ fontFamily: "'Epilogue',sans-serif", fontWeight: 700, fontSize: "1.1rem", marginBottom: ".5rem" }}>
+                      No events yet
+                    </div>
+                    <div style={{ color: "#888", fontSize: ".85rem", marginBottom: "1.5rem" }}>
+                      Deploy your first on-chain event to get a QR code for attendees to check in.
+                    </div>
+                    <button
+                      className="btn btn-primary"
+                      onClick={() => { setActiveView("form"); setMsg(null); setDeployStep("idle"); }}
+                    >
+                      ⬡ Host Your First Event
+                    </button>
+                  </div>
+                ) : (
+                  <div className="ev-empty">No {eventsFilter} events.</div>
+                )
               ) : (
                 <div className="ev-list">
                   {Array.from(monthMap.entries()).map(([month, evs]) => (
@@ -409,22 +607,14 @@ export default function OrganizerPage() {
                             </div>
                           </div>
                           <div className="ev-date-col">{formatEventDate(ev.eventDate)}</div>
-                          <div className="ev-stat-col">{ev.attendeeCount}/{ev.capacity > 100000 ? "—" : ev.capacity}</div>
+                          <div className="ev-stat-col">{ev.attendeeCount}/{(ev.capacity === 0 || ev.capacity > 100000) ? "—" : ev.capacity}</div>
                           <div className="ev-cta-col">
                             {ev.status === "Live" ? (
-                              <button
-                                className="btn-checkin"
-                                onClick={() => handleGetQR(ev)}
-                                title="Show check-in QR"
-                              >
+                              <button className="btn-checkin" onClick={() => handleGetQR(ev)} title="Show check-in QR">
                                 QR ↗
                               </button>
                             ) : ev.status === "Upcoming" && ev.organizer === publicKey?.toBase58() ? (
-                              <button
-                                className="btn-checkin"
-                                onClick={() => handleGetQR(ev)}
-                                style={{ background: "transparent", border: "1px solid #fff", color: "#fff" }}
-                              >
+                              <button className="btn-checkin" onClick={() => handleGetQR(ev)} style={{ background: "transparent", border: "1px solid #fff", color: "#fff" }}>
                                 QR ↗
                               </button>
                             ) : ev.status === "Upcoming" ? (
@@ -442,166 +632,6 @@ export default function OrganizerPage() {
             </div>
           );
         })()}
-
-        {/* ── Host Event form ── */}
-        {showForm && (
-          <>
-            {msg && (
-              <div className={msg.type === "ok" ? "msg-ok" : "msg-err"}>
-                {msg.text}
-                {msg.type === "err" && msg.text.toLowerCase().includes("sol") && (
-                  <div style={{ marginTop: ".4rem" }}>
-                    <a href="https://faucet.solana.com" target="_blank" rel="noreferrer" style={{ color: "#fbbf24" }}>→ faucet.solana.com ↗</a>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {!connected && (
-              <div className="card connect-card">
-                <p>Connect your wallet to host an event on-chain</p>
-                <WalletMultiButton />
-              </div>
-            )}
-
-            {connected && idlLoaded && (
-              <div className="card">
-                <div className="card-title">Launch Event</div>
-                <form onSubmit={handleDeploy}>
-
-                  {/* External URL (label only — stored on-chain) */}
-                  <label>
-                    External Event URL
-                    <span style={{ color: "#888", fontWeight: 400, marginLeft: ".4rem" }}>(optional)</span>
-                  </label>
-                  <input
-                    type="url"
-                    value={externalUrl}
-                    onChange={e => setExternalUrl(e.target.value)}
-                    placeholder="https://lu.ma/your-event"
-                  />
-                  <p className="field-note">Stored on-chain for attendee reference.</p>
-
-                  {/* Event Name */}
-                  <label>Event Name *</label>
-                  <input
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                    placeholder="Bangkok Web3 Meetup"
-                    required
-                  />
-
-                  {/* Location */}
-                  <label>Location *</label>
-                  <input
-                    value={location}
-                    onChange={e => setLocation(e.target.value)}
-                    placeholder="Bangkok, Thailand"
-                    required
-                  />
-
-                  {/* Start Date + Time */}
-                  <div className="row">
-                    <div>
-                      <label>Start Date *</label>
-                      <input
-                        type="date"
-                        value={startDatePart}
-                        onChange={e => setStartDatePart(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label>Start Time *</label>
-                      <div ref={startTimeRef} className="time-dropdown">
-                        <button type="button" className="time-trigger" onClick={() => setStartTimeOpen(o => !o)}>
-                          {startTimePart}
-                          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: startTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                            <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                        {startTimeOpen && (
-                          <div className="time-options">
-                            {TIME_OPTIONS.map(t => (
-                              <div key={t} className={`time-option${t === startTimePart ? " active" : ""}`}
-                                onClick={() => { setStartTimePart(t); setStartTimeOpen(false); }}>
-                                {t}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* End Date + Time */}
-                  <div className="row">
-                    <div>
-                      <label>End Date *</label>
-                      <input
-                        type="date"
-                        value={endDatePart}
-                        onChange={e => setEndDatePart(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label>End Time *</label>
-                      <div ref={endTimeRef} className="time-dropdown">
-                        <button type="button" className="time-trigger" onClick={() => setEndTimeOpen(o => !o)}>
-                          {endTimePart}
-                          <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style={{ transition: "transform .2s", transform: endTimeOpen ? "rotate(180deg)" : "rotate(0deg)" }}>
-                            <path d="M1 1l4 4 4-4" stroke="#5C7580" strokeWidth="1.5" strokeLinecap="round" />
-                          </svg>
-                        </button>
-                        {endTimeOpen && (
-                          <div className="time-options">
-                            {TIME_OPTIONS.map(t => (
-                              <div key={t} className={`time-option${t === endTimePart ? " active" : ""}`}
-                                onClick={() => { setEndTimePart(t); setEndTimeOpen(false); }}>
-                                {t}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Capacity */}
-                  <label>Max Capacity *</label>
-                  <input
-                    type="number"
-                    value={capacity}
-                    onChange={e => setCapacity(e.target.value || "50")}
-                    min="1"
-                    placeholder="50"
-                    required
-                  />
-
-                  {/* Deploy progress */}
-                  {deployStep !== "idle" && deployStep !== "error" && (
-                    <DeploySteps step={deployStep} />
-                  )}
-
-                  <button
-                    className="btn btn-primary btn-block"
-                    type="submit"
-                    disabled={isDeploying}
-                    style={{ marginTop: ".75rem" }}
-                  >
-                    {isDeploying
-                      ? <><span className="step-spin" style={{ display: "inline-block" }}>◈</span> Deploying…</>
-                      : "⬡ Deploy & Go Live"}
-                  </button>
-                  <p className="field-note" style={{ textAlign: "center", marginTop: ".5rem" }}>
-                    2 Phantom interactions: create tx → sign QR
-                  </p>
-                </form>
-              </div>
-            )}
-          </>
-        )}
       </div>
     </>
   );

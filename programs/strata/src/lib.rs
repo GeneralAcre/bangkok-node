@@ -456,12 +456,14 @@ pub struct CreateEvent<'info> {
         // + fee(8) + event_code(4+8) + event_index(8)
         // + escrow_bump(1) + bump(1) + created_at(8)
         // + external_url(4+256) + is_hackathon(1)
+        // + 200 bytes padding for safety
         space = 8 + 32 + 32
               + (4+64) + (4+128) + (4+64)
               + 8 + 8 + 8 + 8 + 8
               + (4+8)
               + 8 + 1 + 1 + 8
-              + (4+256) + 1,
+              + (4+256) + 1
+              + 200,
         seeds = [b"event", community.key().as_ref(), &community.event_count.to_le_bytes()],
         bump
     )]

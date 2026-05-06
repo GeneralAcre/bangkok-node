@@ -58,15 +58,16 @@
         { "name": "systemProgram", "address": "11111111111111111111111111111111" }
       ],
       "args": [
-        { "name": "title", "type": "string" },
-        { "name": "description", "type": "string" },
-        { "name": "location", "type": "string" },
-        { "name": "country", "type": "string" },
-        { "name": "eventDate", "type": "i64" },
-        { "name": "capacity", "type": "u64" },
+        { "name": "title",            "type": "string" },
+        { "name": "location",         "type": "string" },
+        { "name": "country",          "type": "string" },
+        { "name": "startTime",        "type": "i64" },
+        { "name": "endTime",          "type": "i64" },
+        { "name": "capacity",         "type": "u64" },
         { "name": "entryFeeLamports", "type": "u64" },
-        { "name": "eventCode", "type": "string" },
-        { "name": "isHackathon", "type": "bool" }
+        { "name": "eventCode",        "type": "string" },
+        { "name": "externalUrl",      "type": "string" },
+        { "name": "isHackathon",      "type": "bool" }
       ]
     },
     {

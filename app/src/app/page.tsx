@@ -21,7 +21,7 @@ const STEPS = [
 const FAQ_ITEMS = [
   {
     q: "What is Signal?",
-    a: "Signal is an on-chain Proof of Presence protocol built on Solana. Every event check-in is a permanent Solana transaction — no servers, no centralized database, just cryptographic proof that you were there.",
+    a: "Signal is an on-chain Proof of Presence protocol on Solana that transforms event attendance into permanent identity. By replacing centralized databases with cryptographic transactions, it ensures every check-in is a verifiable, immutable record: Show up, scan, and stay verified on-chain forever.",
   },
   {
     q: "How does checking in to an event work?",

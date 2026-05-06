@@ -145,7 +145,10 @@ interface EventItem {
 type Filter = "all" | "live" | "upcoming" | "ended";
 
 function formatDate(ts: number) {
-  return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  if (!ts || ts <= 0) return "—";
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function EventsPage() {
@@ -157,7 +160,11 @@ export default function EventsPage() {
     fetch("/api/stats")
       .then(r => r.ok ? r.json() : null)
       .then(d => {
-        if (d?.allEvents) setEvents(d.allEvents);
+        if (d?.allEvents) {
+          setEvents(d.allEvents.filter((e: EventItem) =>
+            e.eventDate > 0 && e.capacity > 0 && e.capacity < 1_000_000
+          ));
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -247,7 +254,7 @@ export default function EventsPage() {
 
                 {/* Checkin count */}
                 <div className="checkin-count">
-                  {ev.attendeeCount}/{ev.capacity} checked in
+                  {ev.attendeeCount}/{ev.capacity > 100_000 ? "—" : ev.capacity} checked in
                 </div>
 
                 {/* Actions */}

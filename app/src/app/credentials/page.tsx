@@ -296,6 +296,18 @@ export default function CredentialsPage() {
   const [claimLoading, setClaimLoading] = useState(false);
   const [claimMsg,     setClaimMsg]     = useState<{ ok: boolean; text: string } | null>(null);
 
+  const ADMIN_WALLET = process.env.NEXT_PUBLIC_ADMIN_WALLET ?? "";
+  const [adminKey,      setAdminKey]      = useState("");
+  const [adminKeyInput, setAdminKeyInput] = useState("");
+  const [adminKeyOpen,  setAdminKeyOpen]  = useState(false);
+  const [myClaims,      setMyClaims]      = useState<any[]>([]);
+  const [claimsLoading, setClaimsLoading] = useState(false);
+  const [actionMsg,     setActionMsg]     = useState<Record<string, { ok: boolean; text: string }>>({});
+  const [actioning,     setActioning]     = useState<string | null>(null);
+
+  const isAdminWallet = !!publicKey && !!ADMIN_WALLET && publicKey.toBase58() === ADMIN_WALLET;
+  const isAdmin = isAdminWallet || !!adminKey;
+
   // Auto-load own wallet on connect
   useEffect(() => {
     if (walletAddr && !target) {
@@ -385,6 +397,38 @@ export default function CredentialsPage() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
+  useEffect(() => {
+    if (!target) { setMyClaims([]); return; }
+    setClaimsLoading(true);
+    fetch(`/api/achievement/wallet/${target}`)
+      .then(r => r.json())
+      .then(d => setMyClaims(d.achievements ?? []))
+      .catch(() => {})
+      .finally(() => setClaimsLoading(false));
+  }, [target]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    setClaimsLoading(true);
+    fetch("/api/achievement/pending?status=pending", {
+      headers: { "x-admin-key": adminKey },
+    })
+      .then(r => r.json())
+      .then(d => {
+        const adminPending = (d.claims ?? []) as any[];
+        setMyClaims(prev => {
+          const ownIds = new Set(prev.map((c: any) => c.id));
+          const merged = [...prev];
+          for (const c of adminPending) {
+            if (!ownIds.has(c.id)) merged.push(c);
+          }
+          return merged;
+        });
+      })
+      .catch(() => {})
+      .finally(() => setClaimsLoading(false));
+  }, [isAdmin, adminKey]);
+
   function doLookup(addr: string) {
     const t = addr.trim();
     if (!t) return;
@@ -416,6 +460,32 @@ export default function CredentialsPage() {
       setClaimMsg({ ok: false, text: err?.message ?? "Submission failed" });
     } finally {
       setClaimLoading(false);
+    }
+  }
+
+  async function handleAction(claimId: string, action: "approve" | "reject") {
+    if (!publicKey) return;
+    setActioning(claimId);
+    setActionMsg(prev => ({ ...prev, [claimId]: { ok: true, text: action === "approve" ? "Approving…" : "Rejecting…" } }));
+    try {
+      const res = await fetch("/api/achievement/approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+        body: JSON.stringify({ claimId, adminPubkey: publicKey.toBase58(), action }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Action failed");
+      setActionMsg(prev => ({
+        ...prev,
+        [claimId]: { ok: true, text: action === "approve" ? "✓ Approved — NFT minted!" : "✕ Rejected" },
+      }));
+      setMyClaims(prev => prev.map((c: any) =>
+        c.id === claimId ? { ...c, status: action === "approve" ? "approved" : "rejected" } : c
+      ));
+    } catch (e: any) {
+      setActionMsg(prev => ({ ...prev, [claimId]: { ok: false, text: e?.message ?? "Failed" } }));
+    } finally {
+      setActioning(null);
     }
   }
 
@@ -627,6 +697,226 @@ export default function CredentialsPage() {
                   {claimLoading ? "Submitting…" : "Submit Claim →"}
                 </button>
               </form>
+            )}
+          </div>
+        )}
+
+        {/* ── Claims Inbox ── */}
+        {(target || walletAddr) && (
+          <div style={{ marginTop: "2.5rem", borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: "2rem" }}>
+
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", gap: "1rem" }}>
+              <div>
+                <div style={{
+                  fontFamily: "'Orbitron',sans-serif", fontSize: ".55rem", fontWeight: 700,
+                  letterSpacing: ".14em", textTransform: "uppercase", color: "#888", marginBottom: ".25rem",
+                }}>
+                  Achievement Claims
+                </div>
+                <div style={{ fontSize: ".95rem", fontWeight: 700, color: "#e8e8e8" }}>
+                  Claims Inbox
+                  {myClaims.filter((c: any) => c.status === "pending").length > 0 && (
+                    <span style={{
+                      marginLeft: ".6rem", background: "rgba(251,191,36,.15)", color: "#fbbf24",
+                      border: "1px solid rgba(251,191,36,.3)", borderRadius: 100,
+                      fontSize: ".6rem", fontWeight: 700, padding: ".15rem .55rem",
+                      fontFamily: "'Orbitron',sans-serif", letterSpacing: ".08em",
+                    }}>
+                      {myClaims.filter((c: any) => c.status === "pending").length} PENDING
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {!isAdminWallet && (
+                <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+                  {adminKeyOpen ? (
+                    <>
+                      <input
+                        type="password"
+                        value={adminKeyInput}
+                        onChange={e => setAdminKeyInput(e.target.value)}
+                        placeholder="Admin key…"
+                        onKeyDown={e => { if (e.key === "Enter") { setAdminKey(adminKeyInput); setAdminKeyOpen(false); } }}
+                        style={{
+                          background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.12)",
+                          borderRadius: 8, padding: ".35rem .65rem", color: "#e8e8e8",
+                          fontFamily: "'Space Mono',monospace", fontSize: ".75rem", outline: "none", width: 140,
+                        }}
+                      />
+                      <button
+                        onClick={() => { setAdminKey(adminKeyInput); setAdminKeyOpen(false); }}
+                        style={{
+                          background: "rgba(0,255,194,.1)", border: "1px solid rgba(0,255,194,.25)",
+                          color: "#00FFC2", borderRadius: 8, padding: ".35rem .75rem",
+                          fontSize: ".7rem", cursor: "pointer", fontFamily: "'Orbitron',sans-serif",
+                          fontWeight: 700, letterSpacing: ".06em",
+                        }}
+                      >
+                        Unlock
+                      </button>
+                      <button
+                        onClick={() => { setAdminKeyOpen(false); setAdminKeyInput(""); }}
+                        style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: ".8rem" }}
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => setAdminKeyOpen(true)}
+                      style={{
+                        background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.1)",
+                        color: "#888", borderRadius: 8, padding: ".3rem .7rem",
+                        fontSize: ".65rem", cursor: "pointer", fontFamily: "'Orbitron',sans-serif",
+                        letterSpacing: ".06em",
+                      }}
+                    >
+                      {adminKey ? "🔓 Admin" : "Admin →"}
+                    </button>
+                  )}
+                </div>
+              )}
+              {isAdminWallet && (
+                <span style={{
+                  background: "rgba(0,255,194,.08)", border: "1px solid rgba(0,255,194,.2)",
+                  color: "#00FFC2", borderRadius: 100, padding: ".25rem .75rem",
+                  fontSize: ".6rem", fontFamily: "'Orbitron',sans-serif", fontWeight: 700, letterSpacing: ".1em",
+                }}>
+                  🔓 ADMIN
+                </span>
+              )}
+            </div>
+
+            {claimsLoading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                {[0, 1].map(i => (
+                  <div key={i} style={{
+                    height: 72, borderRadius: 12,
+                    background: "linear-gradient(90deg,#151515 25%,#1e1e1e 50%,#151515 75%)",
+                    backgroundSize: "200% 100%", animation: "shimmer 1.4s infinite",
+                  }} />
+                ))}
+              </div>
+            ) : myClaims.length === 0 ? (
+              <div style={{
+                textAlign: "center", padding: "2rem 1rem",
+                border: "1px dashed rgba(255,255,255,.08)", borderRadius: 12,
+                color: "#555", fontSize: ".82rem",
+              }}>
+                No claims yet.{" "}
+                {walletAddr && <span style={{ color: "#888" }}>Use &quot;+ Claim&quot; above to submit a hackathon win.</span>}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
+                {myClaims.map((claim: any) => {
+                  const statusColor  = claim.status === "approved" ? "#00FFC2" : claim.status === "rejected" ? "#f87171" : "#fbbf24";
+                  const statusBg     = claim.status === "approved" ? "rgba(0,255,194,.08)" : claim.status === "rejected" ? "rgba(239,68,68,.08)" : "rgba(251,191,36,.08)";
+                  const statusBorder = claim.status === "approved" ? "rgba(0,255,194,.2)" : claim.status === "rejected" ? "rgba(239,68,68,.2)" : "rgba(251,191,36,.2)";
+                  const msg = actionMsg[claim.id];
+                  const isActing = actioning === claim.id;
+
+                  return (
+                    <div key={claim.id} style={{
+                      background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.08)",
+                      borderRadius: 12, padding: "1rem 1.1rem",
+                      display: "flex", flexDirection: "column", gap: ".5rem",
+                      transition: "border-color .2s",
+                    }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: ".75rem" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: ".88rem", color: "#e8e8e8", marginBottom: ".15rem" }}>
+                            {claim.hackathonName}
+                          </div>
+                          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: ".72rem", color: "#00FFC2" }}>
+                            {claim.rank}
+                          </div>
+                        </div>
+                        <span style={{
+                          background: statusBg, border: `1px solid ${statusBorder}`,
+                          color: statusColor, borderRadius: 100, padding: ".2rem .65rem",
+                          fontSize: ".58rem", fontFamily: "'Orbitron',sans-serif",
+                          fontWeight: 700, letterSpacing: ".1em", whiteSpace: "nowrap", flexShrink: 0,
+                        }}>
+                          {claim.status.toUpperCase()}
+                        </span>
+                      </div>
+
+                      <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", alignItems: "center" }}>
+                        <a
+                          href={claim.projectUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ fontFamily: "'Space Mono',monospace", fontSize: ".68rem", color: "#888", textDecoration: "none" }}
+                          onMouseOver={e => (e.currentTarget.style.color = "#e8e8e8")}
+                          onMouseOut={e => (e.currentTarget.style.color = "#888")}
+                        >
+                          {claim.projectUrl.replace(/^https?:\/\//, "").slice(0, 40)}{claim.projectUrl.length > 46 ? "…" : ""} ↗
+                        </a>
+                        <span style={{ fontSize: ".65rem", color: "#555" }}>
+                          {new Date(claim.submittedAt * 1000).toLocaleDateString("en-US", { dateStyle: "medium" })}
+                        </span>
+                        {isAdmin && claim.wallet !== target && (
+                          <span style={{ fontFamily: "'Space Mono',monospace", fontSize: ".65rem", color: "#666" }}>
+                            {claim.wallet.slice(0, 8)}…{claim.wallet.slice(-4)}
+                          </span>
+                        )}
+                        {claim.points && claim.status === "approved" && (
+                          <span style={{
+                            background: "rgba(0,255,194,.08)", border: "1px solid rgba(0,255,194,.2)",
+                            color: "#00FFC2", borderRadius: 100, padding: ".12rem .5rem",
+                            fontSize: ".6rem", fontFamily: "'Orbitron',sans-serif", fontWeight: 700,
+                          }}>
+                            +{claim.points} pts
+                          </span>
+                        )}
+                      </div>
+
+                      {isAdmin && claim.status === "pending" && (
+                        <div style={{ display: "flex", gap: ".5rem", alignItems: "center", marginTop: ".25rem", flexWrap: "wrap" }}>
+                          <button
+                            onClick={() => handleAction(claim.id, "approve")}
+                            disabled={isActing}
+                            style={{
+                              background: "rgba(0,255,194,.1)", border: "1px solid rgba(0,255,194,.25)",
+                              color: "#00FFC2", borderRadius: 8, padding: ".35rem .9rem",
+                              fontSize: ".72rem", cursor: isActing ? "not-allowed" : "pointer",
+                              fontFamily: "'Orbitron',sans-serif", fontWeight: 700,
+                              letterSpacing: ".06em", opacity: isActing ? .5 : 1, transition: "opacity .15s",
+                            }}
+                          >
+                            {isActing ? "…" : "✓ Approve"}
+                          </button>
+                          <button
+                            onClick={() => handleAction(claim.id, "reject")}
+                            disabled={isActing}
+                            style={{
+                              background: "rgba(220,38,38,.08)", border: "1px solid rgba(220,38,38,.2)",
+                              color: "#f87171", borderRadius: 8, padding: ".35rem .9rem",
+                              fontSize: ".72rem", cursor: isActing ? "not-allowed" : "pointer",
+                              fontFamily: "'Orbitron',sans-serif", fontWeight: 700,
+                              letterSpacing: ".06em", opacity: isActing ? .5 : 1, transition: "opacity .15s",
+                            }}
+                          >
+                            ✕ Reject
+                          </button>
+                          {msg && (
+                            <span style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171" }}>
+                              {msg.text}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {msg && claim.status !== "pending" && (
+                        <div style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171", marginTop: ".1rem" }}>
+                          {msg.text}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

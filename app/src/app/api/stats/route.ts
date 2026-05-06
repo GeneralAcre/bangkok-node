@@ -6,6 +6,7 @@ const COMMUNITY_PDA = process.env.NEXT_PUBLIC_COMMUNITY_PDA;
 const PROGRAM_ID    = process.env.NEXT_PUBLIC_PROGRAM_ID;
 
 let cache: { data: unknown; ts: number } | null = null;
+// Cache cleared — bump this comment to invalidate: v2
 const CACHE_TTL = 60_000;
 
 function readStr(data: Buffer, off: number): { value: string; next: number } {
@@ -78,8 +79,18 @@ export async function GET() {
         const now    = Math.floor(Date.now() / 1000);
         const status = now < startTime ? "Upcoming" : now <= endTime ? "Live" : "Ended";
 
-        totalCheckins += attendeeCount;
-        eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate: startTime, endTime, eventIndex: i, organizer });
+        const isValidEvent = (
+          startTime > 1_700_000_000 &&
+          startTime < 9_999_999_999 &&
+          capacity > 0 &&
+          capacity < 1_000_000 &&
+          attendeeCount <= capacity
+        );
+
+        if (isValidEvent) {
+          totalCheckins += attendeeCount;
+          eventsData.push({ title: title.value, location: location.value, country: country.value, status, attendeeCount, capacity, eventCode: eventCode.value, eventDate: startTime, endTime, eventIndex: i, organizer });
+        }
       } catch {}
     }
 
