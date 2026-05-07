@@ -157,7 +157,7 @@ export default function CredentialsPage() {
     setClaimsLoading(true);
     fetch(`/api/achievement/wallet/${target}`)
       .then(r => r.json())
-      .then(d => setMyClaims(d.achievements ?? []))
+      .then(d => setMyClaims(d.allClaims ?? []))
       .catch(() => {})
       .finally(() => setClaimsLoading(false));
   }, [target]);
@@ -198,6 +198,11 @@ export default function CredentialsPage() {
       if (!res.ok) throw new Error(d.error ?? "Submission failed");
       setClaimMsg({ ok: true, text: "Claim submitted! Signal admin will review and mint your Achievement NFT." });
       setClaimForm({ hackathonName: "", projectUrl: "", rank: "", description: "" });
+      // Refresh claims inbox
+      fetch(`/api/achievement/wallet/${walletAddr}`)
+        .then(r => r.json())
+        .then(d => setMyClaims(d.allClaims ?? []))
+        .catch(() => {});
     } catch (err: any) {
       setClaimMsg({ ok: false, text: err?.message ?? "Submission failed" });
     } finally {

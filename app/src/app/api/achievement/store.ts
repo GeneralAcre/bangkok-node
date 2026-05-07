@@ -1,5 +1,5 @@
-// In-memory store — resets on cold starts.
-// Replace with a database (e.g. Postgres, Supabase) for production.
+import fs from "fs";
+import path from "path";
 
 export interface AchievementClaim {
   id:             string;
@@ -15,8 +15,59 @@ export interface AchievementClaim {
   points?:        number;
 }
 
-// Singleton map shared across all requests in the same process
-export const claims = new Map<string, AchievementClaim>();
+const DATA_DIR  = path.join(process.cwd(), "data");
+const DATA_FILE = path.join(DATA_DIR, "claims.json");
+
+function load(): Map<string, AchievementClaim> {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    if (!fs.existsSync(DATA_FILE)) return new Map();
+    const raw = fs.readFileSync(DATA_FILE, "utf-8");
+    const arr: AchievementClaim[] = JSON.parse(raw);
+    return new Map(arr.map(c => [c.id, c]));
+  } catch {
+    return new Map();
+  }
+}
+
+function save(map: Map<string, AchievementClaim>) {
+  try {
+    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.writeFileSync(DATA_FILE, JSON.stringify(Array.from(map.values()), null, 2), "utf-8");
+  } catch (e) {
+    console.error("Failed to save claims:", e);
+  }
+}
+
+// Proxy so callers use claims.get/set/values just like before,
+// but every mutation is persisted to disk.
+export const claims = new Proxy(load(), {
+  get(target, prop) {
+    if (prop === "set") {
+      return (key: string, value: AchievementClaim) => {
+        target.set(key, value);
+        save(target);
+        return target;
+      };
+    }
+    if (prop === "delete") {
+      return (key: string) => {
+        const r = target.delete(key);
+        save(target);
+        return r;
+      };
+    }
+    // Reload from disk on every read so different serverless instances see fresh data
+    if (prop === "values" || prop === "get" || prop === "has" || prop === "size") {
+      const fresh = load();
+      // sync target in-place
+      target.clear();
+      for (const [k, v] of fresh) target.set(k, v);
+    }
+    const val = (target as any)[prop];
+    return typeof val === "function" ? val.bind(target) : val;
+  },
+});
 
 export function pointsForRank(rank: string): number {
   const r = rank.toLowerCase();
