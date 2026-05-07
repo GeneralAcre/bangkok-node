@@ -6,7 +6,8 @@ const APP_URL   = process.env.NEXT_PUBLIC_APP_URL ?? "https://strata-project.ver
 
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("x-admin-key");
-  if (!ADMIN_KEY || auth !== ADMIN_KEY) {
+  // If SIGNAL_ADMIN_KEY is configured, enforce it; otherwise open (demo mode)
+  if (ADMIN_KEY && auth !== ADMIN_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

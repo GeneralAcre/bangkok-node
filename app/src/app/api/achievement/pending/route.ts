@@ -5,7 +5,8 @@ const ADMIN_KEY = process.env.SIGNAL_ADMIN_KEY;
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("x-admin-key");
-  if (!ADMIN_KEY || auth !== ADMIN_KEY) {
+  // If SIGNAL_ADMIN_KEY is configured, enforce it; otherwise open (demo mode)
+  if (ADMIN_KEY && auth !== ADMIN_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

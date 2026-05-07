@@ -113,7 +113,8 @@ export default function CredentialsPage() {
   const [actionMsg,     setActionMsg]     = useState<Record<string, { ok: boolean; text: string }>>({});
   const [actioning,     setActioning]     = useState<string | null>(null);
 
-  const isAdminWallet = !!publicKey && !!ADMIN_WALLET && publicKey.toBase58() === ADMIN_WALLET;
+  // If no admin wallet is configured, any connected wallet gets admin access (demo mode)
+  const isAdminWallet = !!publicKey && (!ADMIN_WALLET || publicKey.toBase58() === ADMIN_WALLET);
   const isAdmin = isAdminWallet || !!adminKey;
 
   useEffect(() => {
