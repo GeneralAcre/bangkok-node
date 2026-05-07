@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-declare_id!("StrataPresenceProtocol111111111111111111111");
+declare_id!("CmStH6nDHyHtsG5PLj9yvKmAQsY9GjDW2Ap8asMZrz57");
 
 #[program]
 pub mod strata {
@@ -188,16 +188,21 @@ pub mod strata {
         // QR expiry (expiry == end_time in new flow, or organizer-set window)
         require!(clock.unix_timestamp < expiry, StrataError::SignatureExpired);
 
-        // Ed25519 organizer co-signature at ix[0]
+        // Ed25519 organizer co-signature — scan first 8 ix slots so wallets that
+        // prepend ComputeBudget instructions don't shift our Ed25519 ix out of ix[0].
         {
             let ix_sysvar = ctx.accounts.instructions.to_account_info();
-            let ed25519_ix = anchor_lang::solana_program::sysvar::instructions
-                ::load_instruction_at_checked(0, &ix_sysvar)
-                .map_err(|_| error!(StrataError::MissingOrganizerSignature))?;
-            require!(
-                ed25519_ix.program_id == anchor_lang::solana_program::ed25519_program::id(),
-                StrataError::MissingOrganizerSignature
-            );
+            let ed25519_program = anchor_lang::solana_program::ed25519_program::id();
+            let mut found: Option<anchor_lang::solana_program::instruction::Instruction> = None;
+            for idx in 0..8usize {
+                match anchor_lang::solana_program::sysvar::instructions
+                    ::load_instruction_at_checked(idx, &ix_sysvar) {
+                    Ok(ix) if ix.program_id == ed25519_program => { found = Some(ix); break; }
+                    Ok(_)  => continue,
+                    Err(_) => break,
+                }
+            }
+            let ed25519_ix = found.ok_or(error!(StrataError::MissingOrganizerSignature))?;
             let expected_msg = format!("signal_checkin:{}:{}", event_code, expiry);
             verify_ed25519_ix(&ed25519_ix.data, &event.organizer, expected_msg.as_bytes())?;
         }
@@ -315,9 +320,9 @@ fn reputation_for_attendance(events_attended: u64) -> u64 {
 #[account]
 pub struct Community {
     pub authority:       Pubkey,
-    pub name:            String,   // max 64
-    pub description:     String,   // max 256
-    pub country:         String,   // max 64
+    pub name:            String,
+    pub description:     String,
+    pub country:         String,
     pub member_count:    u64,
     pub event_count:     u64,
     pub total_checkins:  u64,
@@ -329,7 +334,7 @@ pub struct Community {
 pub struct Member {
     pub wallet:            Pubkey,
     pub community:         Pubkey,
-    pub username:          String,   // max 32
+    pub username:          String,
     pub reputation_score:  u64,
     pub events_attended:   u64,
     pub tier:              MemberTier,
@@ -343,20 +348,20 @@ pub struct Member {
 pub struct Event {
     pub community:          Pubkey,
     pub organizer:          Pubkey,
-    pub title:              String,   // max 64
-    pub location:           String,   // max 128
-    pub country:            String,   // max 64
-    pub start_time:         i64,      // unix — check-ins open from here
-    pub end_time:           i64,      // unix — check-ins close at here (= QR expiry)
+    pub title:              String,
+    pub location:           String,
+    pub country:            String,
+    pub start_time:         i64,
+    pub end_time:           i64,
     pub capacity:           u64,
     pub attendee_count:     u64,
     pub entry_fee_lamports: u64,
-    pub event_code:         String,   // exactly 8 chars — embedded in QR
+    pub event_code:         String,
     pub event_index:        u64,
     pub escrow_bump:        u8,
     pub bump:               u8,
     pub created_at:         i64,
-    pub external_url:       String,   // max 256 — optional link to Luma / Eventbrite
+    pub external_url:       String,
     pub is_hackathon:       bool,
 }
 

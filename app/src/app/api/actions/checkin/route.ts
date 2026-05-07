@@ -18,6 +18,7 @@ import {
   TransactionInstruction,
   SystemProgram,
   Ed25519Program,
+  ComputeBudgetProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
 } from "@solana/web3.js";
 import { createHash } from "crypto";
@@ -350,6 +351,11 @@ export async function POST(req: NextRequest) {
       message:    message,
       signature:  sigBytes,
     }));
+
+    // ix[1-2]: Pre-declare compute budget so Phantom/wallets see it's already set
+    // and skip prepending their own ComputeBudget ixs (which would shift Ed25519 off ix[0]).
+    ixs.push(ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }));
+    ixs.push(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000 }));
 
     // Auto-register member if new
     const memberInfo = await connection.getAccountInfo(mPDA);
