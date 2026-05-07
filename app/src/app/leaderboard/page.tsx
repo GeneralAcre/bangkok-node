@@ -22,11 +22,6 @@ interface CommunityInfo { name: string; country: string; }
 
 type ViewTab = "active" | "hall_of_fame" | "geographic";
 
-const RANK_COLORS: Record<number, string> = {
-  1: "linear-gradient(135deg,#f59e0b,#d97706)",
-  2: "linear-gradient(135deg,#9ca3af,#6b7280)",
-  3: "linear-gradient(135deg,#b45309,#92400e)",
-};
 
 export default function LeaderboardPage() {
   const { publicKey } = useWallet();
@@ -70,18 +65,6 @@ export default function LeaderboardPage() {
     { key: "geographic",   label: "Geographic" },
   ];
 
-  function RankBadge({ rank }: { rank: number }) {
-    const bg = RANK_COLORS[rank] ?? "rgba(66,113,189,.12)";
-    const color = rank <= 3 ? "#fff" : "#ffffff";
-    return (
-      <div className="rank-hex" style={{ background: bg }}>
-        <span style={{ color, fontFamily: "'Space Mono',monospace", fontSize: ".75rem", fontWeight: 700 }}>
-          {rank}
-        </span>
-      </div>
-    );
-  }
-
   function Avatar({ name, wallet }: { name: string; wallet: string }) {
     const ch = (name || wallet).charAt(0).toUpperCase();
     return (
@@ -94,76 +77,77 @@ export default function LeaderboardPage() {
   const sharedCardContent = (entry: LbEntry, idx: number) => {
     const tc   = SCORE_TIER_COLOR[entry.tier];
     const tb   = SCORE_TIER_BG[entry.tier];
-    const ti   = SCORE_TIER_ICON[entry.tier];
     const isMe = entry.wallet === myWallet;
     const rank = idx + 1;
     const displayName = entry.username || `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`;
     const shortAddr   = `${entry.wallet.slice(0,6)}…${entry.wallet.slice(-4)}`;
+    const rankClass   = rank === 1 ? " gold" : rank === 2 ? " silver" : rank === 3 ? " bronze" : "";
+    const stripColor  = rank === 1
+      ? "linear-gradient(90deg,#f59e0b,#d97706,transparent)"
+      : rank === 2
+      ? "linear-gradient(90deg,#94a3b8,#64748b,transparent)"
+      : rank === 3
+      ? "linear-gradient(90deg,#cd7f32,#a0522d,transparent)"
+      : `linear-gradient(90deg,${tc},transparent)`;
 
     return (
       <a
         key={entry.wallet}
-        href={`/credentials`}
+        href="/credentials"
         className={`lb-card${isMe ? " is-me" : ""}`}
-        data-rank={rank <= 3 ? rank : undefined}
         style={{ animationDelay: `${idx * 0.05}s` }}
       >
-        {/* Rank badge top-right */}
-        <div className="lb-card-rank">
-          <RankBadge rank={rank} />
-        </div>
+        {/* Tier / rank colored top strip */}
+        <div className="lb-card-strip" style={{ background: stripColor }} />
 
-        {/* Avatar + identity */}
-        <div className="lb-card-header">
-          <Avatar name={entry.username} wallet={entry.wallet} />
-          <div className="lb-card-identity">
-            <div className="lb-card-name">
-              {displayName}
-              {isMe && <span className="you-badge">you</span>}
-              {wldVerified.has(entry.wallet) && (
-                <span title="World ID Verified" style={{ fontSize:".75rem", marginLeft:".25rem", opacity:.85 }}>🌐</span>
-              )}
+        <div className="lb-card-body">
+          {/* Top row: rank pill + avatar + name */}
+          <div className="lb-card-top">
+            <span className={`lb-rank-pill${rankClass}`}>#{rank}</span>
+            <Avatar name={entry.username} wallet={entry.wallet} />
+            <div className="lb-card-identity">
+              <div className="lb-card-name">
+                {displayName}
+                {isMe && <span className="you-badge">you</span>}
+                {wldVerified.has(entry.wallet) && (
+                  <span title="World ID Verified" style={{ fontSize:".68rem", opacity:.7 }}>ID</span>
+                )}
+              </div>
+              {entry.username && <div className="lb-card-addr">{shortAddr}</div>}
             </div>
-            {entry.username && (
-              <div className="lb-card-addr">{shortAddr}</div>
+          </div>
+
+          {/* Score */}
+          <div className="lb-card-score">
+            <div className="lb-score-num">{entry.score.toLocaleString()}</div>
+            <div className="lb-score-lbl">pts</div>
+          </div>
+
+          {/* Tags */}
+          <div className="lb-card-tags">
+            <span className="lb-tag tier-tag" style={{ color: tc, background: tb, borderColor: tc + "30" }}>
+              {entry.tier}
+            </span>
+            {community?.country && <span className="lb-tag">{community.country}</span>}
+            {community?.name   && <span className="lb-tag">{community.name}</span>}
+          </div>
+
+          {/* Stats footer */}
+          <div className="lb-card-stats">
+            <div className="lb-stat">
+              <span className="lb-stat-val">{entry.eventCount}</span>
+              <span className="lb-stat-lbl">Event{entry.eventCount !== 1 ? "s" : ""}</span>
+            </div>
+            {entry.hackathonCount > 0 && (
+              <>
+                <div className="lb-stat-divider" />
+                <div className="lb-stat">
+                  <span className="lb-stat-val" style={{ color: "#c084fc" }}>{entry.hackathonCount}</span>
+                  <span className="lb-stat-lbl">Hackathon{entry.hackathonCount !== 1 ? "s" : ""}</span>
+                </div>
+              </>
             )}
           </div>
-        </div>
-
-        {/* Big score */}
-        <div className="lb-card-score">
-          <div className="lb-score-num">{entry.score.toLocaleString()}</div>
-          <div className="lb-score-lbl">Signal Score</div>
-        </div>
-
-        {/* Tags */}
-        <div className="lb-card-tags">
-          <span className="lb-tag tier-tag" style={{ color: tc, background: tb, borderColor: tc + "50" }}>
-            {ti} {entry.tier}
-          </span>
-          {community?.country && (
-            <span className="lb-tag">{community.country}</span>
-          )}
-          {community?.name && (
-            <span className="lb-tag">{community.name}</span>
-          )}
-        </div>
-
-        {/* Bottom stats bar */}
-        <div className="lb-card-stats">
-          <div className="lb-stat">
-            <span className="lb-stat-val">{entry.eventCount}</span>
-            <span className="lb-stat-lbl">Event{entry.eventCount !== 1 ? "s" : ""}</span>
-          </div>
-          {entry.hackathonCount > 0 && (
-            <>
-              <div className="lb-stat-divider" />
-              <div className="lb-stat">
-                <span className="lb-stat-val" style={{ color: "#c084fc" }}>{entry.hackathonCount}</span>
-                <span className="lb-stat-lbl">Hackathon{entry.hackathonCount !== 1 ? "s" : ""}</span>
-              </div>
-            </>
-          )}
         </div>
       </a>
     );
