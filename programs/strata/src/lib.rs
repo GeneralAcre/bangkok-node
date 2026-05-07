@@ -288,9 +288,13 @@ fn verify_ed25519_ix(data: &[u8], expected_pubkey: &Pubkey, expected_msg: &[u8])
     require!(data.len() >= 18, StrataError::InvalidOrganizerSignature);
     let num_sigs      = u16::from_le_bytes([data[0], data[1]]);
     require!(num_sigs >= 1, StrataError::MissingOrganizerSignature);
-    let pubkey_offset = u16::from_le_bytes([data[8],  data[9]])  as usize;
-    let msg_offset    = u16::from_le_bytes([data[12], data[13]]) as usize;
-    let msg_size      = u16::from_le_bytes([data[14], data[15]]) as usize;
+    // Ed25519 instruction data layout (per Solana spec):
+    // [0]: num_sigs (u8), [1]: padding, then per-sig entry starting at [2]:
+    // [2..4] sig_offset, [4..6] sig_ix_idx, [6..8] pubkey_offset,
+    // [8..10] pubkey_ix_idx, [10..12] msg_offset, [12..14] msg_size, [14..16] msg_ix_idx
+    let pubkey_offset = u16::from_le_bytes([data[6],  data[7]])  as usize;
+    let msg_offset    = u16::from_le_bytes([data[10], data[11]]) as usize;
+    let msg_size      = u16::from_le_bytes([data[12], data[13]]) as usize;
     require!(data.len() >= pubkey_offset + 32,    StrataError::InvalidOrganizerSignature);
     require!(data.len() >= msg_offset + msg_size, StrataError::InvalidOrganizerSignature);
     require!(
