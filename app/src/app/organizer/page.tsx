@@ -212,7 +212,7 @@ export default function OrganizerPage() {
         title,
         location,
         country:          country || "Global",
-        startTime:        Math.floor(startTs),
+        startTime:        Math.floor(Date.now() / 1000) + 10,
         endTime:          Math.floor(endTs),
         capacity:         cap,
         entryFeeLamports: 0,
