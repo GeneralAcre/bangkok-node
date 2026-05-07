@@ -141,6 +141,7 @@ interface EventItem {
   capacity: number;
   eventCode: string;
   eventDate: number;
+  pubkey?: string;
 }
 
 type Filter = "all" | "live" | "upcoming" | "ended";
@@ -261,15 +262,15 @@ export default function EventsPage() {
                 {/* Actions */}
                 <div className="event-actions">
                   {ev.status === "Live" ? (
-                    <a href={`/checkin?code=${ev.eventCode}`} className="btn-checkin">
+                    <a href={ev.pubkey ? `/checkin?event=${ev.pubkey}` : "/events"} className="btn-checkin">
                       Check In ↗
                     </a>
                   ) : ev.status === "Upcoming" ? (
                     <span className="btn-view">Upcoming</span>
                   ) : (
-                    <a href={`/checkin?code=${ev.eventCode}`} className="btn-view">
-                      View
-                    </a>
+                    ev.pubkey
+                      ? <a href={`/checkin?event=${ev.pubkey}`} className="btn-view">View</a>
+                      : <span className="btn-view">Ended</span>
                   )}
                 </div>
               </div>

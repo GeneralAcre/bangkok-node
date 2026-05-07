@@ -219,20 +219,38 @@ function CheckInContent() {
     } finally { setChecking(false); }
   }
 
+  async function signCheckinUrl(): Promise<string | null> {
+    if (!wallet.signMessage || !publicKey || !eventInfo) return null;
+    const expiry   = eventInfo.endTime;
+    const message  = new TextEncoder().encode(`signal_checkin:${eventInfo.eventCode}:${expiry}`);
+    const sigBytes = await wallet.signMessage(message);
+    const sigHex   = Buffer.from(sigBytes).toString("hex");
+    return `${window.location.origin}/checkin?event=${eventPubkeyStr}&sig=${sigHex}&exp=${expiry}`;
+  }
+
   async function handleGenerateQR() {
     if (!wallet.signMessage || !publicKey || !eventInfo) return;
     setGeneratingQr(true);
     try {
-      const expiry  = eventInfo.endTime;
-      const message = new TextEncoder().encode(`signal_checkin:${eventInfo.eventCode}:${expiry}`);
-      const sigBytes = await wallet.signMessage(message);
-      const sigHex  = Buffer.from(sigBytes).toString("hex");
-      const url = `${window.location.origin}/checkin?event=${eventPubkeyStr}&sig=${sigHex}&exp=${expiry}`;
-      setQrUrl(url);
-      setShowQr(true);
+      const url = await signCheckinUrl();
+      if (url) { setQrUrl(url); setShowQr(true); }
     } catch (e: any) {
       const m = e?.message ?? "";
       if (!m.includes("rejected") && !m.includes("cancelled")) setError(m || "Failed to generate QR");
+    } finally {
+      setGeneratingQr(false);
+    }
+  }
+
+  async function handleSelfCheckIn() {
+    if (!wallet.signMessage || !publicKey || !eventInfo) return;
+    setGeneratingQr(true);
+    try {
+      const url = await signCheckinUrl();
+      if (url) window.location.href = url;
+    } catch (e: any) {
+      const m = e?.message ?? "";
+      if (!m.includes("rejected") && !m.includes("cancelled")) setError(m || "Failed to sign — try again");
     } finally {
       setGeneratingQr(false);
     }
@@ -316,24 +334,36 @@ function CheckInContent() {
     )}
 
     <div className="checkin-card">
-      {/* Organizer QR section */}
+      {/* Organizer panel */}
       {isOrganizer && !sig && (
         <div style={{ background:"rgba(255,255,255,.05)", border:"1px solid rgba(255,255,255,.12)", borderRadius:12, padding:"1rem 1.25rem", marginBottom:"1.25rem", textAlign:"center" }}>
-          <div style={{ fontSize:".72rem", color:"#9ca3af", letterSpacing:".08em", textTransform:"uppercase", marginBottom:".6rem" }}>You are the organizer</div>
+          <div style={{ fontSize:".72rem", color:"#9ca3af", letterSpacing:".08em", textTransform:"uppercase", marginBottom:".75rem" }}>You are the organizer</div>
           {qrUrl ? (
             <div style={{ display:"flex", gap:".6rem", justifyContent:"center", flexWrap:"wrap" }}>
-              <button onClick={() => setShowQr(true)} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer" }}>
-                Show QR Code
+              <button onClick={() => setShowQr(true)} style={{ padding:".55rem 1.4rem", background:"rgba(255,255,255,.1)", color:"#fff", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, fontWeight:700, fontSize:".82rem", cursor:"pointer" }}>
+                Show QR for Attendees
               </button>
-              <a href={qrUrl} style={{ padding:".55rem 1.4rem", background:"transparent", color:"#fff", border:"1px solid rgba(255,255,255,.3)", borderRadius:8, fontWeight:700, fontSize:".82rem", cursor:"pointer", textDecoration:"none" }}>
+              <a href={qrUrl} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer", textDecoration:"none" }}>
                 Check In Myself →
               </a>
             </div>
           ) : (
-            <button onClick={handleGenerateQR} disabled={generatingQr} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer", opacity: generatingQr ? .6 : 1 }}>
-              {generatingQr ? "Signing…" : "Generate QR for Attendees"}
-            </button>
+            <div style={{ display:"flex", gap:".6rem", justifyContent:"center", flexWrap:"wrap" }}>
+              <button onClick={handleGenerateQR} disabled={generatingQr} style={{ padding:".55rem 1.4rem", background:"rgba(255,255,255,.1)", color:"#fff", border:"1px solid rgba(255,255,255,.25)", borderRadius:8, fontWeight:700, fontSize:".82rem", cursor:"pointer", opacity: generatingQr ? .6 : 1 }}>
+                {generatingQr ? "Signing…" : "Generate QR for Attendees"}
+              </button>
+              <button onClick={handleSelfCheckIn} disabled={generatingQr} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer", opacity: generatingQr ? .6 : 1 }}>
+                {generatingQr ? "Signing…" : "Check In Myself →"}
+              </button>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* No-sig warning for regular attendees */}
+      {!isOrganizer && !sig && connected && (
+        <div style={{ background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.1)", borderRadius:10, padding:".85rem 1.1rem", marginBottom:"1rem", fontSize:".82rem", color:"#9ca3af", lineHeight:1.7, textAlign:"center" }}>
+          Scan the QR code from the event organizer to check in.
         </div>
       )}
 
@@ -413,7 +443,7 @@ function CheckInContent() {
       )}
 
       {/* Step 3 (or Step 2 if no WLD) — Check In */}
-      {showCheckinForm && canCheckIn && (
+      {showCheckinForm && canCheckIn && !!sig && (
         <>
           <button className="btn-checkin" onClick={handleCheckIn} disabled={checking}>
             {checking
