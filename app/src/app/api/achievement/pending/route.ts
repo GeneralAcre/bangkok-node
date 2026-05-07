@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { claims } from "../store";
+import { getAllClaims } from "../store";
 
 const ADMIN_KEY = process.env.SIGNAL_ADMIN_KEY;
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("x-admin-key");
-  // If SIGNAL_ADMIN_KEY is configured, enforce it; otherwise open (demo mode)
   if (ADMIN_KEY && auth !== ADMIN_KEY) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const wallet = req.nextUrl.searchParams.get("wallet");
-  const status = req.nextUrl.searchParams.get("status"); // pending | approved | all
+  const status = req.nextUrl.searchParams.get("status");
 
-  const result = Array.from(claims.values()).filter(c => {
+  const all = await getAllClaims();
+  const result = all.filter(c => {
     if (wallet && c.wallet !== wallet) return false;
     if (status === "pending") return c.status === "pending";
     if (status === "approved") return c.status === "approved";

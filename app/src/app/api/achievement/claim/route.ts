@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { claims, AchievementClaim } from "../store";
+import { getAllClaims, setClaim, AchievementClaim } from "../store";
 import { createHash } from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "wallet, hackathonName, projectUrl, rank are required" }, { status: 400 });
   }
 
-  // Deduplicate: one pending claim per wallet+hackathon
-  for (const c of Array.from(claims.values())) {
+  const existing = await getAllClaims();
+  for (const c of existing) {
     if (c.wallet === wallet && c.hackathonName === hackathonName && c.status === "pending") {
       return NextResponse.json({ error: "You already have a pending claim for this hackathon" }, { status: 409 });
     }
@@ -34,17 +34,13 @@ export async function POST(req: NextRequest) {
     .slice(0, 16);
 
   const claim: AchievementClaim = {
-    id,
-    wallet,
-    hackathonName,
-    projectUrl,
-    rank,
+    id, wallet, hackathonName, projectUrl, rank,
     description: body.description ?? "",
     submittedAt: Math.floor(Date.now() / 1000),
     status: "pending",
   };
 
-  claims.set(id, claim);
+  await setClaim(claim);
 
   return NextResponse.json({ success: true, claimId: id, message: "Claim submitted. Signal admin will review and mint your Achievement NFT." });
 }

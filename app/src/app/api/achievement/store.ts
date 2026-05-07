@@ -1,6 +1,3 @@
-import fs from "fs";
-import path from "path";
-
 export interface AchievementClaim {
   id:             string;
   wallet:         string;
@@ -15,59 +12,61 @@ export interface AchievementClaim {
   points?:        number;
 }
 
-const DATA_DIR  = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "claims.json");
+// ── KV helpers (Vercel KV in prod, in-memory fallback for local dev) ──────────
 
-function load(): Map<string, AchievementClaim> {
+let kv: typeof import("@vercel/kv").kv | null = null;
+
+async function getKV() {
+  if (kv) return kv;
   try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(DATA_FILE)) return new Map();
-    const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    const arr: AchievementClaim[] = JSON.parse(raw);
-    return new Map(arr.map(c => [c.id, c]));
-  } catch {
-    return new Map();
-  }
+    // Only available when KV_REST_API_URL env var is set (Vercel KV connected)
+    if (process.env.KV_REST_API_URL) {
+      const mod = await import("@vercel/kv");
+      kv = mod.kv;
+      return kv;
+    }
+  } catch { /* not installed or not configured */ }
+  return null;
 }
 
-function save(map: Map<string, AchievementClaim>) {
-  try {
-    if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(DATA_FILE, JSON.stringify(Array.from(map.values()), null, 2), "utf-8");
-  } catch (e) {
-    console.error("Failed to save claims:", e);
+const KV_KEY = "achievement_claims";
+
+// In-memory fallback for local dev
+const memStore = new Map<string, AchievementClaim>();
+
+// ── Public API ────────────────────────────────────────────────────────────────
+
+export async function getClaim(id: string): Promise<AchievementClaim | null> {
+  const store = await getKV();
+  if (store) {
+    const all = await store.hget<Record<string, AchievementClaim>>(KV_KEY, id);
+    return all ?? null;
   }
+  return memStore.get(id) ?? null;
 }
 
-// Proxy so callers use claims.get/set/values just like before,
-// but every mutation is persisted to disk.
-export const claims = new Proxy(load(), {
-  get(target, prop) {
-    if (prop === "set") {
-      return (key: string, value: AchievementClaim) => {
-        target.set(key, value);
-        save(target);
-        return target;
-      };
-    }
-    if (prop === "delete") {
-      return (key: string) => {
-        const r = target.delete(key);
-        save(target);
-        return r;
-      };
-    }
-    // Reload from disk on every read so different serverless instances see fresh data
-    if (prop === "values" || prop === "get" || prop === "has" || prop === "size") {
-      const fresh = load();
-      // sync target in-place
-      target.clear();
-      fresh.forEach((v, k) => target.set(k, v));
-    }
-    const val = (target as any)[prop];
-    return typeof val === "function" ? val.bind(target) : val;
-  },
-});
+export async function setClaim(claim: AchievementClaim): Promise<void> {
+  const store = await getKV();
+  if (store) {
+    await store.hset(KV_KEY, { [claim.id]: claim });
+    return;
+  }
+  memStore.set(claim.id, claim);
+}
+
+export async function getAllClaims(): Promise<AchievementClaim[]> {
+  const store = await getKV();
+  if (store) {
+    const hash = await store.hgetall<Record<string, AchievementClaim>>(KV_KEY);
+    if (!hash) return [];
+    return Object.values(hash);
+  }
+  return Array.from(memStore.values());
+}
+
+// ── Legacy synchronous shim — used by leaderboard route ──────────────────────
+// Returns the in-memory map (may be stale on Vercel; leaderboard rehydrates separately)
+export const claims = memStore;
 
 export function pointsForRank(rank: string): number {
   const r = rank.toLowerCase();
