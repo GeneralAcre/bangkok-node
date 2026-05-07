@@ -246,182 +246,227 @@ export default function CredentialsPage() {
     if (!cred) return;
     await document.fonts.ready;
 
-    const W = 900, H = 520;
+    const W = 900, H = 560;
     const canvas = document.createElement("canvas");
     canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d")!;
 
     const tierColor = tier.color;
 
-    // ── Background ──────────────────────────────────────────────────────────
-    ctx.fillStyle = "#0d0d12";
-    ctx.beginPath(); ctx.roundRect(0, 0, W, H, 20); ctx.fill();
+    const tc = tier.color;
+    const lw = 290, bh = 56;
 
-    // Subtle dot grid
-    ctx.fillStyle = "rgba(255,255,255,0.025)";
-    for (let x = 30; x < W; x += 36)
-      for (let y = 30; y < H; y += 36) {
-        ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fill();
+    // ── Clip card to rounded rect ────────────────────────────────────────────
+    ctx.save();
+    ctx.beginPath(); (ctx as any).roundRect(0, 0, W, H, 24); ctx.clip();
+
+    // Base background
+    ctx.fillStyle = "#07070f";
+    ctx.fillRect(0, 0, W, H);
+
+    // Ambient left glow (tier color)
+    const ambL = ctx.createRadialGradient(lw * 0.5, H * 0.45, 0, lw * 0.5, H * 0.45, 340);
+    ambL.addColorStop(0, tc + "28"); ambL.addColorStop(1, "transparent");
+    ctx.fillStyle = ambL; ctx.fillRect(0, 0, W, H);
+
+    // Ambient right glow (subtle)
+    const ambR = ctx.createRadialGradient(W * 0.72, H * 0.3, 0, W * 0.72, H * 0.3, 260);
+    ambR.addColorStop(0, tc + "10"); ambR.addColorStop(1, "transparent");
+    ctx.fillStyle = ambR; ctx.fillRect(0, 0, W, H);
+
+    // Dot grid (right panel only)
+    ctx.fillStyle = "rgba(255,255,255,0.022)";
+    for (let x = lw + 20; x < W; x += 30)
+      for (let y = 20; y < H - bh; y += 30) {
+        ctx.beginPath(); ctx.arc(x, y, 0.9, 0, Math.PI * 2); ctx.fill();
       }
 
-    // Left panel background
-    const lw = 260;
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
-    ctx.beginPath(); ctx.roundRect(0, 0, lw, H, [20, 0, 0, 20]); ctx.fill();
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(lw, 0); ctx.lineTo(lw, H); ctx.stroke();
+    // ── Left panel ───────────────────────────────────────────────────────────
+    const lpGrad = ctx.createLinearGradient(0, 0, lw, H);
+    lpGrad.addColorStop(0, tc + "30"); lpGrad.addColorStop(0.7, tc + "0d"); lpGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = lpGrad; ctx.fillRect(0, 0, lw, H - bh);
 
-    // Tier colour top strip
-    const strip = ctx.createLinearGradient(0, 0, W * 0.6, 0);
-    strip.addColorStop(0, tierColor);
-    strip.addColorStop(1, "transparent");
-    ctx.fillStyle = strip;
-    ctx.beginPath(); ctx.roundRect(0, 0, W, 4, [20, 20, 0, 0]); ctx.fill();
+    // Left panel right border glow
+    const lpBorder = ctx.createLinearGradient(0, 0, 0, H);
+    lpBorder.addColorStop(0, "transparent"); lpBorder.addColorStop(0.3, tc + "55");
+    lpBorder.addColorStop(0.7, tc + "55"); lpBorder.addColorStop(1, "transparent");
+    ctx.strokeStyle = lpBorder; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(lw, 0); ctx.lineTo(lw, H - bh); ctx.stroke();
 
-    // ── Left panel — branding ───────────────────────────────────────────────
+    // SIGNAL wordmark
     ctx.fillStyle = "#ffffff";
-    ctx.font = "900 28px 'Orbitron', monospace";
-    ctx.letterSpacing = "2px";
+    ctx.font = "900 30px 'Orbitron', monospace";
+    (ctx as any).letterSpacing = "3px";
     ctx.fillText("SIGNAL", 28, 58);
-    ctx.font = "600 11px 'Orbitron', monospace";
-    ctx.fillStyle = "rgba(255,255,255,0.35)";
-    ctx.fillText("PROTOCOL", 28, 75);
+    (ctx as any).letterSpacing = "5px";
+    ctx.font = "600 9.5px 'Orbitron', monospace";
+    ctx.fillStyle = tc + "cc";
+    ctx.fillText("PROTOCOL", 30, 75);
+    (ctx as any).letterSpacing = "0px";
 
-    // Avatar box
-    const av = { x: 54, y: 105, s: 80 };
-    ctx.fillStyle = "rgba(255,255,255,0.07)";
-    ctx.strokeStyle = tierColor + "99";
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.roundRect(av.x, av.y, av.s, av.s, 14); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "800 36px 'Epilogue', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(tier.name.charAt(0), av.x + av.s / 2, av.y + av.s / 2 + 13);
-    ctx.textAlign = "left";
+    // Decorative line under wordmark
+    const wlGrad = ctx.createLinearGradient(28, 0, 230, 0);
+    wlGrad.addColorStop(0, tc); wlGrad.addColorStop(1, "transparent");
+    ctx.strokeStyle = wlGrad; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(28, 84); ctx.lineTo(230, 84); ctx.stroke();
+
+    // Circular avatar with outer glow
+    const avCx = lw / 2, avCy = 198, avR = 56;
+    const avGlow = ctx.createRadialGradient(avCx, avCy, avR, avCx, avCy, avR + 28);
+    avGlow.addColorStop(0, tc + "44"); avGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = avGlow; ctx.beginPath(); ctx.arc(avCx, avCy, avR + 28, 0, Math.PI * 2); ctx.fill();
+
+    // Avatar fill
+    const avFill = ctx.createRadialGradient(avCx - 18, avCy - 18, 0, avCx, avCy, avR);
+    avFill.addColorStop(0, "#1c1c30"); avFill.addColorStop(1, "#0c0c1a");
+    ctx.fillStyle = avFill; ctx.beginPath(); ctx.arc(avCx, avCy, avR, 0, Math.PI * 2); ctx.fill();
+
+    // Avatar ring (tier color)
+    ctx.strokeStyle = tc; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(avCx, avCy, avR, 0, Math.PI * 2); ctx.stroke();
+
+    // Avatar ring outer (subtle)
+    ctx.strokeStyle = tc + "30"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(avCx, avCy, avR + 6, 0, Math.PI * 2); ctx.stroke();
+
+    // Avatar letter
+    ctx.shadowColor = tc; ctx.shadowBlur = 12;
+    ctx.fillStyle = "#ffffff"; ctx.font = "900 40px 'Epilogue', sans-serif";
+    ctx.textAlign = "center"; ctx.fillText(tier.name.charAt(0), avCx, avCy + 15);
+    ctx.shadowBlur = 0; ctx.textAlign = "left";
 
     // Wallet address
     const shortWallet = `${walletAddr.slice(0, 8)}…${walletAddr.slice(-6)}`;
-    ctx.fillStyle = "rgba(255,255,255,0.55)";
-    ctx.font = "400 9.5px 'Space Mono', monospace";
-    ctx.fillText(shortWallet, 18, 212);
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.font = "400 9px 'Space Mono', monospace";
+    ctx.textAlign = "center"; ctx.fillText(shortWallet, lw / 2, 278); ctx.textAlign = "left";
 
     // Tier pill
-    ctx.fillStyle = tierColor + "22";
-    ctx.strokeStyle = tierColor + "66";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.roundRect(18, 222, 100, 22, 6); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = tierColor;
-    ctx.font = "700 10px 'Orbitron', monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(tier.name.toUpperCase(), 68, 237);
-    ctx.textAlign = "left";
+    const pillW = 112, pillX = (lw - pillW) / 2, pillY = 291;
+    ctx.fillStyle = tc + "1a"; ctx.strokeStyle = tc + "70"; ctx.lineWidth = 1;
+    ctx.beginPath(); (ctx as any).roundRect(pillX, pillY, pillW, 24, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = tc;
+    ctx.font = "700 9.5px 'Orbitron', monospace"; (ctx as any).letterSpacing = "2px";
+    ctx.textAlign = "center"; ctx.fillText(tier.name.toUpperCase(), lw / 2, pillY + 16);
+    ctx.textAlign = "left"; (ctx as any).letterSpacing = "0px";
 
-    // ── Right panel ─────────────────────────────────────────────────────────
-    const rx = lw + 32;
+    // ── Right panel ──────────────────────────────────────────────────────────
+    const rx = lw + 38;
 
-    // "BUILDER PASSPORT" label
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
-    ctx.font = "700 9px 'Orbitron', monospace";
-    ctx.letterSpacing = "3px";
-    ctx.fillText("BUILDER PASSPORT", rx, 34);
-    ctx.letterSpacing = "0px";
+    // "BUILDER PASSPORT" eyebrow
+    ctx.fillStyle = "rgba(255,255,255,0.2)";
+    ctx.font = "700 8px 'Orbitron', monospace"; (ctx as any).letterSpacing = "5px";
+    ctx.fillText("BUILDER PASSPORT", rx, 36); (ctx as any).letterSpacing = "0px";
+    ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(rx, 44); ctx.lineTo(W - 28, 44); ctx.stroke();
 
-    // Divider
-    ctx.strokeStyle = "rgba(255,255,255,0.07)";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(rx, 42); ctx.lineTo(W - 24, 42); ctx.stroke();
-
-    // Big score
+    // Score glow shadow
+    ctx.shadowColor = tc; ctx.shadowBlur = 28;
     ctx.fillStyle = "#ffffff";
-    ctx.font = "900 72px 'Orbitron', monospace";
-    ctx.fillText(cred.score.toLocaleString(), rx, 126);
+    ctx.font = "900 88px 'Orbitron', monospace";
+    ctx.fillText(cred.score.toLocaleString(), rx, 150);
+    ctx.shadowBlur = 0;
 
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "700 10px 'Orbitron', monospace";
-    ctx.letterSpacing = "3px";
-    ctx.fillText("SIGNAL SCORE", rx, 148);
-    ctx.letterSpacing = "0px";
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    ctx.font = "700 8.5px 'Orbitron', monospace"; (ctx as any).letterSpacing = "4px";
+    ctx.fillText("SIGNAL SCORE", rx, 170); (ctx as any).letterSpacing = "0px";
 
-    // Stats row
+    // Score underline (tier fade)
+    const suGrad = ctx.createLinearGradient(rx, 0, rx + 280, 0);
+    suGrad.addColorStop(0, tc); suGrad.addColorStop(1, "transparent");
+    ctx.strokeStyle = suGrad; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(rx, 178); ctx.lineTo(rx + 280, 178); ctx.stroke();
+
+    // Stat cards
     const stats = [
       { label: "EVENTS", val: String(cred.eventsAttended) },
       { label: "RANK",   val: rank !== null ? `#${rank}` : "—" },
       { label: "LEVEL",  val: `LV ${cred.tierIndex + 1}` },
     ];
+    const cW = 148, cH = 76, cGap = 12, cY = 196;
     stats.forEach((s, i) => {
-      const sx = rx + i * 140;
-      const sy = 185;
+      const sx = rx + i * (cW + cGap);
       ctx.fillStyle = "rgba(255,255,255,0.04)";
-      ctx.strokeStyle = "rgba(255,255,255,0.08)";
-      ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.roundRect(sx, sy, 120, 60, 10); ctx.fill(); ctx.stroke();
+      ctx.strokeStyle = "rgba(255,255,255,0.07)"; ctx.lineWidth = 1;
+      ctx.beginPath(); (ctx as any).roundRect(sx, cY, cW, cH, 12); ctx.fill(); ctx.stroke();
+      // Top accent bar
+      const acGrad = ctx.createLinearGradient(sx, 0, sx + cW * 0.6, 0);
+      acGrad.addColorStop(0, tc + "bb"); acGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = acGrad;
+      ctx.beginPath(); (ctx as any).roundRect(sx + 1, cY + 1, cW - 2, 2, [11, 11, 0, 0]); ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "800 22px 'Orbitron', monospace";
-      ctx.fillText(s.val, sx + 12, sy + 35);
-      ctx.fillStyle = "rgba(255,255,255,0.3)";
-      ctx.font = "600 8px 'Orbitron', monospace";
-      ctx.letterSpacing = "2px";
-      ctx.fillText(s.label, sx + 12, sy + 50);
-      ctx.letterSpacing = "0px";
+      ctx.font = "900 28px 'Orbitron', monospace";
+      ctx.fillText(s.val, sx + 14, cY + 44);
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.font = "600 7px 'Orbitron', monospace"; (ctx as any).letterSpacing = "2px";
+      ctx.fillText(s.label, sx + 14, cY + 60); (ctx as any).letterSpacing = "0px";
     });
 
-    // Earned badges
+    // Badges section
+    const bSectY = 284;
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    ctx.font = "600 7.5px 'Orbitron', monospace"; (ctx as any).letterSpacing = "3px";
+    ctx.fillText("EARNED BADGES", rx, bSectY); (ctx as any).letterSpacing = "0px";
+
     const earnedBadges = NFT_BADGES.filter(b => cred.eventsAttended >= b.minEvents);
-    const badgeSize = 52;
-    let bx = rx;
-    const badgeY = 270;
-
-    ctx.fillStyle = "rgba(255,255,255,0.25)";
-    ctx.font = "600 8px 'Orbitron', monospace";
-    ctx.letterSpacing = "2px";
-    ctx.fillText("EARNED BADGES", rx, badgeY - 8);
-    ctx.letterSpacing = "0px";
-
-    const badgeImgPromises = earnedBadges.map(b => {
-      return new Promise<{ img: HTMLImageElement; badge: typeof b }>((res, rej) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => res({ img, badge: b });
-        img.onerror = () => rej();
-        img.src = b.img;
-      });
-    });
-
+    const bGap = 14;
+    const panelW = W - 28 - rx; // available right-panel width
+    const bCount = earnedBadges.length || 1;
+    const bs = Math.min(130, Math.floor((panelW - (bCount - 1) * bGap) / bCount));
+    const badgeImgPromises = earnedBadges.map(b =>
+      new Promise<{ img: HTMLImageElement; badge: typeof b }>((res, rej) => {
+        const img = new Image(); img.crossOrigin = "anonymous";
+        img.onload = () => res({ img, badge: b }); img.onerror = () => rej(); img.src = b.img;
+      })
+    );
     const loaded = await Promise.allSettled(badgeImgPromises);
     loaded.forEach((r, i) => {
-      if (r.status === "fulfilled") {
-        const bxPos = bx + i * (badgeSize + 10);
-        ctx.drawImage(r.value.img, bxPos, badgeY, badgeSize, badgeSize);
-      }
+      if (r.status !== "fulfilled") return;
+      const bx = rx + i * (bs + bGap), by = bSectY + 12;
+      // Badge glow
+      const bgGlow = ctx.createRadialGradient(bx + bs / 2, by + bs / 2, 0, bx + bs / 2, by + bs / 2, bs * 0.85);
+      bgGlow.addColorStop(0, tc + "38"); bgGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = bgGlow; ctx.fillRect(bx - 14, by - 14, bs + 28, bs + 28);
+      // Badge image clipped
+      ctx.save();
+      ctx.beginPath(); (ctx as any).roundRect(bx, by, bs, bs, 14); ctx.clip();
+      ctx.drawImage(r.value.img, bx, by, bs, bs);
+      ctx.restore();
+      // Badge border
+      ctx.strokeStyle = tc + "80"; ctx.lineWidth = 2;
+      ctx.beginPath(); (ctx as any).roundRect(bx, by, bs, bs, 14); ctx.stroke();
+      // Badge label below
+      ctx.fillStyle = "rgba(255,255,255,0.4)";
+      ctx.font = "500 8px 'Space Mono', monospace"; (ctx as any).letterSpacing = "0px";
+      ctx.textAlign = "center";
+      ctx.fillText(r.value.badge.label, bx + bs / 2, by + bs + 16);
+      ctx.textAlign = "left";
     });
 
     if (earnedBadges.length === 0) {
-      ctx.fillStyle = "rgba(255,255,255,0.18)";
-      ctx.font = "400 11px 'DM Sans', sans-serif";
-      ctx.fillText("No badges yet — check in to earn your first!", rx, badgeY + 30);
+      ctx.fillStyle = "rgba(255,255,255,0.15)";
+      ctx.font = "400 10px 'DM Sans', sans-serif";
+      ctx.fillText("No badges yet — check in to earn your first!", rx, bSectY + 60);
     }
 
-    // ── Bottom strip ─────────────────────────────────────────────────────────
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    ctx.fillRect(0, H - 46, W, 46);
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(0, H - 46); ctx.lineTo(W, H - 46); ctx.stroke();
+    // ── Bottom MRZ strip ─────────────────────────────────────────────────────
+    ctx.fillStyle = "rgba(255,255,255,0.03)"; ctx.fillRect(0, H - bh, W, bh);
+    ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H - bh); ctx.lineTo(W, H - bh); ctx.stroke();
 
-    // MRZ-style wallet
-    ctx.fillStyle = "rgba(255,255,255,0.18)";
-    ctx.font = "400 9px 'Space Mono', monospace";
-    ctx.fillText(`P<SIGNAL<${walletAddr.slice(0,20).toUpperCase()}<<${walletAddr.slice(-20).toUpperCase()}`, 24, H - 26);
+    const mrzLine1 = `P<SIGNAL<${walletAddr.slice(0, 22).toUpperCase()}<<${walletAddr.slice(-10).toUpperCase()}`.slice(0, 64);
+    const mrzLine2 = walletAddr.toUpperCase().replace(/[^A-Z0-9]/g, "").padEnd(44, "<").slice(0, 44);
+    ctx.fillStyle = "rgba(255,255,255,0.13)"; ctx.font = "400 8px 'Space Mono', monospace";
+    ctx.fillText(mrzLine1, 24, H - bh + 18);
+    ctx.fillText(mrzLine2, 24, H - bh + 32);
 
-    // "Built on Solana" right
-    ctx.fillStyle = "rgba(255,255,255,0.3)";
-    ctx.font = "600 9px 'Orbitron', monospace";
-    ctx.letterSpacing = "1px";
-    ctx.textAlign = "right";
-    ctx.fillText("BUILT ON SOLANA · DEVNET", W - 24, H - 26);
-    ctx.textAlign = "left";
-    ctx.letterSpacing = "0px";
+    // Built on Solana
+    ctx.fillStyle = "rgba(255,255,255,0.28)";
+    ctx.font = "600 8px 'Orbitron', monospace"; (ctx as any).letterSpacing = "1.5px";
+    ctx.textAlign = "right"; ctx.fillText("BUILT ON SOLANA  ·  DEVNET", W - 24, H - bh + 25);
+    ctx.textAlign = "left"; (ctx as any).letterSpacing = "0px";
+
+    ctx.restore(); // end card clip
 
     const dataUrl = canvas.toDataURL("image/png");
     setPassportImg(dataUrl);
