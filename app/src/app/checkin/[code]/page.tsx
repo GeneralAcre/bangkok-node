@@ -244,7 +244,7 @@ function CheckInContent() {
             <br /><br />
             Go to your profile to <strong style={{ color: "var(--purple)" }}>Claim your NFT</strong>.
           </p>
-          <a href="/profile" className="btn-profile">✦ Claim My NFT →</a>
+          <a href="/credentials" className="btn-profile">✦ Claim My NFT →</a>
           {success.sig && success.sig !== "already-confirmed" && (
             <div className="tx-link">
               Tx: <a href={`https://explorer.solana.com/tx/${success.sig}?cluster=devnet`} target="_blank" rel="noreferrer">{success.sig.slice(0, 20)}…</a>

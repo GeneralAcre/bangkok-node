@@ -61,7 +61,7 @@ export default function LeaderboardPage() {
   function handleWalletSearch(e: React.FormEvent) {
     e.preventDefault();
     const addr = walletSearch.trim();
-    if (addr) window.location.href = `/profile/${addr}`;
+    if (addr) window.location.href = `/credentials`;
   }
 
   const TABS: { key: ViewTab; label: string }[] = [
@@ -103,7 +103,7 @@ export default function LeaderboardPage() {
     return (
       <a
         key={entry.wallet}
-        href={`/profile/${entry.wallet}`}
+        href={`/credentials`}
         className={`lb-card${isMe ? " is-me" : ""}`}
         data-rank={rank <= 3 ? rank : undefined}
         style={{ animationDelay: `${idx * 0.05}s` }}
@@ -266,7 +266,7 @@ export default function LeaderboardPage() {
                   return (
                     <a
                       key={entry.wallet}
-                      href={`/profile/${entry.wallet}`}
+                      href={`/credentials`}
                       className={`hof-card${isMe ? " is-me" : ""}`}
                       style={{ animationDelay: `${idx * 0.06}s` }}
                     >

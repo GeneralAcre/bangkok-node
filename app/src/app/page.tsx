@@ -100,7 +100,7 @@ export default function HomePage() {
   function handleWalletSearch(e: React.FormEvent) {
     e.preventDefault();
     const addr = walletSearch.trim();
-    if (addr) window.location.href = `/profile/${addr}`;
+    if (addr) window.location.href = `/credentials`;
   }
 
   return (
