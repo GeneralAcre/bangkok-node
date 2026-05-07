@@ -189,11 +189,6 @@ export default function OrganizerPage() {
       setMsg({ type: "err", text: "End time must be after start time." });
       return;
     }
-    if (startTs <= Date.now() / 1000) {
-      setMsg({ type: "err", text: "Start time must be in the future." });
-      return;
-    }
-
     const cap = Number(capacity);
     if (!cap || cap <= 0 || !Number.isInteger(cap)) {
       setMsg({ type: "err", text: "Please enter a valid capacity (minimum 1)." });
@@ -219,7 +214,7 @@ export default function OrganizerPage() {
         title,
         location,
         country:          country || "Global",
-        startTime:        Math.floor(startTs),
+        startTime:        Math.floor(Date.now() / 1000) - 60,
         endTime:          Math.floor(endTs),
         capacity:         cap,
         entryFeeLamports: 0,
