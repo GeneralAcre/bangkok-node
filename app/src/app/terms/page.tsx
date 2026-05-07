@@ -119,16 +119,20 @@ const CSS = `
   @media (max-width: 600px) { .badge-grid { grid-template-columns: repeat(3, 1fr); } }
   .badge-card {
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-    border-radius: 12px; padding: .85rem .65rem; text-align: center;
+    border-radius: 12px; padding: .75rem .5rem; text-align: center;
     transition: border-color .2s;
   }
   .badge-card:hover { border-color: rgba(255,255,255,.2); }
+  .badge-img {
+    width: 100%; aspect-ratio: 1; object-fit: contain; display: block;
+    margin-bottom: .45rem; border-radius: 8px;
+  }
   .badge-lv {
-    font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900;
-    color: #ffffff; margin-bottom: .25rem;
+    font-family: 'Orbitron', sans-serif; font-size: .72rem; font-weight: 900;
+    color: #ffffff; margin-bottom: .2rem;
   }
   .badge-req {
-    font-size: .65rem; color: #555; font-family: 'Space Mono', monospace;
+    font-size: .6rem; color: #555; font-family: 'Space Mono', monospace;
     line-height: 1.4;
   }
 
@@ -166,11 +170,11 @@ const TIERS = [
 ];
 
 const NFT_BADGES = [
-  { lv: "LV1", events: "1+",  label: "First Presence" },
-  { lv: "LV2", events: "3+",  label: "Regular" },
-  { lv: "LV3", events: "5+",  label: "Committed" },
-  { lv: "LV4", events: "10+", label: "Veteran" },
-  { lv: "LV5", events: "20+", label: "Legend" },
+  { lv: "LV1", events: "1+",  label: "First Presence", img: "/nft-badge/nft-signal-lv1.png" },
+  { lv: "LV2", events: "3+",  label: "Regular",        img: "/nft-badge/nft-signal-lv2.png" },
+  { lv: "LV3", events: "5+",  label: "Committed",      img: "/nft-badge/nft-signal-lv3.png" },
+  { lv: "LV4", events: "10+", label: "Veteran",        img: "/nft-badge/nft-signal-lv4.png" },
+  { lv: "LV5", events: "20+", label: "Legend",         img: "/nft-badge/nft-signal-lv5.png" },
 ];
 
 export default function TermsPage() {
@@ -358,6 +362,7 @@ export default function TermsPage() {
           <div className="badge-grid">
             {NFT_BADGES.map(b => (
               <div className="badge-card" key={b.lv}>
+                <img src={b.img} alt={b.label} className="badge-img" />
                 <div className="badge-lv">{b.lv}</div>
                 <div className="badge-req">{b.events} events<br />{b.label}</div>
               </div>
