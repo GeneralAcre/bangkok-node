@@ -98,6 +98,8 @@ export default function CredentialsPage() {
 
   const [selectedBadge, setSelectedBadge] = useState<typeof NFT_BADGES[0] | null>(null);
   const [badgeEarned,   setBadgeEarned]   = useState(false);
+  const [passportImg,   setPassportImg]   = useState<string | null>(null);
+  const [passportOpen,  setPassportOpen]  = useState(false);
 
   const [claimOpen,    setClaimOpen]    = useState(false);
   const [claimForm,    setClaimForm]    = useState<ClaimForm>({ hackathonName: "", projectUrl: "", rank: "", description: "" });
@@ -240,22 +242,207 @@ export default function CredentialsPage() {
   const tier = cred ? (TIERS[cred.tierIndex] ?? TIERS[0]) : TIERS[0];
   const prog = cred ? tierProgress(cred.score, cred.tierIndex) : { pct: 0, next: "Seeker", needed: 100 };
 
-  function handleShare() {
+  async function handleShare() {
     if (!cred) return;
-    const url = typeof window !== "undefined" ? window.location.href : "https://signal.app";
-    const text = [
-      `My Signal Builder Passport`,
-      ``,
-      `Score: ${cred.score.toLocaleString()} pts`,
-      `Tier: ${cred.tier}`,
-      `Events attended: ${cred.eventsAttended}`,
-      ``,
-      `On-chain identity on Solana.`,
-    ].join("\n");
+    await document.fonts.ready;
+
+    const W = 900, H = 520;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d")!;
+
+    const tierColor = tier.color;
+
+    // ── Background ──────────────────────────────────────────────────────────
+    ctx.fillStyle = "#0d0d12";
+    ctx.beginPath(); ctx.roundRect(0, 0, W, H, 20); ctx.fill();
+
+    // Subtle dot grid
+    ctx.fillStyle = "rgba(255,255,255,0.025)";
+    for (let x = 30; x < W; x += 36)
+      for (let y = 30; y < H; y += 36) {
+        ctx.beginPath(); ctx.arc(x, y, 1, 0, Math.PI * 2); ctx.fill();
+      }
+
+    // Left panel background
+    const lw = 260;
+    ctx.fillStyle = "rgba(255,255,255,0.03)";
+    ctx.beginPath(); ctx.roundRect(0, 0, lw, H, [20, 0, 0, 20]); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(lw, 0); ctx.lineTo(lw, H); ctx.stroke();
+
+    // Tier colour top strip
+    const strip = ctx.createLinearGradient(0, 0, W * 0.6, 0);
+    strip.addColorStop(0, tierColor);
+    strip.addColorStop(1, "transparent");
+    ctx.fillStyle = strip;
+    ctx.beginPath(); ctx.roundRect(0, 0, W, 4, [20, 20, 0, 0]); ctx.fill();
+
+    // ── Left panel — branding ───────────────────────────────────────────────
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 28px 'Orbitron', monospace";
+    ctx.letterSpacing = "2px";
+    ctx.fillText("SIGNAL", 28, 58);
+    ctx.font = "600 11px 'Orbitron', monospace";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
+    ctx.fillText("PROTOCOL", 28, 75);
+
+    // Avatar box
+    const av = { x: 54, y: 105, s: 80 };
+    ctx.fillStyle = "rgba(255,255,255,0.07)";
+    ctx.strokeStyle = tierColor + "99";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.roundRect(av.x, av.y, av.s, av.s, 14); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "800 36px 'Epilogue', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(tier.name.charAt(0), av.x + av.s / 2, av.y + av.s / 2 + 13);
+    ctx.textAlign = "left";
+
+    // Wallet address
+    const shortWallet = `${walletAddr.slice(0, 8)}…${walletAddr.slice(-6)}`;
+    ctx.fillStyle = "rgba(255,255,255,0.55)";
+    ctx.font = "400 9.5px 'Space Mono', monospace";
+    ctx.fillText(shortWallet, 18, 212);
+
+    // Tier pill
+    ctx.fillStyle = tierColor + "22";
+    ctx.strokeStyle = tierColor + "66";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.roundRect(18, 222, 100, 22, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = tierColor;
+    ctx.font = "700 10px 'Orbitron', monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(tier.name.toUpperCase(), 68, 237);
+    ctx.textAlign = "left";
+
+    // ── Right panel ─────────────────────────────────────────────────────────
+    const rx = lw + 32;
+
+    // "BUILDER PASSPORT" label
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "700 9px 'Orbitron', monospace";
+    ctx.letterSpacing = "3px";
+    ctx.fillText("BUILDER PASSPORT", rx, 34);
+    ctx.letterSpacing = "0px";
+
+    // Divider
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(rx, 42); ctx.lineTo(W - 24, 42); ctx.stroke();
+
+    // Big score
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 72px 'Orbitron', monospace";
+    ctx.fillText(cred.score.toLocaleString(), rx, 126);
+
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "700 10px 'Orbitron', monospace";
+    ctx.letterSpacing = "3px";
+    ctx.fillText("SIGNAL SCORE", rx, 148);
+    ctx.letterSpacing = "0px";
+
+    // Stats row
+    const stats = [
+      { label: "EVENTS", val: String(cred.eventsAttended) },
+      { label: "RANK",   val: rank !== null ? `#${rank}` : "—" },
+      { label: "LEVEL",  val: `LV ${cred.tierIndex + 1}` },
+    ];
+    stats.forEach((s, i) => {
+      const sx = rx + i * 140;
+      const sy = 185;
+      ctx.fillStyle = "rgba(255,255,255,0.04)";
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.roundRect(sx, sy, 120, 60, 10); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 22px 'Orbitron', monospace";
+      ctx.fillText(s.val, sx + 12, sy + 35);
+      ctx.fillStyle = "rgba(255,255,255,0.3)";
+      ctx.font = "600 8px 'Orbitron', monospace";
+      ctx.letterSpacing = "2px";
+      ctx.fillText(s.label, sx + 12, sy + 50);
+      ctx.letterSpacing = "0px";
+    });
+
+    // Earned badges
+    const earnedBadges = NFT_BADGES.filter(b => cred.eventsAttended >= b.minEvents);
+    const badgeSize = 52;
+    let bx = rx;
+    const badgeY = 270;
+
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "600 8px 'Orbitron', monospace";
+    ctx.letterSpacing = "2px";
+    ctx.fillText("EARNED BADGES", rx, badgeY - 8);
+    ctx.letterSpacing = "0px";
+
+    const badgeImgPromises = earnedBadges.map(b => {
+      return new Promise<{ img: HTMLImageElement; badge: typeof b }>((res, rej) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => res({ img, badge: b });
+        img.onerror = () => rej();
+        img.src = b.img;
+      });
+    });
+
+    const loaded = await Promise.allSettled(badgeImgPromises);
+    loaded.forEach((r, i) => {
+      if (r.status === "fulfilled") {
+        const bxPos = bx + i * (badgeSize + 10);
+        ctx.drawImage(r.value.img, bxPos, badgeY, badgeSize, badgeSize);
+      }
+    });
+
+    if (earnedBadges.length === 0) {
+      ctx.fillStyle = "rgba(255,255,255,0.18)";
+      ctx.font = "400 11px 'DM Sans', sans-serif";
+      ctx.fillText("No badges yet — check in to earn your first!", rx, badgeY + 30);
+    }
+
+    // ── Bottom strip ─────────────────────────────────────────────────────────
+    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    ctx.fillRect(0, H - 46, W, 46);
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H - 46); ctx.lineTo(W, H - 46); ctx.stroke();
+
+    // MRZ-style wallet
+    ctx.fillStyle = "rgba(255,255,255,0.18)";
+    ctx.font = "400 9px 'Space Mono', monospace";
+    ctx.fillText(`P<SIGNAL<${walletAddr.slice(0,20).toUpperCase()}<<${walletAddr.slice(-20).toUpperCase()}`, 24, H - 26);
+
+    // "Built on Solana" right
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.font = "600 9px 'Orbitron', monospace";
+    ctx.letterSpacing = "1px";
+    ctx.textAlign = "right";
+    ctx.fillText("BUILT ON SOLANA · DEVNET", W - 24, H - 26);
+    ctx.textAlign = "left";
+    ctx.letterSpacing = "0px";
+
+    const dataUrl = canvas.toDataURL("image/png");
+    setPassportImg(dataUrl);
+    setPassportOpen(true);
+  }
+
+  function handleDownload() {
+    if (!passportImg) return;
+    const a = document.createElement("a");
+    a.href = passportImg;
+    a.download = `signal-passport-${walletAddr.slice(0, 8)}.png`;
+    a.click();
+  }
+
+  function handleShareX() {
+    if (!cred) return;
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const text = `My Signal Builder Passport\n\nScore: ${cred.score.toLocaleString()} pts · ${cred.tier} Tier · ${cred.eventsAttended} events on-chain\n\nBuilt on Solana.`;
     window.open(
       `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-      "_blank",
-      "noopener,noreferrer,width=560,height=560"
+      "_blank", "noopener,noreferrer,width=560,height=560"
     );
   }
 
@@ -268,6 +455,71 @@ export default function CredentialsPage() {
       </div>
       <div className="scanline" />
       <Nav active="credentials" />
+
+      {/* ── Passport image modal ── */}
+      {passportOpen && passportImg && (
+        <div
+          onClick={() => setPassportOpen(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999,
+            background: "rgba(0,0,0,.85)", backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "1rem", flexDirection: "column", gap: "1.25rem",
+          }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", maxWidth: 900, width: "100%" }}>
+            <img
+              src={passportImg}
+              alt="Signal Builder Passport"
+              style={{ width: "100%", borderRadius: 16, boxShadow: "0 24px 80px rgba(0,0,0,.7)", display: "block" }}
+            />
+            <div style={{ display: "flex", gap: ".75rem" }}>
+              <button
+                onClick={handleDownload}
+                style={{
+                  padding: ".6rem 1.4rem", borderRadius: 10,
+                  background: "#ffffff", color: "#0a0a0a",
+                  fontFamily: "'Epilogue',sans-serif", fontWeight: 800,
+                  fontSize: ".8rem", letterSpacing: ".06em", textTransform: "uppercase",
+                  border: "none", cursor: "pointer",
+                }}
+              >
+                Download
+              </button>
+              <button
+                onClick={handleShareX}
+                style={{
+                  padding: ".6rem 1.4rem", borderRadius: 10,
+                  background: "#000", color: "#fff",
+                  fontFamily: "'Epilogue',sans-serif", fontWeight: 800,
+                  fontSize: ".8rem", letterSpacing: ".06em", textTransform: "uppercase",
+                  border: "1px solid rgba(255,255,255,.25)", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: ".45rem",
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Post on X
+              </button>
+              <button
+                onClick={() => setPassportOpen(false)}
+                style={{
+                  padding: ".6rem 1rem", borderRadius: 10,
+                  background: "rgba(255,255,255,.07)", color: "#888",
+                  fontFamily: "'Epilogue',sans-serif", fontWeight: 700,
+                  fontSize: ".8rem", border: "1px solid rgba(255,255,255,.1)", cursor: "pointer",
+                }}
+              >
+                Close
+              </button>
+            </div>
+            <p style={{ fontSize: ".72rem", color: "rgba(255,255,255,.25)", textAlign: "center" }}>
+              Save the image, then attach it to your X post for the best look.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="page">
         <div className="cred-eyebrow">Identity &amp; Reputation</div>
