@@ -62,7 +62,7 @@ export const claims = new Proxy(load(), {
       const fresh = load();
       // sync target in-place
       target.clear();
-      for (const [k, v] of fresh) target.set(k, v);
+      fresh.forEach((v, k) => target.set(k, v));
     }
     const val = (target as any)[prop];
     return typeof val === "function" ? val.bind(target) : val;
