@@ -1,27 +1,29 @@
-# Strata — On-Chain Coordination OS
+# Signal — On-Chain Builder Identity Protocol
 
 > Built for the Solana Colosseum Frontier Hackathon 2026
 
-**Strata turns temporary builder communities into persistent, high-output digital organizations** using Solana's speed, compressed NFTs, and an AI coordination agent.
+**Signal turns event attendance into portable, verifiable on-chain identity.** Builders earn a persistent Signal Score across every event they attend — hackathons, hacker houses, pop-up cities — creating a reputation that cannot be faked, edited, or lost when communities disband.
 
 ---
 
 ## The Problem
 
 Global builder communities (hackathon cohorts, hacker houses, pop-up cities) collapse after events end:
-- Project momentum dies in Discord channels
-- Reputation earned during events is lost — never recorded on-chain
-- Funding is centralized and slow, failing to reward micro-contributions
 
-## The Solana Solution
+- Reputation earned during events is never recorded — it lives in organizer spreadsheets and disappears
+- Discord servers go quiet; project momentum dies
+- There's no portable proof of "I was there and I built"
+- Sybil attacks let one person claim multiple identities across the same event
 
-Strata provides three coordination rails:
+## The Solution
 
-1. **Dynamic Identity (cNFT Resident Passes)** — Compressed NFTs via Bubblegum that evolve as members contribute. Living resumes, not static JPEGs.
+Signal provides three rails:
 
-2. **Bounty Protocol with AI Copilot** — Anchor escrow program for the full bounty lifecycle. An AI agent (Strata Copilot) reviews submissions, computes reputation scores, and logs all decisions on-chain via Memo.
+1. **Proof-of-Presence Check-In** — Organizers deploy on-chain events; attendees sign a QR transaction in Phantom. One human, one check-in, enforced by PDA uniqueness + World ID.
 
-3. **Social-Layer Governance** — Solana Blinks integration for one-click governance from X/Twitter. Squads multisig for trustless treasury management.
+2. **Signal Score & Tier System** — Each check-in earns points. Hackathon placements add more. Your score determines your tier (Initiate → Seeker → Resident → Builder → Core → Legend), stored permanently on-chain.
+
+3. **Builder Passport** — A live credential card showing your score, tier, NFT badges, and stats. Shareable to X as a generated image — your proof of work, wherever you go.
 
 ---
 
@@ -29,134 +31,200 @@ Strata provides three coordination rails:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    React Frontend                    │
-│         Dashboard · Bounties · Members · Copilot     │
+│                    Next.js Frontend                  │
+│   Home · Events · Check-In · Credentials · Leaderboard │
 └──────────────┬───────────────────┬──────────────────┘
                │                   │
-    ┌──────────▼──────────┐  ┌─────▼──────────────┐
-    │   Anchor Program    │  │   Strata Copilot   │
-    │   (Solana Devnet)   │  │   (AI Agent)       │
-    │                     │  │                     │
-    │ • Community mgmt    │  │ • PoC scoring       │
-    │ • Member identity   │  │ • Bounty review     │
-    │ • Bounty escrow     │  │ • Reputation calc   │
-    │ • Reputation state  │  │ • Memo logging      │
-    └──────────┬──────────┘  └─────┬──────────────┘
+    ┌──────────▼──────────┐  ┌─────▼──────────────────┐
+    │   Anchor Program    │  │     Next.js API         │
+    │   (Solana Devnet)   │  │     Routes              │
+    │                     │  │                         │
+    │ • Community PDA     │  │ • /api/mint-nft         │
+    │ • Event PDAs        │  │ • /api/credentials      │
+    │ • Attendance PDAs   │  │ • /api/leaderboard      │
+    │ • Score on-chain    │  │ • /api/achievement/*    │
+    └──────────┬──────────┘  └─────┬──────────────────┘
                │                   │
     ┌──────────▼───────────────────▼──────────────────┐
-    │              Solana Blockchain                    │
-    │  Programs · Memo · Bubblegum · Squads (future)   │
+    │              Solana Devnet                        │
+    │  Anchor PDAs · Metaplex UMI · World ID           │
     └──────────────────────────────────────────────────┘
 ```
+
+---
+
+## Features
+
+### For Organizers
+- **Deploy Events On-Chain** — Title, location, date/time, and capacity in one transaction
+- **QR Code Generation** — Ed25519-signed QR links expire at event end time; only your wallet can produce them
+- **Event Dashboard** — Live/Upcoming/Ended filters, attendee counts, downloadable QR PNG
+
+### For Attendees
+- **World ID Verification** — Prove you're human once per event (sybil resistance via nullifier hash)
+- **QR Check-In** — Scan, sign in Phantom, receive attendance NFT
+- **Automatic NFT Minting** — Badge level upgrades automatically as you attend more events
+- **Signal Score** — Cumulative on-chain reputation across all events
+
+### For Everyone
+- **Builder Passport** — Live credential card with score, tier badge, earned NFTs, and rank; generates a shareable image
+- **Public Leaderboard** — Ranked by Signal Score with Active and Hall of Fame views
+- **Achievement Claims** — Submit hackathon placements for admin review; approved claims mint an Achievement NFT and add bonus points
+
+---
+
+## Signal Score Formula
+
+```
+Base Score  = (Events × 10) + (Hackathons × 30) + Achievement Points
+Tier Bonus  = 0 / 10 / 25 / 50 / 150 / 500  (Initiate → Legend)
+Final Score = Base Score + Tier Bonus
+```
+
+| Tier | Min Score | Color |
+|------|-----------|-------|
+| Initiate | 0 | Gray |
+| Seeker | 100 | White |
+| Resident | 250 | Green |
+| Builder | 500 | Amber |
+| Core | 1 000 | Red |
+| Legend | 2 000 | Purple |
+
+---
+
+## NFT Badge Levels
+
+| Badge | Events Required | Signal Score |
+|-------|----------------|--------------|
+| Signal Lv.1 | 1+ | 100 |
+| Signal Lv.2 | 3+ | 300 |
+| Signal Lv.3 | 5+ | 500 |
+| Signal Lv.4 | 10+ | 1 000 |
+| Signal Lv.5 | 20+ | 2 000 |
+
+Badges are minted on Solana via Metaplex UMI and displayed on the Builder Passport.
 
 ---
 
 ## Project Structure
 
 ```
-strata/
-├── programs/strata/src/
-│   └── lib.rs              # Anchor program (bounty escrow, identity, reputation)
-├── app/src/
-│   └── utils/
-│       └── strata-client.ts  # TypeScript SDK for on-chain interactions
-├── copilot/
-│   └── strata-copilot.ts    # AI agent: scoring, review, memo logging
-├── tests/
-│   └── strata.ts             # Integration tests (full bounty lifecycle)
-├── strata-dashboard.jsx      # React frontend dashboard
+strata-project/
+├── programs/strata/          # Anchor program (Rust)
+│   └── src/lib.rs            # Community, Event, Attendance, Score instructions
+├── app/                      # Next.js 14 frontend
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── page.tsx            # Home / landing
+│   │   │   ├── events/             # Browse on-chain events
+│   │   │   ├── checkin/[code]/     # QR check-in flow
+│   │   │   ├── organizer/          # Event deployment dashboard
+│   │   │   ├── credentials/        # Builder Passport + achievement claims
+│   │   │   ├── leaderboard/        # Ranked builders
+│   │   │   ├── terms/              # Protocol whitepaper
+│   │   │   └── api/                # 18+ API routes
+│   │   ├── components/             # Nav, Footer, PageBackground
+│   │   ├── styles/                 # Per-page CSS-in-JS
+│   │   └── utils/
+│   │       ├── strata-client.ts    # TypeScript SDK for on-chain calls
+│   │       └── scoring.ts          # Score + tier calculation
+│   └── public/nft-badge/           # Badge images (lv1–lv5)
 ├── Anchor.toml
 └── README.md
 ```
 
 ---
 
-## How to Test
+## Getting Started
 
 ### Prerequisites
-- Rust + Solana CLI + Anchor CLI installed
-- Node.js 18+
-- A Solana devnet wallet with SOL (`solana airdrop 5`)
 
-### 1. Build & Deploy the Program
+- Node.js 18+
+- Rust + Solana CLI + Anchor CLI
+- A Phantom wallet funded on Devnet (`solana airdrop 2`)
+
+### 1. Install Frontend Dependencies
+
 ```bash
-cd strata/
-anchor build
-anchor deploy --provider.cluster devnet
+cd app
+npm install
 ```
 
-### 2. Run Tests
+### 2. Configure Environment
+
+Create `app/.env.local`:
+
+```env
+NEXT_PUBLIC_PROGRAM_ID=CmStH6nDHyHtsG5PLj9yvKmAQsY9GjDW2Ap8asMZrz57
+NEXT_PUBLIC_COMMUNITY_PDA=DY9eAKpdMYhrRuTn3JZJQ2F7gsFTtsBaJADHwr48xVL6
+NEXT_PUBLIC_RPC_URL=https://api.devnet.solana.com
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# World ID (optional for local dev)
+NEXT_PUBLIC_WLD_APP_ID=your_world_app_id
+NEXT_PUBLIC_WLD_ACTION=signal-checkin
+
+# NFT minting — Solana keypair array (devnet only)
+TREASURY_KEYPAIR=[...]
+TREASURY_PUBKEY=your_treasury_pubkey
+
+# Admin wallet (leave blank to enable demo mode — any connected wallet is admin)
+NEXT_PUBLIC_ADMIN_WALLET=
+```
+
+### 3. Run the Frontend
+
 ```bash
+npm run dev
+# → http://localhost:3000
+```
+
+### 4. Build & Deploy the Anchor Program (optional)
+
+```bash
+anchor build
+anchor deploy --provider.cluster devnet
 anchor test
 ```
 
-This runs the full lifecycle:
-- Initialize community
-- Register Alice and Bob as members
-- Alice creates a bounty with 1 SOL escrow
-- Bob claims, completes, and submits
-- Copilot reviews the submission
-- Alice approves → Bob receives SOL + reputation boost
-- Verifies error cases (self-claim rejection)
+---
 
-### 3. Run the Frontend
-The React dashboard (`strata-dashboard.jsx`) renders as a standalone artifact. It includes:
-- Bounty board with create/claim/submit/approve flow
-- Member leaderboard with reputation tiers
-- Copilot panel showing AI reviews and on-chain memo logs
-- Simulated wallet connection
+## Key Pages
 
-### 4. Test the Copilot
-```typescript
-import { computeReputationScore, reviewBountySubmission } from "./copilot/strata-copilot";
-
-// Compute reputation
-const score = computeReputationScore({
-  walletAddress: "7xKp...3nRq",
-  bountiesCompleted: 5,
-  bountiesCreated: 2,
-  totalEarned: 3_000_000_000, // 3 SOL in lamports
-  governanceVotes: 8,
-  codeReviews: 3,
-  daysActive: 14,
-  lastActiveTimestamp: Date.now() / 1000 - 3600,
-});
-// → { totalScore: 178, tier: "builder", ... }
-
-// Review a submission
-const review = reviewBountySubmission({
-  bountyTitle: "Build Frontend",
-  bountyDescription: "React dashboard",
-  requiredSkills: ["React"],
-  amountLamports: 1_000_000_000,
-  submissionUri: "https://github.com/user/repo/pull/1",
-  claimantReputation: 156,
-  claimantBountiesCompleted: 5,
-});
-// → { approved: true, confidence: 85, reasoning: "..." }
-```
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page with live event calendar and protocol stats |
+| `/events` | Browse all on-chain events (Live / Upcoming / Ended) |
+| `/checkin/[code]` | Attendee check-in — World ID verify + sign transaction |
+| `/organizer` | Deploy events and generate signed QR codes |
+| `/credentials` | Your Builder Passport — score, tier, badges, achievements |
+| `/leaderboard` | Public ranking of all builders by Signal Score |
+| `/terms` | Full protocol whitepaper and NFT badge documentation |
 
 ---
 
-## Solana-Native Features Used
+## Solana Features Used
 
 | Feature | Usage |
 |---------|-------|
-| **State Compression (cNFTs)** | Resident Pass identity NFTs via Bubblegum — fractions of a cent per mint |
-| **Solana Blinks/Actions** | One-click governance from social feeds |
-| **Memo Program** | Copilot audit trail — every AI decision logged on-chain |
-| **PDA Escrow** | Trustless bounty funds held by program-owned accounts |
-| **Versioned Transactions + LUTs** | Efficient multi-instruction transactions |
-| **Priority Fees** | Reliable inclusion via Helius fee estimation |
+| **Anchor PDAs** | Unique (event, wallet) attendance records — duplicate prevention at chain level |
+| **Metaplex UMI** | Server-side NFT minting for attendance and achievement badges |
+| **Ed25519 Signatures** | Organizer-signed QR codes with on-chain expiry validation |
+| **World ID** | Nullifier hash stored per event — one human, one check-in |
+| **Solana Clock** | QR expiry checked against `clock.unix_timestamp` in the Anchor instruction |
+| **Phantom Wallet Adapter** | Multi-wallet support via `@solana/wallet-adapter-react` |
 
 ---
 
-## Judging Criteria Alignment
+## Admin & Demo Mode
 
-- **Technical Prowess**: Full Anchor program with PDA escrow, security checks, event emission. AI agent with weighted scoring algorithm.
-- **Design & UX**: Dark-mode dashboard with real-time state updates. One-click bounty lifecycle.
-- **Business Potential**: Infrastructure for 1000+ network cities. University cohorts → pop-up cities → global builder marketplace.
-- **Novelty**: On-chain AI coordination agent with auditable reasoning ledger. Dynamic cNFT identity that evolves with contributions.
+If `NEXT_PUBLIC_ADMIN_WALLET` is not set, any connected wallet automatically gets admin privileges. This allows:
+
+- Viewing all pending achievement claims on the Credentials page
+- Approving/rejecting claims (triggers NFT mint on approval)
+- No API key required in local dev
+
+Set `SIGNAL_ADMIN_KEY` and `NEXT_PUBLIC_ADMIN_WALLET` in production to restrict access.
 
 ---
 
@@ -164,4 +232,4 @@ const review = reviewBountySubmission({
 
 Built for the Solana Colosseum Frontier Hackathon (April 6 — May 11, 2026).
 
-*"Edge City proved builders want to live together. Strata provides the rails to ensure they actually build together."*
+*"The builders were always there. Signal just makes sure the chain remembers."*
