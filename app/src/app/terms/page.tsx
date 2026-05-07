@@ -170,11 +170,11 @@ const TIERS = [
 ];
 
 const NFT_BADGES = [
-  { lv: "LV1", events: "1+",  label: "First Presence", img: "/nft-badge/nft-signal-lv1.png" },
-  { lv: "LV2", events: "3+",  label: "Regular",        img: "/nft-badge/nft-signal-lv2.png" },
-  { lv: "LV3", events: "5+",  label: "Committed",      img: "/nft-badge/nft-signal-lv3.png" },
-  { lv: "LV4", events: "10+", label: "Veteran",        img: "/nft-badge/nft-signal-lv4.png" },
-  { lv: "LV5", events: "20+", label: "Legend",         img: "/nft-badge/nft-signal-lv5.png" },
+  { lv: "LV1", events: "1+",  label: "Signal Lv.1", img: "/nft-badge/nft-signal-lv1.png" },
+  { lv: "LV2", events: "3+",  label: "Signal Lv.2", img: "/nft-badge/nft-signal-lv2.png" },
+  { lv: "LV3", events: "5+",  label: "Signal Lv.3", img: "/nft-badge/nft-signal-lv3.png" },
+  { lv: "LV4", events: "10+", label: "Signal Lv.4", img: "/nft-badge/nft-signal-lv4.png" },
+  { lv: "LV5", events: "20+", label: "Signal Lv.5", img: "/nft-badge/nft-signal-lv5.png" },
 ];
 
 export default function TermsPage() {
