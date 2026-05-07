@@ -240,6 +240,25 @@ export default function CredentialsPage() {
   const tier = cred ? (TIERS[cred.tierIndex] ?? TIERS[0]) : TIERS[0];
   const prog = cred ? tierProgress(cred.score, cred.tierIndex) : { pct: 0, next: "Seeker", needed: 100 };
 
+  function handleShare() {
+    if (!cred) return;
+    const url = typeof window !== "undefined" ? window.location.href : "https://signal.app";
+    const text = [
+      `My Signal Builder Passport`,
+      ``,
+      `Score: ${cred.score.toLocaleString()} pts`,
+      `Tier: ${cred.tier}`,
+      `Events attended: ${cred.eventsAttended}`,
+      ``,
+      `On-chain identity on Solana.`,
+    ].join("\n");
+    window.open(
+      `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank",
+      "noopener,noreferrer,width=560,height=560"
+    );
+  }
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: credentialCSS }} />
@@ -289,7 +308,28 @@ export default function CredentialsPage() {
               height: 80,
               background: "linear-gradient(120deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%)",
               borderBottom: "1px solid rgba(255,255,255,.08)",
-            }} />
+              position: "relative",
+            }}>
+              <button
+                onClick={handleShare}
+                style={{
+                  position: "absolute", top: 14, right: 14,
+                  display: "flex", alignItems: "center", gap: ".4rem",
+                  background: "#000", border: "1px solid rgba(255,255,255,.2)",
+                  color: "#ffffff", borderRadius: 8, padding: ".38rem .75rem",
+                  fontFamily: "'Epilogue',sans-serif", fontSize: ".72rem",
+                  fontWeight: 700, letterSpacing: ".04em", cursor: "pointer",
+                  transition: "background .15s, border-color .15s",
+                }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "#111"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,.4)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "#000"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(255,255,255,.2)"; }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.746l7.73-8.835L1.254 2.25H8.08l4.253 5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+                Share
+              </button>
+            </div>
 
             <div style={{ padding: "0 1.75rem 1.75rem" }}>
               {/* Avatar row */}
