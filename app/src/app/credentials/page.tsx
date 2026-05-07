@@ -71,7 +71,7 @@ function tierProgress(score: number, idx: number) {
 function AchievementCard({ ach }: { ach: Achievement }) {
   return (
     <div className="ach-card">
-      <div className="ach-verified">✓ Verified by Signal</div>
+      <div className="ach-verified">Verified by Signal</div>
       <div className="ach-name">{ach.hackathonName}</div>
       <div className="ach-rank">{ach.rank}</div>
       {ach.points != null && <div className="ach-pts">+{ach.points} pts</div>}
@@ -219,7 +219,7 @@ export default function CredentialsPage() {
       if (!res.ok) throw new Error(d.error ?? "Action failed");
       setActionMsg(prev => ({
         ...prev,
-        [claimId]: { ok: true, text: action === "approve" ? "✓ Approved — NFT minted!" : "✕ Rejected" },
+        [claimId]: { ok: true, text: action === "approve" ? "Approved — NFT minted!" : "Rejected" },
       }));
       setMyClaims(prev => prev.map((c: any) =>
         c.id === claimId ? { ...c, status: action === "approve" ? "approved" : "rejected" } : c
@@ -256,7 +256,7 @@ export default function CredentialsPage() {
             border: "1px dashed rgba(255,255,255,.1)", borderRadius: 20,
             marginTop: "2rem",
           }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>◈</div>
+            <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}></div>
             <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: ".5rem" }}>Connect your wallet</div>
             <div style={{ color: "#888", fontSize: ".85rem" }}>Your Builder Passport is tied to your wallet address.</div>
           </div>
@@ -296,7 +296,7 @@ export default function CredentialsPage() {
                   display: "flex", alignItems: "center", justifyContent: "center",
                   fontSize: "2rem", color: "#ffffff",
                 }}>
-                  {tier.icon}
+                  {tier.name.charAt(0)}
                 </div>
                 <div style={{ paddingBottom: ".25rem" }}>
                   <div style={{ fontFamily: "'Space Mono',monospace", fontSize: ".82rem", color: "#e8e8e8", fontWeight: 700 }}>
@@ -309,7 +309,7 @@ export default function CredentialsPage() {
                       border: "1px solid rgba(255,255,255,.2)", borderRadius: 100,
                       padding: ".1rem .55rem",
                     }}>
-                      {tier.icon} {tier.name}
+                      {tier.name}
                     </span>
                     {worldVerified && (
                       <span style={{
@@ -317,7 +317,7 @@ export default function CredentialsPage() {
                         color: "#60c8f5", borderRadius: 100, padding: ".1rem .5rem",
                         fontSize: ".58rem", fontWeight: 700, fontFamily: "'Orbitron',sans-serif",
                       }}>
-                        🌐 World ID
+                        World ID
                       </span>
                     )}
                   </div>
@@ -345,7 +345,7 @@ export default function CredentialsPage() {
                     <div style={{ height: "100%", width: `${prog.pct}%`, background: "#ffffff", borderRadius: 100, transition: "width .6s ease" }} />
                   </div>
                   {prog.next && (
-                    <div style={{ fontSize: ".58rem", color: "#555", marginTop: ".3rem" }}>{prog.needed} pts → {prog.next}</div>
+                    <div style={{ fontSize: ".58rem", color: "#555", marginTop: ".3rem" }}>{prog.needed} pts to {prog.next}</div>
                   )}
                 </div>
 
@@ -428,7 +428,7 @@ export default function CredentialsPage() {
                           position: "absolute", inset: 0,
                           display: "flex", alignItems: "center", justifyContent: "center",
                           background: "rgba(0,0,0,.5)", fontSize: "1.3rem",
-                        }}>🔒</div>
+                        }}></div>
                       )}
                     </div>
                     <div style={{
@@ -438,7 +438,7 @@ export default function CredentialsPage() {
                       {badge.label}
                     </div>
                     <div style={{ fontSize: ".58rem", color: earned ? "#888" : "#444" }}>
-                      {earned ? "✓ Earned" : `${badge.minEvents} events`}
+                      {earned ? "Earned" : `${badge.minEvents} events`}
                     </div>
                   </div>
                 );
@@ -478,7 +478,7 @@ export default function CredentialsPage() {
                   color: "#888", borderRadius: 8, width: 28, height: 28,
                   cursor: "pointer", fontSize: ".85rem", display: "flex", alignItems: "center", justifyContent: "center",
                 }}
-              >✕</button>
+              >x</button>
 
               {/* Header */}
               {badgeEarned ? (
@@ -508,7 +508,7 @@ export default function CredentialsPage() {
                     position: "absolute", top: "50%", left: "50%",
                     transform: "translate(-50%,-50%)",
                     fontSize: "2.2rem", lineHeight: 1,
-                  }}>🔒</div>
+                  }}></div>
                 )}
               </div>
 
@@ -656,7 +656,7 @@ export default function CredentialsPage() {
                   disabled={claimLoading}
                   style={{ alignSelf: "flex-start", padding: ".55rem 1.4rem" }}
                 >
-                  {claimLoading ? "Submitting…" : "Submit Claim →"}
+                  {claimLoading ? "Submitting…" : "Submit Claim"}
                 </button>
               </form>
             )}
@@ -717,7 +717,7 @@ export default function CredentialsPage() {
                       <button
                         onClick={() => { setAdminKeyOpen(false); setAdminKeyInput(""); }}
                         style={{ background: "none", border: "none", color: "#888", cursor: "pointer", fontSize: ".8rem" }}
-                      >✕</button>
+                      >x</button>
                     </>
                   ) : (
                     <button
@@ -729,7 +729,7 @@ export default function CredentialsPage() {
                         letterSpacing: ".06em",
                       }}
                     >
-                      {adminKey ? "🔓 Admin" : "Admin →"}
+                      {adminKey ? "Unlocked" : "Admin"}
                     </button>
                   )}
                 </div>
@@ -740,7 +740,7 @@ export default function CredentialsPage() {
                   color: "#00FFC2", borderRadius: 100, padding: ".25rem .75rem",
                   fontSize: ".6rem", fontFamily: "'Orbitron',sans-serif", fontWeight: 700, letterSpacing: ".1em",
                 }}>
-                  🔓 ADMIN
+                  ADMIN
                 </span>
               )}
             </div>
@@ -801,7 +801,7 @@ export default function CredentialsPage() {
                           onMouseOver={e => (e.currentTarget.style.color = "#e8e8e8")}
                           onMouseOut={e => (e.currentTarget.style.color = "#888")}
                         >
-                          {claim.projectUrl.replace(/^https?:\/\//, "").slice(0, 40)}{claim.projectUrl.length > 46 ? "…" : ""} ↗
+                          {claim.projectUrl.replace(/^https?:\/\//, "").slice(0, 40)}{claim.projectUrl.length > 46 ? "…" : ""}
                         </a>
                         <span style={{ fontSize: ".65rem", color: "#555" }}>
                           {new Date(claim.submittedAt * 1000).toLocaleDateString("en-US", { dateStyle: "medium" })}
@@ -835,7 +835,7 @@ export default function CredentialsPage() {
                               letterSpacing: ".06em", opacity: isActing ? .5 : 1,
                             }}
                           >
-                            {isActing ? "…" : "✓ Approve"}
+                            {isActing ? "Approving..." : "Approve"}
                           </button>
                           <button
                             onClick={() => handleAction(claim.id, "reject")}
@@ -848,7 +848,7 @@ export default function CredentialsPage() {
                               letterSpacing: ".06em", opacity: isActing ? .5 : 1,
                             }}
                           >
-                            ✕ Reject
+                            Reject
                           </button>
                           {msg && (
                             <span style={{ fontSize: ".72rem", color: msg.ok ? "#00FFC2" : "#f87171" }}>{msg.text}</span>

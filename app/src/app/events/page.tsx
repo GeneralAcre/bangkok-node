@@ -263,7 +263,7 @@ export default function EventsPage() {
                 <div className="event-actions">
                   {ev.status === "Live" ? (
                     <a href={ev.pubkey ? `/checkin?event=${ev.pubkey}` : "/events"} className="btn-checkin">
-                      Check In ↗
+                      Check In
                     </a>
                   ) : ev.status === "Upcoming" ? (
                     <span className="btn-view">Upcoming</span>
@@ -284,7 +284,7 @@ export default function EventsPage() {
             <strong>Host your own event</strong>
             Deploy on Solana in 30 seconds. Attendees scan your QR, check in on-chain, and earn their NFT automatically.
           </div>
-          <a href="/organizer" className="btn-host">Deploy Event →</a>
+          <a href="/organizer" className="btn-host">Deploy Event</a>
         </div>
       </div>
       <Footer />

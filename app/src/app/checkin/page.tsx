@@ -272,7 +272,7 @@ function CheckInContent() {
       </p>
       <div style={{ marginTop:"1.25rem", display:"flex", gap:".75rem", justifyContent:"center", flexWrap:"wrap" }}>
         <a href="/organizer" style={{ display:"inline-flex", alignItems:"center", gap:".4rem", padding:".55rem 1.25rem", background:"var(--purple)", color:"#fff", borderRadius:8, fontSize:".82rem", fontWeight:600, textDecoration:"none", fontFamily:"'Space Grotesk',sans-serif" }}>
-          → Go to Organizer
+          Go to Organizer
         </a>
       </div>
     </div>
@@ -283,11 +283,10 @@ function CheckInContent() {
       <>
         {confetti && Array.from({ length: 30 }, (_, i) => <ConfettiPiece key={i} i={i} />)}
         <div className="success-card">
-          <span className="success-icon">◎</span>
           <h2 className="success-title">You're checked in!</h2>
           {wldState === "verified" && (
             <div style={{ display:"inline-flex", alignItems:"center", gap:".4rem", background:"rgba(0,180,255,.1)", border:"1px solid rgba(0,180,255,.25)", borderRadius:100, padding:".3rem .85rem", fontSize:".72rem", color:"#60c8f5", marginBottom:".75rem" }}>
-              🌐 World ID Verified
+              World ID Verified
             </div>
           )}
           <p className="success-sub">
@@ -295,7 +294,7 @@ function CheckInContent() {
             <br /><br />
             Go to your profile to <strong style={{ color:"var(--purple)" }}>Claim your NFT</strong>.
           </p>
-          <a href="/credentials" className="btn-profile">✦ Claim My NFT →</a>
+          <a href="/credentials" className="btn-profile">Claim My NFT</a>
           {success.sig && success.sig !== "already-confirmed" && (
             <div className="tx-link">
               Tx: <a href={`https://explorer.solana.com/tx/${success.sig}?cluster=devnet`} target="_blank" rel="noreferrer">{success.sig.slice(0,20)}…</a>
@@ -324,7 +323,7 @@ function CheckInContent() {
             onClick={() => setShowQr(false)}
             style={{ marginTop:"1rem", display:"block", width:"100%", padding:".6rem", background:"#0a0a0a", color:"#fff", borderRadius:10, fontWeight:700, fontSize:".85rem", textDecoration:"none", boxSizing:"border-box" }}
           >
-            Check In Myself →
+            Check In Myself
           </a>
           <button onClick={() => setShowQr(false)} style={{ marginTop:".5rem", display:"block", width:"100%", padding:".55rem", background:"transparent", color:"#6b7280", border:"1px solid rgba(0,0,0,.12)", borderRadius:10, fontWeight:600, cursor:"pointer", fontSize:".82rem" }}>
             Close
@@ -344,7 +343,7 @@ function CheckInContent() {
                 Show QR for Attendees
               </button>
               <a href={qrUrl} style={{ padding:".55rem 1.4rem", background:"#ffffff", color:"#0a0a0a", border:"none", borderRadius:8, fontWeight:800, fontSize:".82rem", cursor:"pointer", textDecoration:"none" }}>
-                Check In Myself →
+                Check In Myself
               </a>
             </div>
           ) : (
@@ -404,7 +403,7 @@ function CheckInContent() {
 
           {miniKitReady === false && (
             <div className="wld-unavailable">
-              <div style={{ fontSize:"1.2rem", marginBottom:".4rem" }}>🌐</div>
+              <div style={{ marginBottom:".4rem" }}></div>
               <div style={{ fontWeight:600, marginBottom:".3rem" }}>World App required</div>
               <div style={{ fontSize:".78rem", color:"#6b7280", lineHeight:1.6 }}>
                 Open this page inside the <strong style={{ color:"#e8e8e8" }}>World App</strong> to verify your humanity and complete check-in.
@@ -419,8 +418,8 @@ function CheckInContent() {
               disabled={wldState === "verifying"}
             >
               {wldState === "verifying"
-                ? <><span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span> Verifying…</>
-                : "🌐 Verify with World ID"}
+                ? "Verifying…"
+                : "Verify with World ID"}
             </button>
           )}
 
@@ -428,7 +427,7 @@ function CheckInContent() {
             <>
               <div className="msg-err" style={{ marginBottom:".75rem" }}>{wldError}</div>
               <button className="btn-worldid" onClick={handleWorldId}>
-                🌐 Try Again
+                Try Again
               </button>
             </>
           )}
@@ -438,7 +437,7 @@ function CheckInContent() {
       {/* Step 2 badge when verified */}
       {showCheckinForm && connected && wldState === "verified" && (
         <div className="wld-verified-badge">
-          🌐 World ID Verified
+          World ID Verified
         </div>
       )}
 
@@ -446,10 +445,7 @@ function CheckInContent() {
       {showCheckinForm && canCheckIn && !!sig && (
         <>
           <button className="btn-checkin" onClick={handleCheckIn} disabled={checking}>
-            {checking
-              ? <><span style={{ animation:"spin 1s linear infinite", display:"inline-block" }}>◈</span> Signing transaction…</>
-              : "⬡ Check In to This Event"
-            }
+            {checking ? "Signing transaction…" : "Check In to This Event"}
           </button>
           <p style={{ fontSize:".75rem", color:"var(--muted)", marginTop:".75rem" }}>
             This creates a Solana transaction — approve it in Phantom

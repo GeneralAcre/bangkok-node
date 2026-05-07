@@ -210,7 +210,7 @@ export default function HomePage() {
             </div>
             <div className="events-source">
               Powered by{" "}
-              <a href="https://lu.ma/superteam" target="_blank" rel="noreferrer">lu.ma/superteam ↗</a>
+              <a href="https://lu.ma/superteam" target="_blank" rel="noreferrer">lu.ma/superteam</a>
             </div>
           </div>
 
@@ -238,7 +238,7 @@ export default function HomePage() {
                     <div className="event-cover">
                       {ev.coverUrl
                         ? <img src={ev.coverUrl} alt={ev.title} />
-                        : <div className="event-cover-placeholder">◈</div>
+                        : <div className="event-cover-placeholder"></div>
                       }
                     </div>
                     <div className="event-body">
@@ -247,7 +247,7 @@ export default function HomePage() {
                       <div className="event-location">
                         {ev.location}
                       </div>
-                      <span className="event-register">Register ↗</span>
+                      <span className="event-register">Register</span>
                     </div>
                   </a>
                 );
@@ -257,7 +257,7 @@ export default function HomePage() {
 
           <div className="events-cta">
             <a href="https://lu.ma/superteam" target="_blank" rel="noreferrer">
-              View all Superteam events on Luma ↗
+              View all Superteam events on Luma
             </a>
           </div>
         </div>

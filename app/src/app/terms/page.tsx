@@ -290,7 +290,7 @@ export default function TermsPage() {
                 <tr key={t.tier}>
                   <td>
                     <span className="tier-pill" style={{ color: t.color, borderColor: t.color }}>
-                      {t.icon} {t.tier}
+                      {t.tier}
                     </span>
                   </td>
                   <td style={{ fontFamily: "'Space Mono', monospace", fontSize: ".78rem" }}>
@@ -326,13 +326,12 @@ export default function TermsPage() {
           </p>
           <table className="data-table">
             <thead>
-              <tr><th>Tier</th><th>Icon</th><th>Min Score</th><th>Tier Bonus</th><th>Description</th></tr>
+              <tr><th>Tier</th><th>Min Score</th><th>Tier Bonus</th><th>Description</th></tr>
             </thead>
             <tbody>
               {TIERS.map(t => (
                 <tr key={t.tier}>
                   <td style={{ fontWeight: 700, color: t.color }}>{t.tier}</td>
-                  <td style={{ fontSize: "1.1rem" }}>{t.icon}</td>
                   <td style={{ fontFamily: "'Space Mono',monospace", fontSize: ".78rem" }}>{t.min.toLocaleString()}</td>
                   <td style={{ fontFamily: "'Space Mono',monospace", fontSize: ".78rem", color: t.bonus > 0 ? "#e8e8e8" : "#555" }}>{t.bonus > 0 ? `+${t.bonus}` : "—"}</td>
                   <td style={{ color: "#888", fontSize: ".8rem" }}>{t.desc}</td>

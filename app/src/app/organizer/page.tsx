@@ -63,9 +63,7 @@ function DeploySteps({ step }: { step: DeployStep }) {
         return (
           <div key={s.key} className={`deploy-step${active ? " active" : ""}${done ? " done" : ""}`}>
             <span className="step-icon">
-              {done   ? "✓"
-               : active ? <span className="step-spin">◈</span>
-               : "○"}
+              {done ? "Done" : active ? "…" : "○"}
             </span>
             <span>{s.label}{active ? "…" : ""}</span>
           </div>
@@ -296,8 +294,8 @@ export default function OrganizerPage() {
           </div>
           <div className="qr-overlay" onClick={() => setQrData(null)}>
             <div className="qr-modal" onClick={e => e.stopPropagation()}>
-              <button className="qr-close" onClick={() => setQrData(null)}>✕</button>
-              <div className="qr-success-badge">✓ Event Live</div>
+              <button className="qr-close" onClick={() => setQrData(null)}>×</button>
+              <div className="qr-success-badge">Event Live</div>
               <div className="qr-event-name">{qrData.eventName}</div>
               <div className="qr-code-wrap">
                 <QRCodeSVG value={qrData.url} size={200} />
@@ -315,20 +313,20 @@ export default function OrganizerPage() {
                   className="btn btn-qr-primary"
                   onClick={handleDownloadQR}
                 >
-                  ⬇ Download PNG
+                  Download PNG
                 </button>
                 <button
                   className="btn btn-qr-ghost"
                   onClick={() => navigator.clipboard.writeText(qrData.url)}
                 >
-                  ⎘ Copy Link
+                  Copy Link
                 </button>
                 {typeof navigator !== "undefined" && "share" in navigator && (
                   <button
                     className="btn btn-qr-ghost"
                     onClick={() => (navigator as any).share({ url: qrData.url, title: qrData.eventName })}
                   >
-                    ↗ Share
+                    Share
                   </button>
                 )}
               </div>
@@ -352,13 +350,13 @@ export default function OrganizerPage() {
               className={`btn ${activeView === "events" ? "btn-primary" : "btn-demo"}`}
               onClick={() => setActiveView("events")}
             >
-              ☰ Events
+              Events
             </button>
             <button
               className={`btn ${activeView === "form" ? "btn-primary" : "btn-demo"}`}
               onClick={() => { setActiveView("form"); setMsg(null); setDeployStep("idle"); }}
             >
-              ⬡ Host Event
+              Host Event
             </button>
           </div>
         </div>
@@ -381,7 +379,7 @@ export default function OrganizerPage() {
                 lineHeight: 1.6,
               }}>
                 <span style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: ".05rem" }}>
-                  {msg.type === "ok" ? "✓" : "⚠"}
+                  {""}
                 </span>
                 <div>
                   <div style={{ fontWeight: 700, marginBottom: ".2rem" }}>
@@ -392,7 +390,7 @@ export default function OrganizerPage() {
                     <div style={{ marginTop: ".4rem" }}>
                       <a href="https://faucet.solana.com" target="_blank" rel="noreferrer"
                         style={{ color: "#fbbf24", fontWeight: 600 }}>
-                        → Get free devnet SOL at faucet.solana.com ↗
+                        Get free devnet SOL at faucet.solana.com
                       </a>
                     </div>
                   )}
@@ -512,11 +510,7 @@ export default function OrganizerPage() {
                   disabled={isDeploying || !connected}
                   style={{ marginTop: ".75rem" }}
                 >
-                  {isDeploying
-                    ? <><span className="step-spin" style={{ display: "inline-block" }}>◈</span> Deploying…</>
-                    : !connected
-                    ? "Connect wallet to deploy"
-                    : "⬡ Deploy & Go Live"}
+                  {isDeploying ? "Deploying…" : !connected ? "Connect wallet to deploy" : "Deploy & Go Live"}
                 </button>
 
                 {!connected && (
@@ -569,7 +563,7 @@ export default function OrganizerPage() {
                     borderRadius: 16, padding: "2.5rem",
                     textAlign: "center", background: "rgba(255,255,255,.02)",
                   }}>
-                    <div style={{ fontSize: "2rem", marginBottom: ".75rem" }}>⬡</div>
+                    <div style={{ marginBottom: ".75rem" }}></div>
                     <div style={{ fontFamily: "'Epilogue',sans-serif", fontWeight: 700, fontSize: "1.1rem", marginBottom: ".5rem" }}>
                       No events yet
                     </div>
@@ -580,7 +574,7 @@ export default function OrganizerPage() {
                       className="btn btn-primary"
                       onClick={() => { setActiveView("form"); setMsg(null); setDeployStep("idle"); }}
                     >
-                      ⬡ Host Your First Event
+                      Host Your First Event
                     </button>
                   </div>
                 ) : (
@@ -611,7 +605,7 @@ export default function OrganizerPage() {
                                 className="btn-checkin"
                                 style={{ display:"inline-block", textDecoration:"none", textAlign:"center" }}
                               >
-                                Check In ↗
+                                Check In
                               </a>
                             ) : ev.status === "Upcoming" ? (
                               <span className="badge-upcoming">Upcoming</span>
