@@ -371,7 +371,7 @@ export default function TermsPage() {
 
           <table className="data-table">
             <thead>
-              <tr><th>Badge Level</th><th>Events Required</th><th>Label</th><th>Image</th></tr>
+              <tr><th>Badge Level</th><th>Events Required</th><th>Label</th></tr>
             </thead>
             <tbody>
               {NFT_BADGES.map(b => (
@@ -379,7 +379,6 @@ export default function TermsPage() {
                   <td style={{ fontFamily: "'Orbitron',sans-serif", fontSize: ".78rem", fontWeight: 700 }}>{b.lv}</td>
                   <td style={{ fontFamily: "'Space Mono',monospace", fontSize: ".78rem" }}>{b.events} events attended</td>
                   <td>{b.label}</td>
-                  <td style={{ fontFamily: "'Space Mono',monospace", fontSize: ".65rem", color: "#555" }}>nft-signal-{b.lv.toLowerCase()}.png</td>
                 </tr>
               ))}
             </tbody>
