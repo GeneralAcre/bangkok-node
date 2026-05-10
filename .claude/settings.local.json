@@ -14,7 +14,8 @@
       "PowerShell(Get-Command npm, npx, node -ErrorAction SilentlyContinue)",
       "Read(//c/Users/ACRESANPAPHAT/AppData/Roaming/**)",
       "Read(//c//**)",
-      "WebFetch(domain:claude.ai)"
+      "WebFetch(domain:claude.ai)",
+      "PowerShell(wsl bash -lc \"solana balance 2>&1\")"
     ]
   }
 }
